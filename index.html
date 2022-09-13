@@ -13,15 +13,26 @@
             crossorigin=""
     ></script>
 
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
+    <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"/>
+    <script src="plugins/leaflet-bing-layer.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Everything_else.js"></script>
+
     <title>Atlas</title>
 
     <style>
-        #map {
-            width: 960px;
-            height: 500px;
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+            width: 100%;
         }
     </style>
-
 </head>
 
 <body>
@@ -29,17 +40,13 @@
 <div id="map"></div>
 
 <script>
-    var cities = L.layerGroup();
 
-    var mLittleton = L.marker([39.61, -105.02]).bindPopup('This is Littleton, CO.').addTo(cities);
-    var mDenver = L.marker([39.74, -104.99]).bindPopup('This is Denver, CO.').addTo(cities);
-    var mAurora = L.marker([39.73, -104.8]).bindPopup('This is Aurora, CO.').addTo(cities);
-    var mGolden = L.marker([39.77, -105.23]).bindPopup('This is Golden, CO.').addTo(cities);
+    var Bingkey = 'Aq-f5tP6X7YRqe-3Kfr3ZXMHY9qVZ6MtrwIn8RlwYFVVhdo20E163gOLTjgNN_kc'
 
-    var streets = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1});
-
+    // Maps
     var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
+        maxZoom: 20,
+        maxNativeZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
 
@@ -48,37 +55,78 @@
         subdomains:['mt0','mt1','mt2','mt3']
     });
 
+    var openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxzoom: 20,
+        maxNativeZoom: 17,
+    })
+
+    var bingLabeless = new L.tileLayer.bing(Bingkey, {imagerySet: 'CanvasDark',
+        maxZoom: 25,
+        maxNativeZoom: 20,
+    });
+
+
+    // Layers
     var railwayMap = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',{
         maxZoom: 20,
     });
 
+    var lightPollution = L.tileLayer('https://djlorenz.github.io/astronomy/lp2020/overlay/tiles/tile_{z}_{x}_{y}.png', {
+        maxZoom: 20,
+        maxNativeZoom: 6,
+        opacity: 0.5,
+    })
 
+    var placesToExplore = L.geoJSON(Everything_else)
+
+    // Map creation
     var map = L.map('map', {
         center: [39.73, -104.99],
         zoom: 10,
-        layers: [osm, cities, googleHybrid, railwayMap]
+        layers: [osm, googleHybrid]
     });
 
     var baseLayers = {
         'OpenStreetMap': osm,
-        'Streets': streets,
         'Google Hybrid': googleHybrid,
+        'Bing Labeless': bingLabeless,
+        'Open Topo': openTopo,
     };
 
     var overlays = {
-        'Cities': cities,
-        'Railway map': railwayMap,
+        'Places to explore': placesToExplore,
+        'OpenRailway Map': railwayMap,
+        'Light Pollution': lightPollution,
+
     };
 
+    const provider = new window.GeoSearch.OpenStreetMapProvider();
+    const search = new GeoSearch.GeoSearchControl({
+        provider: provider,
+        style: 'bar',
+        updateMap: true,
+        autoClose: true,
+    }); // Include the search box with usefull params. Autoclose and updateMap in my case. Provider is a compulsory parameter.
+
+    map.addControl(search);
+
     var layerControl = L.control.layers(baseLayers, overlays).addTo(map);
-    var crownHill = L.marker([39.75, -105.09]).bindPopup('This is Crown Hill Park.');
-    var rubyHill = L.marker([39.68, -105.00]).bindPopup('This is Ruby Hill Park.');
 
-    var parks = L.layerGroup([crownHill, rubyHill]);
 
-    var satellite = L.tileLayer(mbUrl, {id: 'mapbox/satellite-v9', tileSize: 512, zoomOffset: -1});
-    layerControl.addBaseLayer(satellite, 'Satellite');
-    layerControl.addOverlay(parks, 'Parks');
+    // Popups
+    map.on('contextmenu',(e) => {
+        const gHref = `https://maps.google.com/?q=${e.latlng.lat},${e.latlng.lng}&t=h`
+        const gMaps = `<a href="${gHref}" target="_blank">Google Maps</a>`
+
+        const bHref = `https://maps.bing.com/?q=${e.latlng.lat},${e.latlng.lng}&style=h`
+        const bMaps = `<a href="${bHref}" target="_blank">Bing Maps</a>`
+
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent(e.latlng.lat + ", " + e.latlng.lng + "<br>" + gMaps + "<br>" + bMaps)
+            .addTo(map)
+            .openOn(map);
+    });
 </script>
 
 

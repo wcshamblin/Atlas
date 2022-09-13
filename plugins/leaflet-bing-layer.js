@@ -69,6 +69,7 @@
                     imagerySet: 'Aerial',
                     culture: 'en-US',
                     minZoom: 1,
+                    maxZoom: 20,
                     minNativeZoom: 1,
                     maxNativeZoom: 19
                 },
