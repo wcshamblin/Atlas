@@ -175,11 +175,17 @@
         L.popup()
             .setLatLng(e.latlng)
             .setContent(e.latlng.lat + ", " + e.latlng.lng +
+                "<button onclick='addMarker(" + e + ")'>Click me</button>" +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
                 "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather + "</div>")
             .addTo(map)
             .openOn(map);
     });
+
+    function addMarker(e) {
+        var newMarker = new L.marker(e.latlng).addTo(map);
+    }
+
 </script>
 
 
