@@ -1,3 +1,4 @@
+var Possibly_active = [
 {
 "type": "FeatureCollection",
 "name": "Possibly active",
@@ -12,3 +13,4 @@
 { "type": "Feature", "properties": { "Name": "Silos", "description": "Maintained and active. ", "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ -78.8831663, 36.0020436 ] } }
 ]
 }
+];

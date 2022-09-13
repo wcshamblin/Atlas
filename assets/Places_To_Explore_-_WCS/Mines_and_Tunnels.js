@@ -1,3 +1,4 @@
+var Mines_and_Tunnels = [
 {
 "type": "FeatureCollection",
 "name": "Mines and Tunnels",
@@ -9,3 +10,4 @@
 { "type": "Feature", "properties": { "Name": "Tunnels", "description": null }, "geometry": { "type": "Point", "coordinates": [ -98.4370332, 29.5147754 ] } }
 ]
 }
+];

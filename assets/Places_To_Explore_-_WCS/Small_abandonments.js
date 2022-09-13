@@ -1,3 +1,4 @@
+var Small_abandonments = [
 {
 "type": "FeatureCollection",
 "name": "Small abandonments",
@@ -101,3 +102,4 @@
 { "type": "Feature", "properties": { "Name": "Cheshire Underground microwave tower + long lines station\n", "description": "Large underground bunker.<br>https:\/\/long-lines.com\/viewsite\/11735", "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ -72.9290513, 41.4876964 ] } }
 ]
 }
+];

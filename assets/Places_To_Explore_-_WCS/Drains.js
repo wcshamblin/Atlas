@@ -1,4 +1,5 @@
-{
+var Drains = [
+    {
 "type": "FeatureCollection",
 "name": "Drains",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
@@ -7,3 +8,4 @@
 { "type": "Feature", "properties": { "Name": "Mine Shaft Drains", "description": null }, "geometry": { "type": "Point", "coordinates": [ -80.8595333, 35.2290494 ] } }
 ]
 }
+];

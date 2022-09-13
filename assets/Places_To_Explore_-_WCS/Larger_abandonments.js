@@ -1,4 +1,5 @@
-{
+var Larger_abandonments = [
+    {
 "type": "FeatureCollection",
 "name": "Larger abandonments",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
@@ -95,3 +96,4 @@
 { "type": "Feature", "properties": { "Name": "Halihan\/kingston microwave towers + long lines station\n", "description": "Pretty big. Probably has a bunker as well.", "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ -74.0185204, 41.9893322 ] } }
 ]
 }
+];

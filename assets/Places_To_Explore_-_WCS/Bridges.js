@@ -1,4 +1,5 @@
-{
+var Bridges = [
+    {
 "type": "FeatureCollection",
 "name": "Bridges",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
@@ -42,3 +43,4 @@
 { "type": "Feature", "properties": { "Name": "Crabtree Creek trestle\n", "description": null, "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ -78.619714, 35.8138525 ] } }
 ]
 }
+];

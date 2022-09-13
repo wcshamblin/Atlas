@@ -1,3 +1,4 @@
+var Places_of_interest = [
 {
 "type": "FeatureCollection",
 "name": "Places of interest",
@@ -55,3 +56,4 @@
 { "type": "Feature", "properties": { "Name": "Buzzard's rock overlook\n", "description": "Very good sunsets, though often has people then." }, "geometry": { "type": "Point", "coordinates": [ -82.5058, 35.6622327 ] } }
 ]
 }
+];

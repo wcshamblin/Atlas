@@ -19,7 +19,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"/>
     <script src="plugins/leaflet-bing-layer.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Bridges.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Drains.js"></script>
     <script src="assets/Places_To_Explore_-_WCS/Everything_else.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Larger_abandonments.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Mines_and_Tunnels.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Places_of_interest.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Possibly_active.js"></script>
+    <script src="assets/Places_To_Explore_-_WCS/Small_abandonments.js"></script>
 
     <title>Atlas</title>
 
@@ -77,8 +84,7 @@
         opacity: 0.5,
     })
 
-    var placesToExplore = L.geoJSON(Everything_else, {
-
+    var placesToExplore = L.geoJSON([{}], {
         style: function (feature) {
             return feature.properties && feature.properties.style;
         },
@@ -96,11 +102,19 @@
             });
         }
     })
+    placesToExplore.addData(Bridges);
+    placesToExplore.addData(Drains);
+    placesToExplore.addData(Everything_else);
+    placesToExplore.addData(Larger_abandonments);
+    placesToExplore.addData(Mines_and_Tunnels);
+    placesToExplore.addData(Places_of_interest);
+    placesToExplore.addData(Possibly_active);
+    placesToExplore.addData(Small_abandonments);
 
     // Map creation
     var map = L.map('map', {
-        center: [39.73, -104.99],
-        zoom: 10,
+        center: [39.50, -98.35],
+        zoom: 5,
         layers: [osm, googleHybrid, placesToExplore]
     });
 
@@ -133,7 +147,11 @@
 
     // Popups
     function onEachFeature(feature, layer) {
-        var popupContent = "<div id='center'>" + feature.geometry.coordinates[0] + "," + feature.geometry.coordinates[1] + "</div><hr>" + feature.properties.Name;
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[0] + ", " + feature.geometry.coordinates[1] + "<hr><b>" + feature.properties.Name + "</div></b>";
+
+        if (feature.properties.description) {
+            popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
+        }
 
         layer.bindPopup(popupContent);
     }
@@ -149,12 +167,16 @@
         const sentinel = `<a href="${sHref}" target="_blank">Sentinel Playground</a>`
 
         const aHref = `https://www.antennasearch.com/HTML/search/search.php?address=${e.latlng.lat}%2C+${e.latlng.lng}`
-        const antennaFinder = `<a href="${aHref}" target="_blank">Run antenna finder here</a>`
+        const antennaFinder = `<a href="${aHref}" target="_blank">Run antenna finder</a>`
+
+        const wHref = `https://darksky.net/forecast/${e.latlng.lat},${e.latlng.lng}/us12/en`
+        const weather = `<a href="${wHref}" target="_blank">Run Darksky forecast</a>`
+
         L.popup()
             .setLatLng(e.latlng)
             .setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
-                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "</div>")
+                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather + "</div>")
             .addTo(map)
             .openOn(map);
     });
