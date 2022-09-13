@@ -12,7 +12,7 @@
             integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
             crossorigin=""
     ></script>
-
+    <link rel="stylesheet" href="assets/style.css"/>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
     <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
 
@@ -77,13 +77,31 @@
         opacity: 0.5,
     })
 
-    var placesToExplore = L.geoJSON(Everything_else)
+    var placesToExplore = L.geoJSON(Everything_else, {
+
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        onEachFeature: onEachFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: '#ff7800',
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        }
+    })
 
     // Map creation
     var map = L.map('map', {
         center: [39.73, -104.99],
         zoom: 10,
-        layers: [osm, googleHybrid]
+        layers: [osm, googleHybrid, placesToExplore]
     });
 
     var baseLayers = {
@@ -114,6 +132,12 @@
 
 
     // Popups
+    function onEachFeature(feature, layer) {
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[0] + "," + feature.geometry.coordinates[1] + "</div><hr>" + feature.properties.Name;
+
+        layer.bindPopup(popupContent);
+    }
+
     map.on('contextmenu',(e) => {
         const gHref = `https://maps.google.com/?q=${e.latlng.lat},${e.latlng.lng}&t=h`
         const gMaps = `<a href="${gHref}" target="_blank">Google Maps</a>`
@@ -121,9 +145,16 @@
         const bHref = `https://maps.bing.com/?q=${e.latlng.lat},${e.latlng.lng}&style=h`
         const bMaps = `<a href="${bHref}" target="_blank">Bing Maps</a>`
 
+        const sHref = `https://apps.sentinel-hub.com/sentinel-playground/?source=S2L2A&lat=${e.latlng.lat}&lng=${e.latlng.lng}&zoom=12&preset=1_TRUE_COLOR&layers=B01,B02,B03`
+        const sentinel = `<a href="${sHref}" target="_blank">Sentinel Playground</a>`
+
+        const aHref = `https://www.antennasearch.com/HTML/search/search.php?address=${e.latlng.lat}%2C+${e.latlng.lng}`
+        const antennaFinder = `<a href="${aHref}" target="_blank">Run antenna finder here</a>`
         L.popup()
             .setLatLng(e.latlng)
-            .setContent(e.latlng.lat + ", " + e.latlng.lng + "<br>" + gMaps + "<br>" + bMaps)
+            .setContent(e.latlng.lat + ", " + e.latlng.lng +
+                "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
+                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "</div>")
             .addTo(map)
             .openOn(map);
     });
