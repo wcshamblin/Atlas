@@ -188,7 +188,9 @@
     });
 
     function addMarker(lat, lng) {
-        console.log(lat,"eeeE", lng)
+        placesToExplore.addData({ "type": "Feature", "properties": { "Name": "Casa Grande Domes", "description": null, "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ lat, lng ] } })
+        map.invalidateSize()
+        console.log("Reloaded")
         var newMarker = new L.marker([lat, lng]).addTo(map);
     }
 
