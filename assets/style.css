@@ -10,6 +10,10 @@
     padding-top: .25em;
 }
 
+#createmarkerbutton {
+    float: right;
+}
+
 .leaflet-popup-content-wrapper {
     border-radius: 0;
     border:3px solid rgba(0,0,0,0.4);

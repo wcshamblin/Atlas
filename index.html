@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="assets/style.css"/>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
     <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"/>
     <script src="plugins/leaflet-bing-layer.js"></script>
@@ -175,15 +175,21 @@
         L.popup()
             .setLatLng(e.latlng)
             .setContent(e.latlng.lat + ", " + e.latlng.lng +
-                "<button onclick='addMarker(" + e + ")'>Click me</button>" +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
-                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather + "</div>")
+                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +
+                '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button" data = "' + [e.latlng.lat, e.latlng.lng] + '" ' + '>+</button></div>')
             .addTo(map)
             .openOn(map);
     });
 
-    function addMarker(e) {
-        var newMarker = new L.marker(e.latlng).addTo(map);
+    $("div").on("click", '.create-marker-button', function () {
+        var data = $(this).attr("data").split(",");
+        addMarker(parseFloat(data[0]), parseFloat(data[1]));
+    });
+
+    function addMarker(lat, lng) {
+        console.log(lat,"eeeE", lng)
+        var newMarker = new L.marker([lat, lng]).addTo(map);
     }
 
 </script>
