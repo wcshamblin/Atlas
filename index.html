@@ -19,14 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"/>
     <script src="plugins/leaflet-bing-layer.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Bridges.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Drains.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Everything_else.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Larger_abandonments.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Mines_and_Tunnels.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Places_of_interest.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Possibly_active.js"></script>
-    <script src="assets/Places_To_Explore_-_WCS/Small_abandonments.js"></script>
+
 
     <title>Atlas</title>
 
@@ -84,6 +77,7 @@
         opacity: 0.5,
     })
 
+
     var placesToExplore = L.geoJSON([{}], {
         style: function (feature) {
             return feature.properties && feature.properties.style;
@@ -94,7 +88,7 @@
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
                 radius: 8,
-                fillColor: '#ff7800',
+                fillColor: feature.properties.color,
                 color: '#000',
                 weight: 1,
                 opacity: 1,
@@ -102,14 +96,20 @@
             });
         }
     })
-    placesToExplore.addData(Bridges);
-    placesToExplore.addData(Drains);
-    placesToExplore.addData(Everything_else);
-    placesToExplore.addData(Larger_abandonments);
-    placesToExplore.addData(Mines_and_Tunnels);
-    placesToExplore.addData(Places_of_interest);
-    placesToExplore.addData(Possibly_active);
-    placesToExplore.addData(Small_abandonments);
+    async function test() {
+        data = await fetchMapData();
+        console.log(data)
+        placesToExplore.addData(data.success["Bridges"]);
+        placesToExplore.addData(data.success["Drains"]);
+        placesToExplore.addData(data.success["Everything Else"]);
+        placesToExplore.addData(data.success["Larger Abandonments"]);
+        placesToExplore.addData(data.success["Mines and Tunnels"]);
+        placesToExplore.addData(data.success["Places of Interest"]);
+        placesToExplore.addData(data.success["Possibly Active"]);
+        placesToExplore.addData(data.success["Small Abandonments"]);
+    }
+
+    test()
 
     // Map creation
     var map = L.map('map', {
@@ -153,6 +153,7 @@
             popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
         }
 
+        popupContent += "<span id='pointtype'><i>type:</i> properties type</span>"
         layer.bindPopup(popupContent);
     }
 
@@ -193,6 +194,14 @@
         console.log("Reloaded")
         var newMarker = new L.marker([lat, lng]).addTo(map);
     }
+
+    async function fetchMapData() {
+        let obj;
+        const res = await fetch("http://localhost:5001/map/")
+        obj = await res.json();
+        return obj;
+    }
+
 
 </script>
 

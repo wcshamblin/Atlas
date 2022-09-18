@@ -10,10 +10,8 @@ import os
 app = FastAPI()
 
 origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
-    "http://localhost:3000",
+    "https://localhost",
+    "https://localhost:3000",
     "*",
 ]
 
@@ -32,7 +30,7 @@ categories = {
     "Everything Else": fileprefix+"Everything_else.geojson",
     "Larger Abandonments": fileprefix+"Larger_abandonments.geojson",
     "Mines and Tunnels": fileprefix+"Mines_and_Tunnels.geojson",
-    "Places_of_interest": fileprefix+"Places_of_interest.geojson",
+    "Places of Interest": fileprefix+"Places_of_interest.geojson",
     "Possibly Active": fileprefix+"Possibly_active.geojson",
     "Small Abandonments": fileprefix+"Small_abandonments.geojson"
 }
