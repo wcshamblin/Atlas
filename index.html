@@ -206,13 +206,12 @@
             popup.setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
                 "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +
-                '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button" data = "' + [e.latlng.lat, e.latlng.lng] + '" ' + '>+</button></div>')
+                '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button">+</button></div>')
             popup.addTo(map)
             popup.openOn(map);
     });
 
-    newpointform = "<form>" +
-        "<textarea id='name' placeholder='name' rows='1' cols='31'></textarea><br>" +
+    newpointform = "<textarea id='pointname' placeholder='name' rows='1' cols='31'></textarea><br>" +
         "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
         "<select id='color'>" +
             "<option value='green'>Green</option>" +
@@ -224,31 +223,42 @@
             "<option value='yellow'>Yellow</option>" +
             "<option value='black'>Black</option>" +
         "</select>" +
-        "<select>" +
+        "<select id='category'>" +
             "<option value='small'>Small Abandonments</option>" +
             "<option value='large'>Larger Abandonments</option>" +
             "<option value='active'>Possibly Active</option>" +
             "<option value='bridges'>Bridges</option>" +
             "<option value='mines'>Mines and Tunnels</option>" +
             "<option value='drains'>Drains</option>" +
-            "<option value='points'>Points of Interest</option>" +
+            "<option value='places'>Places of Interest</option>" +
             "<option value='everything'>Everything Else</option>" +
         "</select><br><br>" +
         "<input type='checkbox' id='special'><label>Special</label>" +
-        "</form>"
+        "<button id='submitpoint' class='btn btn-primary submit-point'>Submit</button>"
 
-    $("div").on("click", '.create-marker-button', function () {
+
+    // $("#createmarkerbutton").click(function(e) {
+    //     e.preventDefault();
+    //     alert("eeeeee");
+    // });
+
+    $(document).on("click", '.create-marker-button', function () {
         popup.setContent(newpointform)
-        var data = $(this).attr("data").split(",");
-        // addMarker(parseFloat(data[0]), parseFloat(data[1]));
+    });
+    //
+    $(document).on("click", '.submit-point', function (event) {
+        event.preventDefault()
+
+        var pointname = $('#pointname').val();
+        var description = $('#description').val();
+        var color = $('#color').val();
+        var category = $('#category').val();
+        var special = $('#special').prop('checked');
+
+        console.log(pointname, description, color, category, special)
+        postNewPoint({"lat": 0, "lng": 0, "name": pointname, "description": description, "color": color, "category": category, "special": special})
     });
 
-    function addMarker(lat, lng) {
-        placesToExplore.addData({ "type": "Feature", "properties": { "Name": "Casa Grande Domes", "description": null, "gx_media_links": null }, "geometry": { "type": "Point", "coordinates": [ lat, lng ] } })
-        map.invalidateSize()
-        console.log("Reloaded")
-        var newMarker = new L.marker([lat, lng]).addTo(map);
-    }
 
     async function fetchMapData() {
         let obj;
@@ -257,6 +267,16 @@
         return obj;
     }
 
+    function postNewPoint(pointdata) {
+        fetch("http://localhost:5001/add/", {
+            method: "POST",
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(pointdata),
+        })
+    }
 
 </script>
 
