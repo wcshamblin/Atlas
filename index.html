@@ -183,6 +183,7 @@
         popupContent += "<span id='pointtype'><i>type:</i> " + categories[feature.properties.category] + "</span>"
         layer.bindPopup(popupContent);
     }
+    var popup;
 
     map.on('contextmenu',(e) => {
         const gHref = `https://maps.google.com/?q=${e.latlng.lat},${e.latlng.lng}&t=h`
@@ -200,19 +201,46 @@
         const wHref = `https://darksky.net/forecast/${e.latlng.lat},${e.latlng.lng}/us12/en`
         const weather = `<a href="${wHref}" target="_blank">Run Darksky forecast</a>`
 
-        L.popup()
-            .setLatLng(e.latlng)
-            .setContent(e.latlng.lat + ", " + e.latlng.lng +
+        popup = L.popup()
+            popup.setLatLng(e.latlng)
+            popup.setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
                 "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +
                 '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button" data = "' + [e.latlng.lat, e.latlng.lng] + '" ' + '>+</button></div>')
-            .addTo(map)
-            .openOn(map);
+            popup.addTo(map)
+            popup.openOn(map);
     });
 
+    newpointform = "<form>" +
+        "<textarea id='name' placeholder='name' rows='1' cols='31'></textarea><br>" +
+        "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
+        "<select id='color'>" +
+            "<option value='green'>Green</option>" +
+            "<option value='orange'>Orange</option>" +
+            "<option value='blue'>Blue</option>" +
+            "<option value='purple'>Purple</option>" +
+            "<option value='magenta'>Magenta</option>" +
+            "<option value='red'>Red</option>" +
+            "<option value='yellow'>Yellow</option>" +
+            "<option value='black'>Black</option>" +
+        "</select>" +
+        "<select>" +
+            "<option value='small'>Small Abandonments</option>" +
+            "<option value='large'>Larger Abandonments</option>" +
+            "<option value='active'>Possibly Active</option>" +
+            "<option value='bridges'>Bridges</option>" +
+            "<option value='mines'>Mines and Tunnels</option>" +
+            "<option value='drains'>Drains</option>" +
+            "<option value='points'>Points of Interest</option>" +
+            "<option value='everything'>Everything Else</option>" +
+        "</select><br><br>" +
+        "<input type='checkbox' id='special'><label>Special</label>" +
+        "</form>"
+
     $("div").on("click", '.create-marker-button', function () {
+        popup.setContent(newpointform)
         var data = $(this).attr("data").split(",");
-        addMarker(parseFloat(data[0]), parseFloat(data[1]));
+        // addMarker(parseFloat(data[0]), parseFloat(data[1]));
     });
 
     function addMarker(lat, lng) {
