@@ -53,6 +53,10 @@
 
     var Bingkey = 'Aq-f5tP6X7YRqe-3Kfr3ZXMHY9qVZ6MtrwIn8RlwYFVVhdo20E163gOLTjgNN_kc'
 
+    var popup;
+    let popuplat;
+    let popuplng;
+
 
 
 
@@ -174,18 +178,26 @@
 
     // Popups
     function onEachFeature(feature, layer) {
-        var popupContent = "<div id='center'>" + feature.geometry.coordinates[0] + ", " + feature.geometry.coordinates[1] + "<hr><b>" + feature.properties.Name + "</div></b>";
+        popuplat = feature.geometry.coordinates[1];
+        popuplng
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b>" + feature.properties.Name + "</div></b>";
 
         if (feature.properties.description) {
             popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
         }
 
         popupContent += "<span id='pointtype'><i>type:</i> " + categories[feature.properties.category] + "</span>"
+
+        popupContent += "<button type='button' id='deletemarkerbutton' class='btn btn-primary create-marker-button'>del</button>"
+        //popupContent += "<button type='button' id='editmarkerbutton'>edit</button>"
+
         layer.bindPopup(popupContent);
     }
-    var popup;
 
     map.on('contextmenu',(e) => {
+        popuplat = e.latlng.lat;
+        popuplng = e.latlng.lng;
+
         const gHref = `https://maps.google.com/?q=${e.latlng.lat},${e.latlng.lng}&t=h`
         const gMaps = `<a href="${gHref}" target="_blank">Google Maps</a>`
 
@@ -236,18 +248,12 @@
         "<input type='checkbox' id='special'><label>Special</label>" +
         "<button id='submitpoint' class='btn btn-primary submit-point'>Submit</button>"
 
-
-    // $("#createmarkerbutton").click(function(e) {
-    //     e.preventDefault();
-    //     alert("eeeeee");
-    // });
-
-    $(document).on("click", '.create-marker-button', function () {
+    $(document).on("click", ".create-marker-button", function () {
         popup.setContent(newpointform)
     });
-    //
-    $(document).on("click", '.submit-point', function (event) {
-        event.preventDefault()
+
+    $(document).on("click", ".submit-point", function (event) {
+        event.preventDefault();
 
         var pointname = $('#pointname').val();
         var description = $('#description').val();
@@ -256,7 +262,13 @@
         var special = $('#special').prop('checked');
 
         console.log(pointname, description, color, category, special)
-        postNewPoint({"lat": 0, "lng": 0, "name": pointname, "description": description, "color": color, "category": category, "special": special})
+        postNewPoint({"lat": popuplat, "lng": popuplng, "name": pointname, "description": description, "color": color, "category": category, "special": special})
+    });
+
+    $(document).on("click", ".delete-point", function (event) {
+        event.preventDefault();
+
+        deletePoint({"lat": popuplat, "lng": popuplng})
     });
 
 
@@ -275,6 +287,17 @@
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(pointdata),
+        })
+    }
+
+    function deletePoint(pointdata) {
+        fetch("http://localhost:5001/del/", {
+            method: "DELETE",
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(pointdata)
         })
     }
 

@@ -82,36 +82,40 @@ async def add_point(query: PointPost):
     for item in query:
         print(item)
 
+    if query.name is None:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+
     if query.category not in categories:
         raise HTTPException(status_code=400, detail=f"category {query.category} not found")
 
     if query.color not in colors:
         raise HTTPException(status_code=400, detail=f"color {query.color} not found")
-    # with open(placestoexplore, 'r') as f:
-    #     data = load(f)
-    #     data.append({
-    #         "type": "Feature",
-    #         "properties": {
-    #             "Name": query.name,
-    #             "description": query.description,
-    #             "gx_media_links": None,
-    #             "color": query.description,
-    #             "special": query.special,
-    #             "category": categories[query.category]
-    #         },
-    #         "geometry": {
-    #             "type": "Point",
-    #             "coordinates": [
-    #                 query.lat,
-    #                 query.lng
-    #             ]
-    #         }
-    #     },
-    #     )
-    #
-    # os.remove(placestoexplore)
-    # with open(placestoexplore, 'w') as f:
-    #     dump(data, f, indent=4)
+
+    with open(placestoexplore, 'r') as f:
+        data = load(f)
+        data.append({
+            "type": "Feature",
+            "properties": {
+                "Name": query.name,
+                "description": query.description,
+                "gx_media_links": None,
+                "color": colors[query.color],
+                "special": query.special,
+                "category": categories[query.category]
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    query.lng,
+                    query.lat
+                ]
+            }
+        },
+        )
+
+    os.remove(placestoexplore)
+    with open(placestoexplore, 'w') as f:
+        dump(data, f, indent=4)
 
     return JSONResponse({"success": "Point added"})
 

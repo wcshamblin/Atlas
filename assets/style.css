@@ -36,3 +36,8 @@ textarea {
 button#submitpoint {
     float: right;
 }
+
+button#deletemarkerbutton {
+    margin: .5em;
+    float: right;
+}
