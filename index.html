@@ -179,7 +179,7 @@
     // Popups
     function onEachFeature(feature, layer) {
         popuplat = feature.geometry.coordinates[1];
-        popuplng
+        popuplng = feature.geometry.coordinates[0];
         var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b>" + feature.properties.Name + "</div></b>";
 
         if (feature.properties.description) {
@@ -188,7 +188,7 @@
 
         popupContent += "<span id='pointtype'><i>type:</i> " + categories[feature.properties.category] + "</span>"
 
-        popupContent += "<button type='button' id='deletemarkerbutton' class='btn btn-primary create-marker-button'>del</button>"
+        popupContent += "<button type='button' id='deletemarkerbutton' class='btn btn-primary delete-marker-button'>del</button>"
         //popupContent += "<button type='button' id='editmarkerbutton'>edit</button>"
 
         layer.bindPopup(popupContent);
@@ -265,7 +265,7 @@
         postNewPoint({"lat": popuplat, "lng": popuplng, "name": pointname, "description": description, "color": color, "category": category, "special": special})
     });
 
-    $(document).on("click", ".delete-point", function (event) {
+    $(document).on("click", ".delete-marker-button", function (event) {
         event.preventDefault();
 
         deletePoint({"lat": popuplat, "lng": popuplng})

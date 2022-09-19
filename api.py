@@ -121,6 +121,21 @@ async def add_point(query: PointPost):
 
 @app.delete('/del/', status_code=status.HTTP_200_OK)
 async def delete_point(query: PointDel):
+    deleted = False
+    with open(placestoexplore, 'r') as f:
+        data = load(f)
+
+    for i in range(0, len(data)):
+        if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+            del data[i]
+            deleted = True
+
+    if deleted:
+        os.remove(placestoexplore)
+        with open(placestoexplore, 'w') as f:
+            dump(data, f, indent=4)
+
+
     return JSONResponse({"success": "Point deleted"})
 
 @app.put('/edit/', status_code=status.HTTP_200_OK)
