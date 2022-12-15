@@ -53,8 +53,22 @@
 
     var Bingkey = 'Aq-f5tP6X7YRqe-3Kfr3ZXMHY9qVZ6MtrwIn8RlwYFVVhdo20E163gOLTjgNN_kc'
 
+    var colors = {
+        "#558B2F": "green",
+        "#E65100": "orange",
+        "#0288D1": "blue",
+        "#673AB7": "purple",
+        "#880E4F": "magenta",
+        "#A52714": "red",
+        "#FFD600": "yellow",
+        "#000000": "black"
+    }
+
+
+
     var editpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
     var newpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
+    var pointProperties = {"name": "", "description": "", "color": "", "type": "", "special": ""}
 
     // Maps
     var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -190,6 +204,16 @@
                 editpointpopup["latitude"] = editpointpopup["popup"] = event.latlng["lat"];
                 editpointpopup["longitude"] = editpointpopup["popup"] = event.latlng["lng"];
 
+                pointProperties["lat"] = feature.geometry.coordinates[1];
+                pointProperties["lng"] = feature.geometry.coordinates[0];
+                pointProperties["name"] = feature.properties.Name;
+                pointProperties["description"] = feature.properties.description;
+                pointProperties["color"] = feature.properties.color;
+                pointProperties["category"] = feature.properties.category;
+                pointProperties["special"] = feature.properties.special;
+                console.log(pointProperties);
+
+
                 editpointpopup["popup"] = L.popup()
                     .setLatLng(event.latlng)
                     .setContent(popupContent)
@@ -270,35 +294,43 @@
     });
 
     $(document).on("click", ".edit-marker-button", function () {
-        editpointform = "<textarea id='latitude' placeholder='Latitude' rows='1'></textarea><textarea id='longitude' placeholder='Longitude' rows='1'></textarea><br>" +
-            "<textarea id='pointname' placeholder='name' rows='1' cols='31'></textarea><br>" +
-            "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
-            "<select id='color'>" +
-            "<option value='green'>Green</option>" +
-            "<option value='orange'>Orange</option>" +
-            "<option value='blue'>Blue</option>" +
-            "<option value='purple'>Purple</option>" +
-            "<option value='magenta'>Magenta</option>" +
-            "<option value='red'>Red</option>" +
-            "<option value='yellow'>Yellow</option>" +
-            "<option value='black'>Black</option>" +
+        editpointform = "<textarea id='latitude' placeholder=" + editpointpopup["latitude"] + " rows='1'></textarea><textarea id='longitude' placeholder=" + editpointpopup["longitude"] + " rows='1'></textarea><br>" +
+            "<textarea id='pointname' placeholder='name' rows='1' cols='31'>" + pointProperties["name"] + "</textarea><br>" +
+            "<textarea id='description' placeholder='description' rows='5' cols='31'>" + pointProperties["description"] + "</textarea><br>" +
+            "<select id='editColor'>" +
+            "<option value='#558B2F'>Green</option>" +
+            "<option value='#E65100'>Orange</option>" +
+            "<option value='#0288D1'>Blue</option>" +
+            "<option value='#673AB7'>Purple</option>" +
+            "<option value='#880E4F'>Magenta</option>" +
+            "<option value='#A52714'>Red</option>" +
+            "<option value='#FFD600'>Yellow</option>" +
+            "<option value='#000000'>Black</option>" +
             "</select>" +
-            "<select id='category'>" +
-            "<option value='small'>Small Abandonments</option>" +
-            "<option value='large'>Larger Abandonments</option>" +
-            "<option value='active'>Possibly Active</option>" +
-            "<option value='bridges'>Bridges</option>" +
-            "<option value='mines'>Mines and Tunnels</option>" +
-            "<option value='drains'>Drains</option>" +
-            "<option value='places'>Places of Interest</option>" +
-            "<option value='everything'>Everything Else</option>" +
+            "<select id='editCategory'>" +
+            "<option value='Small_abandonments'>Small Abandonments</option>" +
+            "<option value='Larger_abandonments'>Larger Abandonments</option>" +
+            "<option value='Possibly_active'>Possibly Active</option>" +
+            "<option value='Bridges'>Bridges</option>" +
+            "<option value='Mines_and_Tunnels'>Mines and Tunnels</option>" +
+            "<option value='Drains'>Drains</option>" +
+            "<option value='Places_of_interest'>Places of Interest</option>" +
+            "<option value='Everything_else'>Everything Else</option>" +
             "</select><br>" +
             "<textarea id='delete' placeholder='type &apos;delete&apos; to delete' rows='1' cols='31'></textarea><br>" +
-            "<input type='checkbox' id='special'><label>Special</label>" +
+            "<input type='checkbox' id='editSpecial'><label>Special</label>" +
             "<button id='editpoint' class='btn btn-primary edit-point'>Done</button>"
 
         editpointpopup["popup"].setContent(editpointform);
+
+        console.log(pointProperties["special"]);
+
+        $("#editCategory").val(pointProperties["category"]);
+        $("#editColor").val([pointProperties["color"]]);
+        $("#editSpecial").prop("checked", pointProperties["special"]);
+
     });
+
 
     $(document).on("click", ".edit-point", function (event) {
         event.preventDefault();
@@ -307,9 +339,11 @@
         var pointname = $('#pointname').val();
         var description = $('#description').val();
         var todelete = $('#delete').val();
-        var color = $('#color').val();
-        var category = $('#category').val();
-        var special = $('#special').prop('checked');
+        var color = $('#editColor').val();
+        var category = $('#editCategory').val();
+        var special = $('#editSpecial').prop('checked');
+
+        console.log(category, color, special);
 
         PutPoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"], "newlat": latitude, "newlng": longitude, "name": pointname, "description": description, "color": color, "category": category, "special": special, "delete": todelete})
     });
