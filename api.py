@@ -48,7 +48,6 @@ colors = {
 
 placestoexplore = "assets/placestoexplore/Places_to_Explore.geojson"
 
-
 class PointPost(BaseModel):
     name: str
     category: str
@@ -62,10 +61,13 @@ class PointPut(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    lat: Optional[float] = None
-    lng: Optional[float] = None
+    lat: float
+    lng: float
+    newlat: Optional[float] = None
+    newlng: Optional[float] = None
     color: Optional[str] = None
     special: Optional[bool] = None
+    delete: Optional[str] = None
 
 class PointDel(BaseModel):
     name: Optional[str] = None
@@ -135,14 +137,43 @@ async def delete_point(query: PointDel):
         with open(placestoexplore, 'w') as f:
             dump(data, f, indent=4)
 
+    if deleted:
+        return JSONResponse({"success": "Point deleted"})
+    return JSONResponse({"failure": "Point not found"})
 
-    return JSONResponse({"success": "Point deleted"})
-
-@app.put('/edit/', status_code=status.HTTP_200_OK)
+@app.put('/put/', status_code=status.HTTP_200_OK)
 async def edit_point(query: PointPut):
-    # Edit data
+    found = False
+    index = None
+    with open(placestoexplore, 'r') as f:
+        data = load(f)
 
-    return JSONResponse({"success": "Point edited"})
+    for i in range(0, len(data)):
+        index = i
+        found = True
+        if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+            if query.newlat is not None and query.newlng is not None:
+                data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
+            if query.name != "":
+                data[i]["properties"]["Name"] = query.name
+            if query.description != "":
+                data[i]["properties"]["description"] = query.description
+
+            data[i]["properties"]["color"] = colors[query.color]
+            data[i]["properties"]["special"] = query.special
+            data[i]["properties"]["category"] = categories[query.category]
+
+    if found:
+        if query.delete == "delete":
+            del data[index]
+
+        os.remove(placestoexplore)
+        with open(placestoexplore, 'w') as f:
+            dump(data, f, indent=4)
+
+        return JSONResponse({"success": "Point edited"})
+
+    return JSONResponse({"failure": "Could not find point"})
 
 
 @app.get('/map/', status_code=status.HTTP_200_OK)

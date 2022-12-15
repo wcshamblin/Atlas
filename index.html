@@ -53,12 +53,8 @@
 
     var Bingkey = 'Aq-f5tP6X7YRqe-3Kfr3ZXMHY9qVZ6MtrwIn8RlwYFVVhdo20E163gOLTjgNN_kc'
 
-    var popup;
-    let popuplat;
-    let popuplng;
-
-
-
+    var editpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
+    var newpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
 
     // Maps
     var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -178,8 +174,6 @@
 
     // Popups
     function onEachFeature(feature, layer) {
-        popuplat = feature.geometry.coordinates[1];
-        popuplng = feature.geometry.coordinates[0];
         var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b>" + feature.properties.Name + "</div></b>";
 
         if (feature.properties.description) {
@@ -188,15 +182,26 @@
 
         popupContent += "<span id='pointtype'><i>type:</i> " + categories[feature.properties.category] + "</span>"
 
-        popupContent += "<button type='button' id='deletemarkerbutton' class='btn btn-primary delete-marker-button'>del</button>"
+        popupContent += "<button type='button' id='editbutton' class='btn btn-primary edit-marker-button'>⚙</button>"
         //popupContent += "<button type='button' id='editmarkerbutton'>edit</button>"
 
-        layer.bindPopup(popupContent);
+        layer.on({
+            click: function(event) {
+                editpointpopup["latitude"] = editpointpopup["popup"] = event.latlng["lat"];
+                editpointpopup["longitude"] = editpointpopup["popup"] = event.latlng["lng"];
+
+                editpointpopup["popup"] = L.popup()
+                    .setLatLng(event.latlng)
+                    .setContent(popupContent)
+                    .addTo(map)
+                    .openOn(map);
+            }
+        })
     }
 
     map.on('contextmenu',(e) => {
-        popuplat = e.latlng.lat;
-        popuplng = e.latlng.lng;
+        newpointpopup["latitude"] = e.latlng.lat;
+        newpointpopup["longitude"] = e.latlng.lng;
 
         const gHref = `https://maps.google.com/?q=${e.latlng.lat},${e.latlng.lng}&t=h`
         const gMaps = `<a href="${gHref}" target="_blank">Google Maps</a>`
@@ -213,19 +218,20 @@
         const wHref = `https://darksky.net/forecast/${e.latlng.lat},${e.latlng.lng}/us12/en`
         const weather = `<a href="${wHref}" target="_blank">Run Darksky forecast</a>`
 
-        popup = L.popup()
-            popup.setLatLng(e.latlng)
-            popup.setContent(e.latlng.lat + ", " + e.latlng.lng +
+        newpointpopup["popup"] = L.popup()
+            newpointpopup["popup"].setLatLng(e.latlng)
+            newpointpopup["popup"].setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
                 "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +
                 '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button">+</button></div>')
-            popup.addTo(map)
-            popup.openOn(map);
+            newpointpopup["popup"].addTo(map)
+            newpointpopup["popup"].openOn(map);
     });
 
-    newpointform = "<textarea id='pointname' placeholder='name' rows='1' cols='31'></textarea><br>" +
-        "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
-        "<select id='color'>" +
+    $(document).on("click", ".create-marker-button", function () {
+        newpointform = "<textarea id='pointname' placeholder='name' rows='1' cols='31'></textarea><br>" +
+            "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
+            "<select id='color'>" +
             "<option value='green'>Green</option>" +
             "<option value='orange'>Orange</option>" +
             "<option value='blue'>Blue</option>" +
@@ -234,8 +240,8 @@
             "<option value='red'>Red</option>" +
             "<option value='yellow'>Yellow</option>" +
             "<option value='black'>Black</option>" +
-        "</select>" +
-        "<select id='category'>" +
+            "</select>" +
+            "<select id='category'>" +
             "<option value='small'>Small Abandonments</option>" +
             "<option value='large'>Larger Abandonments</option>" +
             "<option value='active'>Possibly Active</option>" +
@@ -244,12 +250,10 @@
             "<option value='drains'>Drains</option>" +
             "<option value='places'>Places of Interest</option>" +
             "<option value='everything'>Everything Else</option>" +
-        "</select><br><br>" +
-        "<input type='checkbox' id='special'><label>Special</label>" +
-        "<button id='submitpoint' class='btn btn-primary submit-point'>Submit</button>"
-
-    $(document).on("click", ".create-marker-button", function () {
-        popup.setContent(newpointform)
+            "</select><br><br>" +
+            "<input type='checkbox' id='special'><label>Special</label>" +
+            "<button id='submitpoint' class='btn btn-primary submit-point'>Submit</button>"
+        newpointpopup["popup"].setContent(newpointform)
     });
 
     $(document).on("click", ".submit-point", function (event) {
@@ -262,13 +266,58 @@
         var special = $('#special').prop('checked');
 
         console.log(pointname, description, color, category, special)
-        postNewPoint({"lat": popuplat, "lng": popuplng, "name": pointname, "description": description, "color": color, "category": category, "special": special})
+        postNewPoint({"lat": newpointpopup["latitude"], "lng": newpointpopup["longitude"], "name": pointname, "description": description, "color": color, "category": category, "special": special})
+    });
+
+    $(document).on("click", ".edit-marker-button", function () {
+        editpointform = "<textarea id='latitude' placeholder='Latitude' rows='1'></textarea><textarea id='longitude' placeholder='Longitude' rows='1'></textarea><br>" +
+            "<textarea id='pointname' placeholder='name' rows='1' cols='31'></textarea><br>" +
+            "<textarea id='description' placeholder='description' rows='5' cols='31'></textarea><br>" +
+            "<select id='color'>" +
+            "<option value='green'>Green</option>" +
+            "<option value='orange'>Orange</option>" +
+            "<option value='blue'>Blue</option>" +
+            "<option value='purple'>Purple</option>" +
+            "<option value='magenta'>Magenta</option>" +
+            "<option value='red'>Red</option>" +
+            "<option value='yellow'>Yellow</option>" +
+            "<option value='black'>Black</option>" +
+            "</select>" +
+            "<select id='category'>" +
+            "<option value='small'>Small Abandonments</option>" +
+            "<option value='large'>Larger Abandonments</option>" +
+            "<option value='active'>Possibly Active</option>" +
+            "<option value='bridges'>Bridges</option>" +
+            "<option value='mines'>Mines and Tunnels</option>" +
+            "<option value='drains'>Drains</option>" +
+            "<option value='places'>Places of Interest</option>" +
+            "<option value='everything'>Everything Else</option>" +
+            "</select><br>" +
+            "<textarea id='delete' placeholder='type &apos;delete&apos; to delete' rows='1' cols='31'></textarea><br>" +
+            "<input type='checkbox' id='special'><label>Special</label>" +
+            "<button id='editpoint' class='btn btn-primary edit-point'>Done</button>"
+
+        editpointpopup["popup"].setContent(editpointform);
+    });
+
+    $(document).on("click", ".edit-point", function (event) {
+        event.preventDefault();
+        var latitude = parseFloat($('#latitude').val());
+        var longitude = parseFloat($('#longitude').val());
+        var pointname = $('#pointname').val();
+        var description = $('#description').val();
+        var todelete = $('#delete').val();
+        var color = $('#color').val();
+        var category = $('#category').val();
+        var special = $('#special').prop('checked');
+
+        PutPoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"], "newlat": latitude, "newlng": longitude, "name": pointname, "description": description, "color": color, "category": category, "special": special, "delete": todelete})
     });
 
     $(document).on("click", ".delete-marker-button", function (event) {
         event.preventDefault();
 
-        deletePoint({"lat": popuplat, "lng": popuplng})
+        deletePoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"]})
     });
 
 
@@ -298,6 +347,17 @@
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(pointdata)
+        })
+    }
+
+    function PutPoint(pointdata) {
+        fetch("http://localhost:5001/put/", {
+            method: "PUT",
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(pointdata),
         })
     }
 

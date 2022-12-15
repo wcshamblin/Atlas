@@ -31,9 +31,17 @@ textarea {
     width: 96%;
     max-width: 96%;
 }
+textarea#latitude {
+    width: 46.5%;
+    max-width: 46.5%;
+}
 
+textarea#longitude {
+    width: 46.5%;
+    max-width: 46.5%;
+}
 
-button#submitpoint {
+button {
     float: right;
 }
 
