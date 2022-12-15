@@ -361,13 +361,13 @@
 
     async function fetchMapData() {
         let obj;
-        const res = await fetch("http://localhost:5001/map/")
+        const res = await fetch("https://octet.llc/atlas/api/map/")
         obj = await res.json();
         return obj;
     }
 
     function postNewPoint(pointdata) {
-        fetch("http://localhost:5001/add/", {
+        fetch("https://octet.llc/atlas/api/add/", {
             method: "POST",
             headers: {
                 'accept': 'application/json',
@@ -378,7 +378,7 @@
     }
 
     function deletePoint(pointdata) {
-        fetch("http://localhost:5001/del/", {
+        fetch("https://octet.llc/atlas/api/del/", {
             method: "DELETE",
             headers: {
                 'accept': 'application/json',
@@ -389,7 +389,7 @@
     }
 
     function PutPoint(pointdata) {
-        fetch("http://localhost:5001/put/", {
+        fetch("https://octet.llc/atlas/api/put/", {
             method: "PUT",
             headers: {
                 'accept': 'application/json',
