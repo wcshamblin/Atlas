@@ -24,27 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-categories = {
-    "bridges": "Bridges",
-    "drains": "Drains",
-    "everything": "Everything_else",
-    "large": "Larger_abandonments",
-    "mines": "Mines_and_Tunnels",
-    "places": "Places_of_interest",
-    "active": "Possibly_active",
-    "small": "Small_abandonments"
-}
+categories = ["Bridges", "Drains", "Everything_else", "Larger_abandonments", "Mines_and_Tunnels", "Places_of_interest", "Possibly_active", "Small_abandonments"]
 
-colors = {
-    "green": "#558B2F",
-    "orange": "#E65100",
-    "blue": "#0288D1",
-    "purple": "#673AB7",
-    "magenta": "#880E4F",
-    "red": "#A52714",
-    "yellow": "#FFD600",
-    "black": "#000000"
-}
+colors = ["#558B2F", "#E65100", "#0288D1", "#673AB7", "#880E4F", "#A52714", "#FFD600", "#000000"]
 
 placestoexplore = "assets/placestoexplore/Places_to_Explore.geojson"
 
@@ -101,9 +83,9 @@ async def add_point(query: PointPost):
                 "Name": query.name,
                 "description": query.description,
                 "gx_media_links": None,
-                "color": colors[query.color],
+                "color": query.color,
                 "special": query.special,
-                "category": categories[query.category]
+                "category": query.category
             },
             "geometry": {
                 "type": "Point",
@@ -159,9 +141,9 @@ async def edit_point(query: PointPut):
             if query.description != "":
                 data[i]["properties"]["description"] = query.description
 
-            data[i]["properties"]["color"] = colors[query.color]
+            data[i]["properties"]["color"] = query.color
             data[i]["properties"]["special"] = query.special
-            data[i]["properties"]["category"] = categories[query.category]
+            data[i]["properties"]["category"] = query.category
 
     if found:
         if query.delete == "delete":
