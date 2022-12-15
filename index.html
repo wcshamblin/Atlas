@@ -290,6 +290,8 @@
         var special = $('#special').prop('checked');
 
         console.log(pointname, description, color, category, special)
+        $(".leaflet-popup-close-button")[0].click();
+
         postNewPoint({"lat": newpointpopup["latitude"], "lng": newpointpopup["longitude"], "name": pointname, "description": description, "color": color, "category": category, "special": special})
     });
 
@@ -319,7 +321,7 @@
             "</select><br>" +
             "<textarea id='delete' placeholder='type &apos;delete&apos; to delete' rows='1' cols='31'></textarea><br>" +
             "<input type='checkbox' id='editSpecial'><label>Special</label>" +
-            "<button id='editpoint' class='btn btn-primary edit-point'>Done</button>"
+            "<button id='editpoint' class='btn btn-primary edit-point'>Submit</button>"
 
         editpointpopup["popup"].setContent(editpointform);
 
@@ -344,6 +346,8 @@
         var special = $('#editSpecial').prop('checked');
 
         console.log(category, color, special);
+
+        $(".leaflet-popup-close-button")[0].click();
 
         PutPoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"], "newlat": latitude, "newlng": longitude, "name": pointname, "description": description, "color": color, "category": category, "special": special, "delete": todelete})
     });

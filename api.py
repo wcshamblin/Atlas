@@ -138,8 +138,7 @@ async def edit_point(query: PointPut):
                 data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
             if query.name != "":
                 data[i]["properties"]["Name"] = query.name
-            if query.description != "":
-                data[i]["properties"]["description"] = query.description
+            data[i]["properties"]["description"] = query.description
 
             data[i]["properties"]["color"] = query.color
             data[i]["properties"]["special"] = query.special
