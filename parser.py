@@ -17,7 +17,7 @@ with open("assets/PlacesToExploreWCS.kml") as f:
         styleurl = str(pm.styleUrl).split("-")
         color = "#"+styleurl[2]
         coordinates = str(pm.Point.coordinates).strip().split(",")
-        special =  True if styleurl[1]=="1502" else False
+        special = True if styleurl[1] == "1502" else False
         try:
             description = pm.description
         except AttributeError:
