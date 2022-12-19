@@ -61,7 +61,7 @@ class PointDel(BaseModel):
     special: Optional[bool] = None
 
 
-@app.post('/add/', status_code=status.HTTP_201_CREATED)
+@app.post('/add', status_code=status.HTTP_201_CREATED)
 async def add_point(query: PointPost):
     for item in query:
         print(item)
@@ -103,7 +103,7 @@ async def add_point(query: PointPost):
 
     return JSONResponse({"success": "Point added"})
 
-@app.delete('/del/', status_code=status.HTTP_200_OK)
+@app.delete('/del', status_code=status.HTTP_200_OK)
 async def delete_point(query: PointDel):
     deleted = False
     with open(placestoexplore, 'r') as f:
@@ -123,7 +123,7 @@ async def delete_point(query: PointDel):
         return JSONResponse({"success": "Point deleted"})
     return JSONResponse({"failure": "Point not found"})
 
-@app.put('/put/', status_code=status.HTTP_200_OK)
+@app.put('/put', status_code=status.HTTP_200_OK)
 async def edit_point(query: PointPut):
     found = False
     index = None
@@ -157,7 +157,7 @@ async def edit_point(query: PointPut):
     return JSONResponse({"failure": "Could not find point"})
 
 
-@app.get('/map/', status_code=status.HTTP_200_OK)
+@app.get('/map', status_code=status.HTTP_200_OK)
 async def return_data():
     data = load(open(placestoexplore))
 
