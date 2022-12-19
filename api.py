@@ -144,6 +144,8 @@ async def edit_point(query: PointPut):
             data[i]["properties"]["special"] = query.special
             data[i]["properties"]["category"] = query.category
 
+            break
+
     if found:
         if query.delete == "delete":
             del data[index]
