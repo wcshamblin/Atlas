@@ -7,7 +7,7 @@ namespace = {"ns": nsmap[None]}
 
 placemarks = {}
 
-with open("assets/PlacesToExploreWCS.kml") as f:
+with open("assets/placestoexplore/PlacesToExploreWCS.kml") as f:
     root = parser.parse(f).getroot()
     pms = root.findall(".//ns:Placemark", namespaces=namespace)
 
