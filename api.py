@@ -9,33 +9,12 @@ from json import load, dump
 import os
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app = FastAPI()
 
 origins = [
     "https://localhost",
     "https://localhost:3000",
     "http://localhost:63342",
-    "*",
 ]
 
 app.add_middleware(
