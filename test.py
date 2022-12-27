@@ -12,9 +12,11 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from json import load, dump
+import os
 
 # Authenticated users
-users = {"112057537397008960552":{"scope": "edit"}, "112057537397008960553":{"scope": "view"}}
+# Scopes are: edit, view, add
+users = {"112057537397008960552":{"scope": ["edit", "add", "view"]}, "109701721255072747502":{"scope": ["edit", "add", "view"]}}
 
 
 # JWT
@@ -125,6 +127,7 @@ async def login_callback(request: Request):
 
     # Check if token is owned by a user that has access to our API
     userid = token["userinfo"]["sub"]
+    print(userid)
     if userid not in users:
         # If they don't
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
@@ -157,102 +160,96 @@ async def logout(request: Request):
     request.session.pop('user', None)
     return RedirectResponse(url='/')
 
-# @app.post('/add', status_code=status.HTTP_201_CREATED)
-# async def add_point(query: PointPost):
-#     for item in query:
-#         print(item)
+@app.post('/add', status_code=status.HTTP_201_CREATED)
+async def add_point(query: PointPost, request: Request):
+    # Verify user
+    user = await get_current_user(request.session["access_token"])
 
-#     if query.name is None:
-#         raise HTTPException(status_code=400, detail="Name cannot be empty")
+    # Check if scoped for this action
+    if "edit" not in users[user]["scope"] and "add" not in users[user]["scope"]:
+        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
 
-#     if query.category not in categories:
-#         raise HTTPException(status_code=400, detail=f"category {query.category} not found")
+    for item in query:
+        print(item)
 
-#     if query.color not in colors:
-#         raise HTTPException(status_code=400, detail=f"color {query.color} not found")
+    if query.name is None:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
 
-#     with open(placestoexplore, 'r') as f:
-#         data = load(f)
-#         data.append({
-#             "type": "Feature",
-#             "properties": {
-#                 "Name": query.name,
-#                 "description": query.description,
-#                 "gx_media_links": None,
-#                 "color": query.color,
-#                 "special": query.special,
-#                 "category": query.category
-#             },
-#             "geometry": {
-#                 "type": "Point",
-#                 "coordinates": [
-#                     query.lng,
-#                     query.lat
-#                 ]
-#             }
-#         },
-#         )
+    if query.category not in categories:
+        raise HTTPException(status_code=400, detail=f"category {query.category} not found")
 
-#     os.remove(placestoexplore)
-#     with open(placestoexplore, 'w') as f:
-#         dump(data, f, indent=4)
+    if query.color not in colors:
+        raise HTTPException(status_code=400, detail=f"color {query.color} not found")
 
-#     return JSONResponse({"success": "Point added"})
+    with open(placestoexplore, 'r') as f:
+        data = load(f)
+        data.append({
+            "type": "Feature",
+            "properties": {
+                "Name": query.name,
+                "description": query.description,
+                "gx_media_links": None,
+                "color": query.color,
+                "special": query.special,
+                "category": query.category
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    query.lng,
+                    query.lat
+                ]
+            }
+        },
+        )
 
-# @app.delete('/del', status_code=status.HTTP_200_OK)
-# async def delete_point(query: PointDel):
-#     deleted = False
-#     with open(placestoexplore, 'r') as f:
-#         data = load(f)
+    os.remove(placestoexplore)
+    with open(placestoexplore, 'w') as f:
+        dump(data, f, indent=4)
 
-#     for i in range(0, len(data)):
-#         if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
-#             del data[i]
-#             deleted = True
+    return JSONResponse({"success": "Point added"})
 
-#     if deleted:
-#         os.remove(placestoexplore)
-#         with open(placestoexplore, 'w') as f:
-#             dump(data, f, indent=4)
+@app.put('/put', status_code=status.HTTP_200_OK)
+async def edit_point(query: PointPut, request: Request):
+    # Verify user
+    user = await get_current_user(request.session["access_token"])
 
-#     if deleted:
-#         return JSONResponse({"success": "Point deleted"})
-#     return JSONResponse({"failure": "Point not found"})
+    # Check if scoped for this action
+    if "edit" not in users[user]["scope"]:
+        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
 
-# @app.put('/put', status_code=status.HTTP_200_OK)
-# async def edit_point(query: PointPut):
-#     found = False
-#     index = None
-#     with open(placestoexplore, 'r') as f:
-#         data = load(f)
+    found = False
+    index = None
+    with open(placestoexplore, 'r') as f:
+        data = load(f)
 
-#     for i in range(0, len(data)):
-#         index = i
-#         found = True
-#         if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
-#             if query.newlat is not None and query.newlng is not None:
-#                 data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
-#             if query.name != "":
-#                 data[i]["properties"]["Name"] = query.name
-#             data[i]["properties"]["description"] = query.description
+    for i in range(0, len(data)):
+        index = i
+        found = True
+        if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+            if query.newlat is not None and query.newlng is not None:
+                data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
+            if query.name != "":
+                data[i]["properties"]["Name"] = query.name
+            data[i]["properties"]["description"] = query.description
 
-#             data[i]["properties"]["color"] = query.color
-#             data[i]["properties"]["special"] = query.special
-#             data[i]["properties"]["category"] = query.category
+            data[i]["properties"]["color"] = query.color
+            data[i]["properties"]["special"] = query.special
+            data[i]["properties"]["category"] = query.category
 
-#             break
+            break
 
-#     if found:
-#         if query.delete == "delete":
-#             del data[index]
+    if found:
+        if query.delete == "delete":
+            del data[index]
 
-#         os.remove(placestoexplore)
-#         with open(placestoexplore, 'w') as f:
-#             dump(data, f, indent=4)
+        os.remove(placestoexplore)
+        with open(placestoexplore, 'w') as f:
+            dump(data, f, indent=4)
 
-#         return JSONResponse({"success": "Point edited"})
+        return JSONResponse({"success": "Point edited"})
 
-#     return JSONResponse({"failure": "Could not find point"})
+    return JSONResponse({"failure": "Could not find point"})
 
 
 @app.get('/map', status_code=status.HTTP_200_OK)
