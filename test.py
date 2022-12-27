@@ -1,20 +1,20 @@
 import json
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, status, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from starlette.config import Config
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, RedirectResponse
+from starlette.responses import HTMLResponse, RedirectResponse, JSONResponse
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from json import load, dump
 
 # Authenticated users
-users = ["112057537397008960552"]
+users = {"112057537397008960552":{"scope": "edit"}, "112057537397008960553":{"scope": "view"}}
 
 
 # JWT
@@ -26,6 +26,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="!secret")
+
+origins = [
+    "https://localhost",
+    "https://localhost:3000",
+    "http://localhost:63342",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 config = Config('.env')
 oauth = OAuth(config)
@@ -60,36 +74,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        user: str = payload.get("sub")
+        if user is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
+    if user not in users:
         raise credentials_exception
     return user
-
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-origins = [
-    "https://localhost",
-    "https://localhost:3000",
-    "http://localhost:63342",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 categories = ["Bridges", "Drains", "Everything_else", "Larger_abandonments", "Mines_and_Tunnels", "Places_of_interest", "Possibly_active", "Small_abandonments"]
 
@@ -118,26 +110,11 @@ class PointPut(BaseModel):
     special: Optional[bool] = None
     delete: Optional[str] = None
 
-    
-@app.get('/')
-async def homepage(request: Request):
-    user = request.session.get('user')
-    if user:
-        data = json.dumps(user)
-        html = (
-            f'<pre>{data}</pre>'
-            '<a href="/logout">logout</a>'
-        )
-        return HTMLResponse(html)
-    return HTMLResponse('<a href="/login">login</a>')
-
-
 @app.get('/login')
 async def login(request: Request):
     redirect_uri = request.url_for('auth')
     redirect_uri = 'https://octet.llc/atlas/api/login/callback'
     return await oauth.google.authorize_redirect(request, redirect_uri)
-
 
 @app.get('/login/callback')
 async def login_callback(request: Request):
@@ -156,15 +133,13 @@ async def login_callback(request: Request):
         access_token = create_access_token(
             data={"sub": userid}, expires_delta=access_token_expires
         )
-        return {"access_token": access_token, "token_type": "bearer"}
 
+        # Set the JWT as a cookie in the response
+        request.session["access_token"] = access_token
 
-    # If so, return JWT token
+        response = RedirectResponse(url="/atlas/")
 
-
-    
-        
-    
+        return response
 
 @app.get('/auth')
 async def auth(request: Request):
@@ -177,14 +152,122 @@ async def auth(request: Request):
         request.session['user'] = dict(user)
     return RedirectResponse(url='/')
 
-
-
-
-
 @app.get('/logout')
 async def logout(request: Request):
     request.session.pop('user', None)
     return RedirectResponse(url='/')
+
+# @app.post('/add', status_code=status.HTTP_201_CREATED)
+# async def add_point(query: PointPost):
+#     for item in query:
+#         print(item)
+
+#     if query.name is None:
+#         raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+#     if query.category not in categories:
+#         raise HTTPException(status_code=400, detail=f"category {query.category} not found")
+
+#     if query.color not in colors:
+#         raise HTTPException(status_code=400, detail=f"color {query.color} not found")
+
+#     with open(placestoexplore, 'r') as f:
+#         data = load(f)
+#         data.append({
+#             "type": "Feature",
+#             "properties": {
+#                 "Name": query.name,
+#                 "description": query.description,
+#                 "gx_media_links": None,
+#                 "color": query.color,
+#                 "special": query.special,
+#                 "category": query.category
+#             },
+#             "geometry": {
+#                 "type": "Point",
+#                 "coordinates": [
+#                     query.lng,
+#                     query.lat
+#                 ]
+#             }
+#         },
+#         )
+
+#     os.remove(placestoexplore)
+#     with open(placestoexplore, 'w') as f:
+#         dump(data, f, indent=4)
+
+#     return JSONResponse({"success": "Point added"})
+
+# @app.delete('/del', status_code=status.HTTP_200_OK)
+# async def delete_point(query: PointDel):
+#     deleted = False
+#     with open(placestoexplore, 'r') as f:
+#         data = load(f)
+
+#     for i in range(0, len(data)):
+#         if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+#             del data[i]
+#             deleted = True
+
+#     if deleted:
+#         os.remove(placestoexplore)
+#         with open(placestoexplore, 'w') as f:
+#             dump(data, f, indent=4)
+
+#     if deleted:
+#         return JSONResponse({"success": "Point deleted"})
+#     return JSONResponse({"failure": "Point not found"})
+
+# @app.put('/put', status_code=status.HTTP_200_OK)
+# async def edit_point(query: PointPut):
+#     found = False
+#     index = None
+#     with open(placestoexplore, 'r') as f:
+#         data = load(f)
+
+#     for i in range(0, len(data)):
+#         index = i
+#         found = True
+#         if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+#             if query.newlat is not None and query.newlng is not None:
+#                 data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
+#             if query.name != "":
+#                 data[i]["properties"]["Name"] = query.name
+#             data[i]["properties"]["description"] = query.description
+
+#             data[i]["properties"]["color"] = query.color
+#             data[i]["properties"]["special"] = query.special
+#             data[i]["properties"]["category"] = query.category
+
+#             break
+
+#     if found:
+#         if query.delete == "delete":
+#             del data[index]
+
+#         os.remove(placestoexplore)
+#         with open(placestoexplore, 'w') as f:
+#             dump(data, f, indent=4)
+
+#         return JSONResponse({"success": "Point edited"})
+
+#     return JSONResponse({"failure": "Could not find point"})
+
+
+@app.get('/map', status_code=status.HTTP_200_OK)
+async def return_data(request: Request):
+    token = request.session.get("access_token", None)
+    # Verify user
+    user = await get_current_user(token)
+
+    data = load(open(placestoexplore))
+
+    return JSONResponse({"success": data})
+
+
+
+
 
 
 if __name__ == '__main__':
