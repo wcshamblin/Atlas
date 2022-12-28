@@ -92,6 +92,10 @@
         maxNativeZoom: 20,
     });
 
+    var VFR = L.tileLayer('https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{z}/{y}/{x}.png', {
+        maxZoom: 20,
+        maxNativeZoom: 11,
+    });
 
 
 
@@ -158,6 +162,7 @@
         'Google Hybrid': googleHybrid,
         'Bing Labeless': bingLabeless,
         'Open Topo': openTopo,
+        'VFR': VFR,
     };
 
     var overlays = {
