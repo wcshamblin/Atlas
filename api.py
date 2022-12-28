@@ -157,8 +157,8 @@ async def auth(request: Request):
 
 @app.get('/logout')
 async def logout(request: Request):
-    request.session.pop('user', None)
-    return RedirectResponse(url='/')
+    request.session.pop('access_token', None)
+    return RedirectResponse(url='/atlas/')
 
 @app.post('/add', status_code=status.HTTP_201_CREATED)
 async def add_point(query: PointPost, request: Request):
