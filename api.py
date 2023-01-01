@@ -13,6 +13,15 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from json import load, dump
 import os
+import logging
+
+# Google drive backups
+def send_backup():
+    os.system('/usr/bin/rclone copy --update --verbose --contimeout 60s --timeout 300s --retries 3 --low-level-retries 10 --stats 1s "/home/wcs/octet.llc/atlas/assets/placestoexplore/Places_to_Explore.geojson" "octet drive:"')
+
+# Logging
+logging.basicConfig(filename='access.log', level=logging.INFO, format='%(asctime)s %(message)s', datefmt="%m/%d/%Y|%H:%M:%S")
+
 
 # Authenticated users
 # Scopes are: edit, view, add
@@ -126,12 +135,16 @@ async def login_callback(request: Request):
     token = await oauth.google.authorize_access_token(request)
 
     # Check if token is owned by a user that has access to our API
+    logging.info("User logging in: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
+
     userid = token["userinfo"]["sub"]
-    print(userid)
+
     if userid not in users:
         # If they don't
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
+        logging.info("User not authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
     else:
+        logging.info("User authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": userid}, expires_delta=access_token_expires
@@ -164,13 +177,12 @@ async def logout(request: Request):
 async def add_point(query: PointPost, request: Request):
     # Verify user
     user = await get_current_user(request.session["access_token"])
+    logging.info("User adding point: " + user)
 
     # Check if scoped for this action
     if "edit" not in users[user]["scope"] and "add" not in users[user]["scope"]:
+        logging.info("User not authorized for this action: " + user)
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
-
-    for item in query:
-        print(item)
 
     if query.name is None:
         raise HTTPException(status_code=400, detail="Name cannot be empty")
@@ -207,26 +219,33 @@ async def add_point(query: PointPost, request: Request):
     with open(placestoexplore, 'w') as f:
         dump(data, f, indent=4)
 
+    logging.info("User added point: " + user + "\nPoint info: " + str(query))
+    send_backup()
+
     return JSONResponse({"success": "Point added"})
 
 @app.put('/put', status_code=status.HTTP_200_OK)
 async def edit_point(query: PointPut, request: Request):
     # Verify user
     user = await get_current_user(request.session["access_token"])
+    logging.info("User requesting to edit point: " + user)
 
     # Check if scoped for this action
     if "edit" not in users[user]["scope"]:
+        logging.info("User not authorized for this action: " + user)
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
 
     found = False
     index = None
+    oldpoint = None
     with open(placestoexplore, 'r') as f:
         data = load(f)
 
     for i in range(0, len(data)):
         index = i
-        found = True
         if data[i]["geometry"]["coordinates"] == [query.lng, query.lat]:
+            found = True
+            oldpoint = data[i]
             if query.newlat is not None and query.newlng is not None:
                 data[i]["geometry"]["coordinates"] = [query.newlng, query.newlat]
             if query.name != "":
@@ -241,12 +260,16 @@ async def edit_point(query: PointPut, request: Request):
 
     if found:
         if query.delete == "delete":
+            logging.info("User deleted point: " + user + "\nPoint info: " + str(data[index]))
             del data[index]
+        else:
+            logging.info("User edited point: " + user + "\nOld point: " + str(oldpoint) + "\nNew point: " + str(data[index]))
 
         os.remove(placestoexplore)
         with open(placestoexplore, 'w') as f:
             dump(data, f, indent=4)
-
+        
+        send_backup()
         return JSONResponse({"success": "Point edited"})
 
     return JSONResponse({"failure": "Could not find point"})
@@ -259,6 +282,7 @@ async def return_data(request: Request):
     user = await get_current_user(token)
 
     data = load(open(placestoexplore))
+    logging.info("Served map to: " + user)
 
     return JSONResponse({"success": data})
 
