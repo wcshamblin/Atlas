@@ -25,7 +25,7 @@ logging.basicConfig(filename='access.log', level=logging.INFO, format='%(asctime
 
 # Authenticated users
 # Scopes are: edit, view, add
-users = {"112057537397008960552":{"scope": ["edit", "add", "view"]}, "109701721255072747502":{"scope": ["edit", "add", "view"]}, "103079011459605179145":{"scope": ["edit", "add", "view"]}, "112799760127187625788": {"scope": ["edit", "add", "view"]}}
+users = {"112057537397008960552":{"scope": ["edit", "add", "view"]}, "109701721255072747502":{"scope": ["edit", "add", "view"]}, "103079011459605179145":{"scope": ["edit", "add", "view"]}, "112799760127187625788": {"scope": ["edit", "add", "view"]}, "111023702251746291970": {"scope": ["view"]}}
 
 
 # JWT

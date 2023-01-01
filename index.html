@@ -139,6 +139,44 @@
         }
     })
 
+    var nikeSites = new L.GeoJSON.AJAX("assets/missilesites/nike/nike.geojson", {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        onEachFeature: missileFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: '#DC5252',
+                color: '#FFA6A6',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        }
+    })
+
+    var minutemanSites = new L.GeoJSON.AJAX("assets/missilesites/minuteman/minuteman.geojson", {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        onEachFeature: missileFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: '#DC5252',
+                color: '#FFA6A6',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        }
+    })
+
     async function initPtE() {
         data = await fetchMapData();
         console.log(data)
@@ -169,7 +207,8 @@
         'Places to explore': placesToExplore,
         'OpenRailway Map': railwayMap,
         'Light Pollution': lightPollution,
-
+        'Nike Sites': nikeSites,
+        'Minuteman Sites': minutemanSites,
     };
 
 
@@ -220,6 +259,24 @@
 
 
                 editpointpopup["popup"] = L.popup()
+                    .setLatLng(event.latlng)
+                    .setContent(popupContent)
+                    .addTo(map)
+                    .openOn(map);
+            }
+        })
+    }
+
+    function missileFeature(feature, layer) {
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> Missile Site " + feature.properties.name + "</div></b>";
+
+        if (feature.properties.description) {
+            popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
+        }
+
+        layer.on({
+            click: function(event) {
+                L.popup()
                     .setLatLng(event.latlng)
                     .setContent(popupContent)
                     .addTo(map)
