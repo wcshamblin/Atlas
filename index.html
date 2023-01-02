@@ -168,14 +168,35 @@
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
                 radius: 8,
-                fillColor: '#DC5252',
-                color: '#FFA6A6',
+                fillColor: '#FFA6A6',
+                color: '#DC5252',
                 weight: 1,
                 opacity: 1,
                 fillOpacity: 0.8
             });
         }
     })
+
+
+    var longLines = new L.GeoJSON.AJAX("assets/long-lines/long-lines.geojson", {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        onEachFeature: longLinesFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 6,
+                fillColor: '#1991A4',
+                color: '#227784',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.6
+            });
+        }
+    })
+
 
     async function initPtE() {
         data = await fetchMapData();
@@ -209,6 +230,7 @@
         'Light Pollution': lightPollution,
         'Nike Sites': nikeSites,
         'Minuteman Sites': minutemanSites,
+        'Long Lines': longLines,
     };
 
 
@@ -269,6 +291,24 @@
 
     function missileFeature(feature, layer) {
         var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> Missile Site " + feature.properties.name + "</div></b>";
+
+        if (feature.properties.description) {
+            popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
+        }
+
+        layer.on({
+            click: function(event) {
+                L.popup()
+                    .setLatLng(event.latlng)
+                    .setContent(popupContent)
+                    .addTo(map)
+                    .openOn(map);
+            }
+        })
+    }
+
+    function longLinesFeature(feature, layer) {
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> Long Lines Site: " + feature.properties.name + "</div></b>";
 
         if (feature.properties.description) {
             popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
