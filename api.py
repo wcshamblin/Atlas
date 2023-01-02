@@ -12,12 +12,16 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from json import load, dump
-import os
+from subprocess import check_output, STDOUT
 import logging
+import os
 
 # Google drive backups
 def send_backup():
-    os.system('/usr/bin/rclone copy --update --verbose --contimeout 60s --timeout 300s --retries 3 --low-level-retries 10 --stats 1s "/home/wcs/octet.llc/atlas/assets/placestoexplore/Places_to_Explore.geojson" "octet drive:"')
+    # Call backup and keep output
+    logging.info("Backing up to Google Drive")
+    output = check_output("./backup.sh", stderr=STDOUT, shell=True, universal_newlines=True)
+    logging.info(output)
 
 # Logging
 logging.basicConfig(filename='access.log', level=logging.INFO, format='%(asctime)s %(message)s', datefmt="%m/%d/%Y|%H:%M:%S")
@@ -141,8 +145,8 @@ async def login_callback(request: Request):
 
     if userid not in users:
         # If they don't
-        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
         logging.info("User not authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
+        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
     else:
         logging.info("User authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -181,7 +185,7 @@ async def add_point(query: PointPost, request: Request):
 
     # Check if scoped for this action
     if "edit" not in users[user]["scope"] and "add" not in users[user]["scope"]:
-        logging.info("User not authorized for this action: " + user)
+        logging.info("User not authorized for this action: " + user, "Action: add")
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
 
     if query.name is None:
@@ -219,7 +223,7 @@ async def add_point(query: PointPost, request: Request):
     with open(placestoexplore, 'w') as f:
         dump(data, f, indent=4)
 
-    logging.info("User added point: " + user + "\nPoint info: " + str(query))
+    logging.info("User added point: " + user + "\n    " + str(query))
     send_backup()
 
     return JSONResponse({"success": "Point added"})
@@ -260,10 +264,10 @@ async def edit_point(query: PointPut, request: Request):
 
     if found:
         if query.delete == "delete":
-            logging.info("User deleted point: " + user + "\nPoint info: " + str(data[index]))
+            logging.info("User deleted point: " + user + "\n    " + str(data[index]))
             del data[index]
         else:
-            logging.info("User edited point: " + user + "\nOld point: " + str(oldpoint) + "\nNew point: " + str(data[index]))
+            logging.info("User edited point: " + user + "\n    Old point: " + str(oldpoint) + "\n    New point: " + str(data[index]))
 
         os.remove(placestoexplore)
         with open(placestoexplore, 'w') as f:
