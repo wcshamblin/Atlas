@@ -19,6 +19,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css"/>
     <script src="plugins/leaflet-bing-layer.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+
 
 
     <title>Atlas</title>
@@ -64,8 +67,6 @@
         "#000000": "black"
     }
 
-
-
     var editpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
     var newpointpopup = {"popup": "", "latitude": 0, "longitude": 0};
     var pointProperties = {"name": "", "description": "", "color": "", "type": "", "special": ""}
@@ -100,6 +101,8 @@
 
 
     // Layers
+    var editableLayers = new L.FeatureGroup();
+
     var railwayMap = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',{
         maxZoom: 20,
     });
@@ -213,7 +216,7 @@
     var map = L.map('map', {
         center: [39.50, -98.35],
         zoom: 5,
-        layers: [osm, googleHybrid, placesToExplore]
+        layers: [osm, googleHybrid, placesToExplore, editableLayers]
     });
 
     var baseLayers = {
@@ -245,11 +248,71 @@
         autoClose: true,
     }); // Include the search box with usefull params. Autoclose and updateMap in my case. Provider is a compulsory parameter.
 
+    
+    // Edit layer
+    var DrawnMarker = L.Icon.extend({
+        options: {
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            iconUrl: 'assets/drawn-icon.png',
+        }
+    });
+
+    var drawPluginOptions = {
+    position: 'bottomright',
+    draw: {
+        polyline: {
+            shapeOptions: {
+                color: '#f357a1',
+                weight: 10
+            }
+        },
+        polygon: {
+            allowIntersection: false, // Restricts shapes to simple polygons
+            drawError: {
+                color: '#e1e100', // Color the shape will turn when intersects
+                message: '<strong>Polygon draw does not allow intersections!<strong> (allowIntersection: false)' // Message that will show when intersect
+            },
+            shapeOptions: {
+                color: '#bada55'
+            }
+        },
+        rectangle: {
+            shapeOptions: {
+                color: '#bada55'
+            }
+        },
+        circle: {
+            shapeOptions: {
+                color: '#bada55'
+            }
+        },
+        marker: {
+            icon: new DrawnMarker()
+        }
+    },
+    edit: {
+        featureGroup: editableLayers
+    }
+    };
+
+
+
+
+    // Add everything to the map
+    var drawControl = new L.Control.Draw(drawPluginOptions);
+    map.addControl(drawControl);
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        var layer = e.layer;
+            editableLayers.addLayer(layer);
+    });
+
+
+
     map.addControl(search);
 
     var layerControl = L.control.layers(baseLayers, overlays).addTo(map);
-
-
 
 
     // Popups
