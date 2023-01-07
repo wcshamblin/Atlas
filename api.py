@@ -15,6 +15,7 @@ from json import load, dump
 from subprocess import check_output, STDOUT
 import logging
 import os
+from parsers import longlines
 
 # Google drive backups
 def send_backup():
@@ -26,16 +27,18 @@ def send_backup():
 # Logging
 logging.basicConfig(filename='access.log', level=logging.INFO, format='%(asctime)s %(message)s', datefmt="%m/%d/%Y|%H:%M:%S")
 
+# Startup
+logging.info("Starting API")
 
 # Authenticated users
 # Scopes are: edit, view, add
-users = {"112057537397008960552":{"scope": ["edit", "add", "view"]}, "109701721255072747502":{"scope": ["edit", "add", "view"]}, "103079011459605179145":{"scope": ["edit", "add", "view"]}, "112799760127187625788": {"scope": ["edit", "add", "view"]}, "111023702251746291970": {"scope": ["view"]}}
+users = {"112057537397008960552":{"scope": ["edit", "add", "view"]}, "109701721255072747502":{"scope": ["edit", "add", "view"]}, "103079011459605179145":{"scope": ["edit", "add", "view"]}, "112799760127187625788": {"scope": ["edit", "add", "view"]}, "111023702251746291970": {"scope": ["view"]}, "118176797204485272737": {"scope": ["view"]}}
 
 
 # JWT
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7" #openssl rand -hex 32
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 

@@ -3,7 +3,7 @@ from json import loads, dump
 
 outfile = "assets/long-lines/long-lines.geojson"
 
-def retrieve(logger):
+def retrieve():
     states = ["California", "Texas", "Florida", "New York", "Pennsylvania", "Illinois", "Ohio", "Georgia", "North Carolina", "Michigan", "New Jersey", "Virginia", "Washington", "Massachusetts", "Arizona", "Indiana", "Tennessee", "Missouri", "Maryland", "Wisconsin", "Minnesota", "Colorado", "Alabama", "South Carolina", "Louisiana", "Kentucky", "Oregon", "Oklahoma", "Connecticut", "Iowa", "Mississippi", "Arkansas", "Utah", "Kansas", "Nevada", "New Mexico", "Nebraska", "West Virginia", "Idaho", "Hawaii", "New Hampshire", "Maine", "Montana", "Rhode Island", "Delaware", "South Dakota", "North Dakota", "Alaska", "Vermont", "Wyoming"]
 
     geojson = {
@@ -12,16 +12,19 @@ def retrieve(logger):
     }
 
     for state in states:
-        logger.info("Parsing " + state)
+        print("Parsing " + state)
         response = get("https://long-lines.com/map/gensitelistmainmap?state="+state)
         data = loads(response.text)
         for site in data:
             geojson["features"].append({"type":"Feature","geometry":{"type":"Point","coordinates":[site["lon1"], site["lat1"],0]},"properties":{"name": site["sitename1"], "description":""}})
         
-        logger.info("Parsed " + state + " found" + str(len(data)) + " sites")
+        print("    Found " + str(len(data)) + " sites\n")
 
     out = open(outfile, "w")
-    logger.info("Dumping to " + outfile)
+    print("Dumping to " + outfile)
     dump(geojson, out, indent=4)
     out.close()
-    logger.info("Done")
+    print("Done")
+
+if __name__ == "__main__":
+    retrieve()
