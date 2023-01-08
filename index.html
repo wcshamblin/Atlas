@@ -12,6 +12,7 @@
             integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
             crossorigin=""
     ></script>
+    <link rel="shortcut icon" href="assets/favicon.png"/>
     <link rel="stylesheet" href="assets/style.css"/>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
     <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
@@ -205,6 +206,7 @@
         data = await fetchMapData();
         console.log(data)
         placesToExplore.addData(data.success);
+        placesToExplore.redraw();
     }
 
     initPtE()
@@ -540,6 +542,9 @@
             },
             body: JSON.stringify(pointdata),
         })
+        // Update local data
+        console.log(pointdata)
+        placesToExplore.addData(pointdata)
     }
 
     function deletePoint(pointdata) {
