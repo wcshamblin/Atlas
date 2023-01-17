@@ -206,7 +206,6 @@
         data = await fetchMapData();
         console.log(data)
         placesToExplore.addData(data.success);
-        placesToExplore.redraw();
     }
 
     initPtE()
@@ -506,8 +505,6 @@
 
         editpointpopup["popup"].setContent(editpointform);
 
-        console.log(pointProperties["special"]);
-
         $("#editCategory").val(pointProperties["category"]);
         $("#editColor").val([pointProperties["color"]]);
         $("#editSpecial").prop("checked", pointProperties["special"]);
@@ -531,14 +528,37 @@
         $(".leaflet-popup-close-button")[0].click();
 
         PutPoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"], "newlat": latitude, "newlng": longitude, "name": pointname, "description": description, "color": color, "category": category, "special": special, "delete": todelete})
+
+        if (todelete === "delete") {
+            removePoint(editpointpopup["latitude"], editpointpopup["longitude"]);
+        } else {
+            removePoint(editpointpopup["latitude"], editpointpopup["longitude"]);
+            placesToExplore.addData({
+                "type": "Feature",
+                "properties": {
+                    "Name": pointname,
+                    "description": description,
+                    "color": color,
+                    "category": category,
+                    "special": special
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [editpointpopup["longitude"], editpointpopup["latitude"]]
+                }
+            });
+        }
     });
 
-    $(document).on("click", ".delete-marker-button", function (event) {
-        event.preventDefault();
 
-        deletePoint({"lat": editpointpopup["latitude"], "lng": editpointpopup["longitude"]})
-    });
 
+    function removePoint(lat, lng) {
+        placesToExplore.eachLayer(function (layer) {
+            if (layer.feature.geometry.coordinates[0] === lng && layer.feature.geometry.coordinates[1] === lat) {
+                placesToExplore.removeLayer(layer);
+            }
+        });
+    }
 
     async function fetchMapData() {
         let obj;
@@ -555,17 +575,6 @@
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(pointdata),
-        })
-    }
-
-    function deletePoint(pointdata) {
-        fetch("https://octet.llc/atlas/api/del/", {
-            method: "DELETE",
-            headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(pointdata)
         })
     }
 
