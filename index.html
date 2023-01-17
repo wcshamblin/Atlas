@@ -460,6 +460,20 @@
         $(".leaflet-popup-close-button")[0].click();
 
         postNewPoint({"lat": newpointpopup["latitude"], "lng": newpointpopup["longitude"], "name": pointname, "description": description, "color": color, "category": category, "special": special})
+        placesToExplore.addData({
+            "type": "Feature",
+            "properties": {
+                "Name": pointname,
+                "description": description,
+                "color": color,
+                "category": category,
+                "special": special
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [newpointpopup["longitude"], newpointpopup["latitude"]]
+            }
+        });
     });
 
     $(document).on("click", ".edit-marker-button", function () {
@@ -542,9 +556,6 @@
             },
             body: JSON.stringify(pointdata),
         })
-        // Update local data
-        console.log(pointdata)
-        placesToExplore.addData(pointdata)
     }
 
     function deletePoint(pointdata) {
