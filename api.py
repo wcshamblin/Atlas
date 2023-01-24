@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, RedirectResponse, JSONResponse
+from starlette.responses import HTMLResponse, RedirectResponse, JSONResponse, HTMLResponse
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
@@ -39,8 +39,10 @@ users = {"112057537397008960552":{"scope": ["edit", "add", "view"]},
  "111023702251746291970": {"scope": ["view"]},
  "118176797204485272737": {"scope": ["view"]},
  "100821748140927916507": {"scope": ["view"]},
- "107745383827411410442": {"scope": ["view", "add"]}
-}
+ "107745383827411410442": {"scope": ["view", "add"]},
+ "111705004713568818098": {"scope": ["view"]},
+ "113388504247807728977": {"scope": ["view"]}
+ }
 
 
 # JWT
@@ -115,6 +117,8 @@ colors = ["#558B2F", "#E65100", "#0288D1", "#673AB7", "#880E4F", "#A52714", "#FF
 
 placestoexplore = "assets/placestoexplore/Places_to_Explore.geojson"
 
+unauthorized = "".join(open("unauthorized.html", "r").readlines())
+
 class PointPost(BaseModel):
     name: str
     category: str
@@ -157,7 +161,8 @@ async def login_callback(request: Request):
     if userid not in users:
         # If they don't
         logging.info("User not authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
-        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Bearer"})
+        return HTMLResponse(content=unauthorized, status_code=401)
+
     else:
         logging.info("User authorized: " + token["userinfo"]["sub"] + " - " + token["userinfo"]["email"] + " - " + token["userinfo"]["name"])
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
