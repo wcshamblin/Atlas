@@ -13776,6 +13776,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-77.748306",
+                    "40.845056",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Pleasant Gap",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-75.16194916",
                     "40.37110901",
                     0
@@ -14143,6 +14158,21 @@
             },
             "properties": {
                 "name": "TROY HILL PA",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-78.215556",
+                    "40.685056",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Tyrone",
                 "description": ""
             }
         },
@@ -22018,6 +22048,21 @@
             },
             "properties": {
                 "name": "WENDELL NC",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-82.58486732499537",
+                    "35.601412930335876",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "West Asheville",
                 "description": ""
             }
         },
