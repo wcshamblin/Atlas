@@ -32,17 +32,7 @@ logging.info("Starting API")
 
 # Authenticated users
 # Scopes are: edit, view, add
-users = {"112057537397008960552":{"scope": ["edit", "add", "view"]},
- "109701721255072747502":{"scope": ["edit", "add", "view"]},
- "103079011459605179145":{"scope": ["edit", "add", "view"]},
- "112799760127187625788": {"scope": ["edit", "add", "view"]},
- "111023702251746291970": {"scope": ["view"]},
- "118176797204485272737": {"scope": ["view"]},
- "100821748140927916507": {"scope": ["view"]},
- "107745383827411410442": {"scope": ["view", "add"]},
- "111705004713568818098": {"scope": ["view"]},
- "113388504247807728977": {"scope": ["view"]}
- }
+users = load(open("userdata.json", "r"))
 
 
 # JWT
