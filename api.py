@@ -34,16 +34,18 @@ logging.info("Starting API")
 # Scopes are: edit, view, add
 users = load(open("userdata.json", "r"))
 
+config = Config('.env')
+oauth = OAuth(config)
 
 # JWT
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7" #openssl rand -hex 32
+SECRET_KEY = config('SECRET_KEY', cast=str) #openssl rand -hex 32
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="!secret")
+app.add_middleware(SessionMiddleware, secret_key=config('TOKEN_SECRET', cast=str))
 
 origins = [
     "https://localhost",
@@ -59,9 +61,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-config = Config('.env')
-oauth = OAuth(config)
-
 CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth.register(
     name='google',
@@ -70,9 +69,6 @@ oauth.register(
         'scope': 'openid email profile'
     }
 )
-
-def get_google_provider_cfg():
-    return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
