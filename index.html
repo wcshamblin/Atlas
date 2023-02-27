@@ -111,7 +111,7 @@
     var lightPollution = L.tileLayer('https://djlorenz.github.io/astronomy/lp2020/overlay/tiles/tile_{z}_{x}_{y}.png', {
         maxZoom: 20,
         maxNativeZoom: 6,
-        opacity: 0.5,
+        opacity: 0.3,
     })
 
     var placesToExplore = L.geoJSON([{}], {
@@ -201,6 +201,29 @@
         }
     })
 
+    var cloudCover = L.tileLayer('https://b.sat.owm.io/vane/2.0/weather/CL/{z}/{x}/{y}?appid=9de243494c0b295cca9337e1e96b00e2', {
+        maxZoom: 20,
+        maxNativeZoom: 10,
+        opacity: 0.8,
+    })
+
+    var today = new Date();
+
+    
+    var backTen = new Date(new Date() - 10 * 60000);
+    var backTenModTen = backTen.getUTCFullYear() + '-' + ('0' + (backTen.getUTCMonth()+1)).slice(-2) + '-' + ('0' + backTen.getUTCDate()).slice(-2) + 'T' +backTen.getUTCHours() + ':' + (backTen.getUTCMinutes() - backTen.getUTCMinutes()%10);
+
+    radarEndpoint = 'https://c.sat.owm.io/maps/2.0/radar/{z}/{x}/{y}?appid=9de243494c0b295cca9337e1e96b00e2&day=' + backTenModTen;
+
+    var rainfall = L.tileLayer(radarEndpoint, {
+        maxZoom: 20,
+        maxNativeZoom: 7,
+        opacity: 0.7,
+    })
+
+    var openWeatherMap = L.layerGroup([cloudCover, rainfall]);
+
+
 
     async function initPtE() {
         data = await fetchMapData();
@@ -217,6 +240,9 @@
     var map = L.map('map', {
         center: [39.50, -98.35],
         zoom: 5,
+        zoomSnap: .5,
+        zoomDelta: .5,
+        wheelPxPerZoomLevel: 200,
         layers: [osm, googleHybrid, placesToExplore, editableLayers]
     });
 
@@ -232,6 +258,7 @@
         'Places to explore': placesToExplore,
         'OpenRailway Map': railwayMap,
         'Light Pollution': lightPollution,
+        'OpenWeatherMap': openWeatherMap,
         'Nike Sites': nikeSites,
         'Minuteman Sites': minutemanSites,
         'Long Lines': longLines,
@@ -408,11 +435,16 @@
         const wHref = `https://www.accuweather.com/en/search-locations?query=${e.latlng.lat}%2C+${e.latlng.lng}`
         const weather = `<a href="${wHref}" target="_blank">Accuweather forecast</a>`
 
+        const rHref = `https://www.ventusky.com/?p=${e.latlng.lat},%20${e.latlng.lng};8&l=clouds-total`
+        const radar = `<a href="${rHref}" target="_blank">Ventusky radar</a>`
+
+
+
         newpointpopup["popup"] = L.popup()
             newpointpopup["popup"].setLatLng(e.latlng)
             newpointpopup["popup"].setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
-                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +
+                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +"<br>- " + radar +
                 '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button">+</button></div>')
             newpointpopup["popup"].addTo(map)
             newpointpopup["popup"].openOn(map);
