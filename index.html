@@ -47,6 +47,7 @@
     var categories = {
         "Bridges": "Bridges",
         "Drains": "Drains",
+        "Towers": "Towers",
         "Everything_else": "Everything Else",
         "Larger_abandonments": "Larger Abandonments",
         "Mines_and_Tunnels": "Mines and Tunnels",
@@ -201,6 +202,32 @@
         }
     })
 
+    var decoms = new L.GeoJSON.AJAX("assets/decom-towers/parsed.geojson", {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        attribution: 'Created by actionstorm and octet',
+
+        onEachFeature: decomTowerFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: feature.properties.color,
+                color: '#d06627',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.6
+            });
+        }
+    })
+
+    // print decoms to console
+    decoms.on('data:loaded', function() {
+        console.log(decoms.toGeoJSON());
+    });
+
     var cloudCover = L.tileLayer('https://b.sat.owm.io/vane/2.0/weather/CL/{z}/{x}/{y}?appid=9de243494c0b295cca9337e1e96b00e2', {
         maxZoom: 20,
         maxNativeZoom: 10,
@@ -262,6 +289,7 @@
         'Nike Sites': nikeSites,
         'Minuteman Sites': minutemanSites,
         'Long Lines': longLines,
+        'Decom Towers': decoms,
     };
 
 
@@ -416,6 +444,24 @@
         })
     }
 
+    function decomTowerFeature(feature, layer) {
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> Decommissioned Tower: " + feature.properties.name + "</div></b>";
+
+        if (feature.properties.description) {
+            popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
+        }
+
+        layer.on({
+            click: function(event) {
+                L.popup()
+                    .setLatLng(event.latlng)
+                    .setContent(popupContent)
+                    .addTo(map)
+                    .openOn(map);
+            }
+        })
+    }
+
     map.on('contextmenu',(e) => {
         newpointpopup["latitude"] = e.latlng.lat;
         newpointpopup["longitude"] = e.latlng.lng;
@@ -438,13 +484,15 @@
         const rHref = `https://www.ventusky.com/?p=${e.latlng.lat},%20${e.latlng.lng};8&l=clouds-total`
         const radar = `<a href="${rHref}" target="_blank">Ventusky radar</a>`
 
+        const cHref = `https://www.cleardarksky.com/cgi-bin/find_chart.py?type=llmap&Mn=science&olat=${e.latlng.lat}&olong=${e.latlng.lng}&olatd=&olatm=&olongd=&olongm=&unit=1`
+        const cleardarksky = `<a href="${cHref}" target="_blank">Clear Dark Sky</a>`
 
 
         newpointpopup["popup"] = L.popup()
             newpointpopup["popup"].setLatLng(e.latlng)
             newpointpopup["popup"].setContent(e.latlng.lat + ", " + e.latlng.lng +
                 "<hr>Maps:<br><div id='indented'>- " + gMaps + "<br>- " + bMaps +"<br>- " + sentinel + "<br> </div>" +
-                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +"<br>- " + radar +
+                "<br>Services:<br> <div id='indented'> - " + antennaFinder + "<br>- " + weather +"<br>- " + radar + "<br>- " + cleardarksky +
                 '<button type="button" id="createmarkerbutton" class="btn btn-primary create-marker-button">+</button></div>')
             newpointpopup["popup"].addTo(map)
             newpointpopup["popup"].openOn(map);
@@ -470,6 +518,7 @@
             "<option value='Bridges'>Bridges</option>" +
             "<option value='Mines_and_Tunnels'>Mines and Tunnels</option>" +
             "<option value='Drains'>Drains</option>" +
+            "<option value='Towers'>Towers</option>" +
             "<option value='Places_of_interest'>Places of Interest</option>" +
             "<option value='Everything_else'>Everything Else</option>" +
             "</select><br><br>" +
@@ -528,6 +577,7 @@
             "<option value='Bridges'>Bridges</option>" +
             "<option value='Mines_and_Tunnels'>Mines and Tunnels</option>" +
             "<option value='Drains'>Drains</option>" +
+            "<option value='Towers'>Towers</option>" +
             "<option value='Places_of_interest'>Places of Interest</option>" +
             "<option value='Everything_else'>Everything Else</option>" +
             "</select><br>" +
