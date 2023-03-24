@@ -81,6 +81,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-122.794076",
+                    "38.147954",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Three Peaks Earth Station CA",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-116.214246",
                     "35.134807",
                     0
@@ -14676,6 +14691,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-87.543621",
+                    "41.633463",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Burnham",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-88.89290619",
                     "42.33136749",
                     0
@@ -18711,6 +18741,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-83.003155",
+                    "40.115732",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Worthington",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-83.842423",
                     "39.578729",
                     0
@@ -19213,6 +19258,21 @@
             },
             "properties": {
                 "name": "EVERETT GA",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-84.575345",
+                    "33.568634",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Fairburn",
                 "description": ""
             }
         },
@@ -31573,6 +31633,21 @@
             },
             "properties": {
                 "name": "Benton Springs",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-86.747095",
+                    "35.760884",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Bethesda",
                 "description": ""
             }
         },
@@ -59766,6 +59841,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-102.97824919223787",
+                    "41.14404106022264",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Sidney",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-98.6916393154808",
                     "42.8647314319673",
                     0
@@ -59983,6 +60073,36 @@
             },
             "properties": {
                 "name": "Arthurdale",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-79.737268",
+                    "39.280767",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Etam International Earth Station",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-79.805543",
+                    "39.479013",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Reedsville WV",
                 "description": ""
             }
         },
