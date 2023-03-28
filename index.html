@@ -90,6 +90,11 @@
         maxNativeZoom: 17,
     })
 
+    var esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 20,
+        maxNativeZoom: 19,
+    });
+
     var bingLabeless = new L.tileLayer.bing(Bingkey, {imagerySet: 'CanvasDark',
         maxZoom: 25,
         maxNativeZoom: 20,
@@ -207,7 +212,7 @@
             return feature.properties && feature.properties.style;
         },
 
-        attribution: 'Created by actionstorm and octet',
+        attribution: 'Decom towers by actionstorm and octet',
 
         onEachFeature: decomTowerFeature,
 
@@ -278,6 +283,7 @@
         'Google Hybrid': googleHybrid,
         'Bing Labeless': bingLabeless,
         'Open Topo': openTopo,
+        'ESRI': esri,
         'VFR': VFR,
     };
 
