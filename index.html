@@ -22,6 +22,7 @@
     <script src="plugins/leaflet-bing-layer.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+    <!-- <script src="plugins/leaflet-search.js"></script>  -->
 
 
 
@@ -207,7 +208,7 @@
         }
     })
 
-    var decoms = new L.GeoJSON.AJAX("assets/decom-towers/parsed.geojson", {
+    var decoms = new L.GeoJSON.AJAX("assets/decom-towers/decoms.geojson", {
         style: function (feature) {
             return feature.properties && feature.properties.style;
         },
@@ -228,10 +229,26 @@
         }
     })
 
-    // print decoms to console
-    decoms.on('data:loaded', function() {
-        console.log(decoms.toGeoJSON());
-    });
+    var safetowers = new L.GeoJSON.AJAX("assets/decom-towers/safe_towers.geojson", {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        attribution: 'Safe towers by actionstorm',
+
+        onEachFeature: safeTowerFeature,
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: feature.properties.color,
+                color: "#000000",
+                weight: 1.2,
+                opacity: 1,
+                fillOpacity: 0.7
+            });
+        }
+    })
 
     var cloudCover = L.tileLayer('https://b.sat.owm.io/vane/2.0/weather/CL/{z}/{x}/{y}?appid=9de243494c0b295cca9337e1e96b00e2', {
         maxZoom: 20,
@@ -296,6 +313,7 @@
         'Minuteman Sites': minutemanSites,
         'Long Lines': longLines,
         'Decom Towers': decoms,
+        '"Safe" Towers': safetowers,
     };
 
 
@@ -362,6 +380,14 @@
 
 
     // Add everything to the map
+    
+    // var searchLayer = L.featureGroup().addTo(map);
+    // map.addControl(new L.Control.Search({layer: searchLayer, propertyName: 'Name', zoom: 15, initial: false, hideMarkerOnCollapse: true, moveToLocation: function(latlng, title, map) {
+    //     //map.fitBounds( latlng.layer.getBounds() );
+    //     var zoom = map.getBoundsZoom(latlng.layer.getBounds());
+    //     map.setView(latlng, zoom); // access the zoom
+    // }}));
+
     var drawControl = new L.Control.Draw(drawPluginOptions);
     map.addControl(drawControl);
 
@@ -452,6 +478,24 @@
 
     function decomTowerFeature(feature, layer) {
         var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> Decommissioned Tower: " + feature.properties.name + "</div></b>";
+
+        if (feature.properties.description) {
+            popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";
+        }
+
+        layer.on({
+            click: function(event) {
+                L.popup()
+                    .setLatLng(event.latlng)
+                    .setContent(popupContent)
+                    .addTo(map)
+                    .openOn(map);
+            }
+        })
+    }
+
+    function safeTowerFeature(feature, layer) {
+        var popupContent = "<div id='center'>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "<hr><b> \"Safe\" Tower: " + feature.properties.name + "</div></b>";
 
         if (feature.properties.description) {
             popupContent += "<div id='placedescription'>" + feature.properties.description + "</div>";

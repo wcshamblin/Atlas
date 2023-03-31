@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "leaflet-search": "^3.0.9"
+  }
+}

@@ -1,16 +1,19 @@
 import json
+from pprint import pprint
 from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 
-towers = json.load(open('decoms.json'))
+towers = json.load(open('crosscheck_safe_results.json'))
 # sort by height
-towers = sorted(towers, key=lambda k: k['height'])
+towers = sorted(towers, key=lambda k: float(k['height']))
+
+pprint(towers[:10])
 
 geojson = {'type': 'FeatureCollection', 'features': []}
-outfile = open('parsed.geojson', 'w')
+outfile = open('safe_towers.geojson', 'w')
 
-max_color_height = 304.8 # 1000 feet
+max_color_height = 243.84 # 800 feet
 
 maxheight = minheight = float(towers[0]['height'])
 heights = []
@@ -37,6 +40,7 @@ rgba_values = cm.plasma(norm(heights))
 i=0
 for tower in towers:
     height = float(tower['height'])
+    print(height)
 
     color = colors.to_hex(rgba_values[i])
     i+=1
@@ -44,13 +48,13 @@ for tower in towers:
     geojson['features'].append({
         'type': 'Feature',
         'properties': {
-            'name': tower['registration_number'],
+            'name': tower['id'],
             'description': str(float(tower['height']) * 3.28084) + " feet",
             'color': color
         },
         'geometry': {
             'type': 'Point',
-            'coordinates': [float(tower["coordinates"].replace(" ", "").split(",")[1]), float(tower["coordinates"].replace(" ", "").split(",")[0])]
+            'coordinates': [float(tower["longitude"]), float(tower["latitude"])]
         }
     })
 
