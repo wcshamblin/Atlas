@@ -66,8 +66,8 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/points")
-async def get_points(response: Response, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
+async def get_points(response: Response, request: Request, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
