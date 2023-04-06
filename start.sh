@@ -1,1 +1,2 @@
-tmux new-session -d -n "Atlas-API" python3 -m uvicorn --workers 4 --port 5000 api:app
+#tmux new-session -d -n "Atlas-API" python3 -m uvicorn --workers 4 --port 5000 api.api:app
+python3 -m uvicorn --workers 4 --port 5000 api.api:app
