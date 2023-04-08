@@ -5,8 +5,9 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point
-from database.database import add_pte_point, get_pte_point, get_pte_points, update_pte_point, delete_pte_point
+from database.database import add_pte_point, get_pte_point, get_pte_points_json, update_pte_point, delete_pte_point
 from datetime import datetime
+from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 
 from api.utils import VerifyToken
 
@@ -61,19 +62,34 @@ class PointPut(BaseModel):
     lng: float
 
 
+@app.get("/api/messages/public")
+def public():
+    """No access token required to access this route"""
+
+    result = {
+        "status": "success",
+        "msg": ("Hello from a public endpoint! You don't need to be authenticated to see this.")
+    }
+    result = "Hello from a public endpoint! You don't need to be authenticated to see this."
+    return Response(content=result, status_code=status.HTTP_200_OK, media_type="text/plain")
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/points")
-async def get_points(response: Response, request: Request, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials).verify()
 
+@app.get("/points")
+async def get_points(response: Response, token: str = Depends(token_auth_scheme)):
+    """A valid access token is required to access this route"""
+
+    result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
 
-    return {"status": "success", "msg": "points retrieved", "points": get_pte_points()}
+    return {"status": "success", "msg": "points retrieved", "points": get_pte_points_json()}
+
 
 @app.get("/points/{point_id}")
 async def get_point(response: Response, point_id: str, token: str = Depends(token_auth_scheme)):
@@ -83,7 +99,17 @@ async def get_point(response: Response, point_id: str, token: str = Depends(toke
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
 
+    point = get_pte_point(point_id)
+
+    if point is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "msg": "point not found"}
+
+    point["creation"] = from_datetime_to_str(point["creation"])
+    point["last_update"] = from_datetime_to_str(point["last_update"])
+
     return {"status": "success", "msg": "point retrieved", "point": get_pte_point(point_id)}
+
 
 @app.post("/points")
 async def post_point(response: Response, point: PointPost, token: str = Depends(token_auth_scheme)):
@@ -105,6 +131,7 @@ async def post_point(response: Response, point: PointPost, token: str = Depends(
     add_pte_point(new_point)
 
     return {"status": "success", "message": "Point added", "point": new_point}
+
 
 @app.put("/points/{point_id}")
 async def put_point(response: Response, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
