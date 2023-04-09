@@ -1,0 +1,8 @@
+#sidebar {
+    position: absolute;
+    right: 0;
+    height: 100%;
+    z-index: 999;
+    color: black;
+    width: 250px;
+}

@@ -13,7 +13,7 @@ import {useAuth0} from "@auth0/auth0-react";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
-function Map() {
+function Map({displaySidebar, setDisplaySidebar}) {
     const mapRef = useRef(null);
     const mapbox = useRef(null);
 
@@ -302,6 +302,7 @@ function Map() {
         // layer control
         <div id="map" ref={mapRef}>
             <div id="menu"/>
+            <button onClick={() => setDisplaySidebar(!displaySidebar)} style={{"color": "black", "position": "absolute", "zIndex": "999"}}>Sidebar</button>
         </div>
     );
 }
