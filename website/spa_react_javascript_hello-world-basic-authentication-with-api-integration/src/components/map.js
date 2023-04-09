@@ -100,27 +100,27 @@ function Map() {
 
 
         // load points from api and add to the map
-        console.log("points");
-        console.log(points);
-        mapbox.current.addSource('PlacesToExplore', {
-            'type': 'geojson',
-            'data': {
-                'type': 'FeatureCollection',
-                'features': points
-            }
-        });
-
-        mapbox.current.addLayer({
-            'id': 'PlacesToExplore',
-            'type': 'circle',
-            'source': 'PlacesToExplore',
-            'paint': {
-                // if the icon is special, make it bigger
-                // I'll change this later to be prettier
-                'circle-radius': ['case', ['==', ['get', 'special'], true], 10, 6],
-                'circle-color': ['get', 'color'],
-            }
-        });
+        // console.log("points");
+        // console.log(points);
+        // mapbox.current.addSource('PlacesToExplore', {
+        //     'type': 'geojson',
+        //     'data': {
+        //         'type': 'FeatureCollection',
+        //         'features': points
+        //     }
+        // });
+        //
+        // mapbox.current.addLayer({
+        //     'id': 'PlacesToExplore',
+        //     'type': 'circle',
+        //     'source': 'PlacesToExplore',
+        //     'paint': {
+        //         // if the icon is special, make it bigger
+        //         // I'll change this later to be prettier
+        //         'circle-radius': ['case', ['==', ['get', 'special'], true], 10, 6],
+        //         'circle-color': ['get', 'color'],
+        //     }
+        // });
 
         mapbox.current.addLayer(
             {
@@ -129,7 +129,7 @@ function Map() {
                 'source': '00',
                 'paint': {}
             },
-            'PlacesToExplore'
+            // 'PlacesToExplore'
         );
 
         mapbox.current.addLayer(
@@ -139,7 +139,7 @@ function Map() {
                 'source': '01',
                 'paint': {}
             },
-            'PlacesToExplore'
+            // 'PlacesToExplore'
         );
         // set the default layer to google hybrid
         mapbox.current.setLayoutProperty('Google Hybrid', 'visibility', 'visible');
@@ -160,7 +160,7 @@ function Map() {
                 console.log(error);
             }
         };
-        getPoints();
+        // getPoints();
     }, []);
 
     useEffect(() => {
