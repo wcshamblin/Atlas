@@ -55,13 +55,13 @@ export const getAdminResource = async (accessToken) => {
   };
 };
 
-export const getPoints = async (accessToken) => {
+export const fetchPoints = async (accessToken) => {
     const config = {
         url: `${apiServerUrl}/points`,
         method: "GET",
         headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
         },
     };
 

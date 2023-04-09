@@ -1,6 +1,8 @@
 from json import dumps
 from datetime import datetime
 from uuid import uuid4
+# from database.timeconversion import from_str_to_datetime, from_datetime_to_str
+
 
 class Point:
     def __init__(self, owner: str, name: str, description: str, color: str, special: bool, category: str, lat: float, lng: float):
@@ -8,7 +10,7 @@ class Point:
         self.deleted = False
         self.creation_date = datetime.now()
         self.owner = owner
-        self.edit_date = None
+        self.edit_date = datetime.now()
         self.editor = None
         self.name = name
         self.description = description
@@ -18,9 +20,9 @@ class Point:
         self.lat = lat
         self.lng = lng
 
-
     def set_id(self, id: str):
         self.id = id
+
     def set_deleted(self, deleted: bool):
         self.deleted = deleted
 
@@ -105,7 +107,6 @@ class Point:
             "lat": self.lat,
             "lng": self.lng
         }
-
 
     def to_json(self) -> str:
         return dumps(self.to_dict())
