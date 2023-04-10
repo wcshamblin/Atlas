@@ -11,6 +11,9 @@ import {fetchPoints} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
+import { centerOfMass, circle} from "@turf/turf";
+
+
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
 function Map({displaySidebar, setDisplaySidebar}) {
@@ -20,6 +23,8 @@ function Map({displaySidebar, setDisplaySidebar}) {
     const baseLayers = {
         "Google Hybrid": {"visible": true},
         "Bing Hybrid": {"visible": false},
+        "ESRI": {"visible": false},
+        "OpenStreetMap": {"visible": false},
     }
 
     const [points, setPoints] = useState([]);
@@ -65,19 +70,41 @@ function Map({displaySidebar, setDisplaySidebar}) {
             'tileSize': 256
         });
 
+        mapbox.current.addSource('02', {
+            'type': 'raster',
+            'tiles': [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            'tileSize': 256
+        });
+
+        mapbox.current.addSource('03', {
+            'type': 'raster',
+            'tiles': [
+                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            'tileSize': 256
+        });
+
+
         // add decom towers from file assets/geojson/decoms.geojson
         let decoms = require('./decoms.geojson');
         mapbox.current.addSource('Decommissioned Towers', {
             'type': 'geojson',
             'data': decoms
         });
+
         mapbox.current.addLayer({
             'id': 'Decommissioned Towers',
             'type': 'circle',
             'source': 'Decommissioned Towers',
             'paint': {
                 'circle-radius': 6,
-                'circle-color': ['get', 'color'],
+                'circle-color': ['get' , 'color'],
             }
         });
 
@@ -96,8 +123,6 @@ function Map({displaySidebar, setDisplaySidebar}) {
                 'circle-color': ['get', 'color'],
             }
         });
-
-
 
         // load points from api and add to the map
         // console.log("points");
@@ -141,9 +166,31 @@ function Map({displaySidebar, setDisplaySidebar}) {
             },
             // 'PlacesToExplore'
         );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'ESRI',
+                'type': 'raster',
+                'source': '02',
+                'paint': {}
+            }
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'OpenStreetMap',
+                'type': 'raster',
+                'source': '03',
+                'paint': {}
+            }
+        );
+
+
         // set the default layer to google hybrid
         mapbox.current.setLayoutProperty('Google Hybrid', 'visibility', 'visible');
         mapbox.current.setLayoutProperty('Bing Hybrid', 'visibility', 'none');
+        mapbox.current.setLayoutProperty('ESRI', 'visibility', 'none');
+        mapbox.current.setLayoutProperty('OpenStreetMap', 'visibility', 'none');
     }
 
     // api query
@@ -218,8 +265,8 @@ function Map({displaySidebar, setDisplaySidebar}) {
         });
 
         // controls
-        mapbox.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        mapbox.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+        mapbox.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
+        mapbox.current.addControl(new mapboxgl.FullscreenControl(), 'top-left');
         mapbox.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
         mapbox.current.addControl(new mapboxgl.GeolocateControl({
             positionOptions: {
@@ -228,10 +275,12 @@ function Map({displaySidebar, setDisplaySidebar}) {
             },
             trackUserLocation: true,
             showUserHeading: true
-        }), 'top-right');
+        }), 'top-left');
 
     }, [mapRef]);
 
+
+    // custom controls should all go in the sidebar
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
         if (menuInitialized) return; // initialize menu only once
@@ -239,9 +288,15 @@ function Map({displaySidebar, setDisplaySidebar}) {
         // iterate through baselayers
         var toggleableLayerIds = Object.keys(baseLayers);
 
+        var sidebar = document.getElementById('sidebar');
+        console.log("sidebar: ", sidebar);
+
         for (var i = 0; i < toggleableLayerIds.length; i++) {
+
             var id = toggleableLayerIds[i];
+            // make sure the link is in the sidebar
             var link = document.createElement('a');
+            sidebar.appendChild(link);
             link.href = '#';
             link.id = id;
             link.className = '';
@@ -289,6 +344,8 @@ function Map({displaySidebar, setDisplaySidebar}) {
         }
         } , [menuInitialized]);
 
+
+    
 
 
     return (

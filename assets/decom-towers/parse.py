@@ -4,14 +4,15 @@ from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 
-towers = json.load(open('crosscheck_safe_results.json'))
+towers = json.load(open('decoms.json'))
 # sort by height
 towers = sorted(towers, key=lambda k: float(k['height']))
 
 pprint(towers[:10])
 
 geojson = {'type': 'FeatureCollection', 'features': []}
-outfile = open('safe_towers.geojson', 'w')
+outfile = open(
+    '../../website/spa_react_javascript_hello-world-basic-authentication-with-api-integration/src/components/decoms.geojson', 'w')
 
 max_color_height = 243.84 # 800 feet
 
@@ -35,7 +36,8 @@ for i in range(len(heights)):
         heights[i] = max_color_height
 
 norm = Normalize(vmin=minheight, vmax=max_color_height + max_color_height / 3) # so we don't have an ugly bright color on top
-rgba_values = cm.plasma(norm(heights))
+norm = Normalize(vmin=minheight, vmax=max_color_height + max_color_height / 3) # so we don't have an ugly bright color on top
+rgba_values = cm.summer(norm(heights))
 
 i=0
 for tower in towers:
@@ -48,13 +50,14 @@ for tower in towers:
     geojson['features'].append({
         'type': 'Feature',
         'properties': {
-            'name': tower['id'],
+            'name': tower['registration_number'],
             'description': str(float(tower['height']) * 3.28084) + " feet",
+            'height': float(tower['height']),  # meters
             'color': color
         },
         'geometry': {
             'type': 'Point',
-            'coordinates': [float(tower["longitude"]), float(tower["latitude"])]
+            'coordinates': [float(tower["coordinates"].split(", ")[1]), float(tower["coordinates"].split(", ")[0])]
         }
     })
 
