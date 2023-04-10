@@ -1,19 +1,8 @@
-#sidebar {
-    position: absolute;
-    right: 0;
-    top: 80px;
-    bottom: 0;
-    z-index: 100;
-    color: black;
-    width: 250px;
-    background: #fff;
-}
-
 #menu {
     background: #fff;
     position: absolute;
     z-index: 1;
-    top: 10px;
+    top: 100px;
     right: 10px;
     border-radius: 3px;
     width: 120px;

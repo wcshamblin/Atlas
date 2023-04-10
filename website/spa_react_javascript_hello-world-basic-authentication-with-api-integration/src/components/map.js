@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 // css
 import '../styles/components/map.css';
+import '../styles/components/sidebar.css';
 
 // api imports
 import {fetchPoints} from "../services/message.service";
@@ -16,9 +17,11 @@ import { centerOfMass, circle} from "@turf/turf";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
-function Map({displaySidebar, setDisplaySidebar}) {
+function Map() {
     const mapRef = useRef(null);
     const mapbox = useRef(null);
+    const [displaySidebar, setDisplaySidebar] = useState(false);
+    const [selectedLayer, setSelectedLayer] = useState("Google Hybrid");
 
     const baseLayers = {
         "Google Hybrid": {"visible": true},
@@ -281,7 +284,7 @@ function Map({displaySidebar, setDisplaySidebar}) {
 
 
     // custom controls should all go in the sidebar
-    useEffect(() => {
+    /*useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
         if (menuInitialized) return; // initialize menu only once
 
@@ -342,9 +345,43 @@ function Map({displaySidebar, setDisplaySidebar}) {
         return () => {
             setMenuInitialized(true);
         }
-        } , [menuInitialized]);
+    } , [menuInitialized]);*/
 
+    const getSidebar = () => {  
+        if (!mapbox.current) return; // wait for map to initialize
+        if (menuInitialized) return; // initialize menu only once
 
+        return (
+            <div id="menu">
+                {Object.keys(baseLayers).map(layerId => (
+                    <>
+                        <a href="#" id={layerId} className={selectedLayer == layerId ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
+                        <br/>
+                    </>
+                ))}
+            </div>
+        )
+    }
+
+    const handleLayerClick = (e, clickedLayerId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
+
+        if (visibility === 'visible') {
+            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
+            setSelectedLayer("");
+        } else {
+            // turn off all other layers
+            setSelectedLayer(clickedLayerId);
+            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
+            Object.keys(baseLayers).forEach(layerId => {
+                if (layerId == clickedLayerId) return;
+                mapbox.current.setLayoutProperty(layerId, 'visibility', 'none');
+            })
+        }
+    }
     
 
 
@@ -357,10 +394,13 @@ function Map({displaySidebar, setDisplaySidebar}) {
         // />
 
         // layer control
-        <div id="map" ref={mapRef}>
-            <div id="menu"/>
-            <button onClick={() => setDisplaySidebar(!displaySidebar)} style={{"color": "black", "position": "absolute", "zIndex": "999"}}>Sidebar</button>
-        </div>
+        <>
+            <div id="map" ref={mapRef}>
+                <div id="menu"/>
+                <button onClick={() => setDisplaySidebar(!displaySidebar)} style={{"color": "black", "position": "absolute", "zIndex": "999"}}>Sidebar</button>
+            </div>
+            {displaySidebar ? getSidebar() : ""}
+        </>
     );
 }
 
