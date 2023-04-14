@@ -7,6 +7,7 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw";
 // css
 import '../styles/components/map.css';
 import '../styles/components/sidebar.css';
+import '../styles/components/layerswitcher.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 // api imports
@@ -21,6 +22,7 @@ function Map() {
     const mapRef = useRef(null);
     const mapbox = useRef(null);
     const [displaySidebar, setDisplaySidebar] = useState(false);
+    const [displayLayers, setDisplayLayers] = useState(false);
     const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
     const [selectedLayers, setSelectedLayers] = useState([]);
 
@@ -41,18 +43,6 @@ function Map() {
     const [points, setPoints] = useState([]);
 
     const { getAccessTokenSilently } = useAuth0();
-
-    // menu toggle
-    const [menuOpen, setMenuOpen] = useState(true);
-
-    // menu initialized to false
-    const [menuInitialized, setMenuInitialized] = useState(false);
-
-    // toggle menu
-    const toggleMenu = () => {
-        setMenuOpen(!menuOpen);
-    };
-
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -361,29 +351,39 @@ function Map() {
 
     const getSidebar = () => {  
         if (!mapbox.current) return; // wait for map to initialize
-        if (menuInitialized) return; // initialize menu only once
 
         return (
-            <div id="menu">
-                <h4 id="layerstitle">Baselayers</h4>
-                <div id="baselayers">
-                {Object.keys(baseLayers).map(layerId => (
-                    <>
-                        <a href="#" id={layerId} className={selectedBaseLayer == layerId ? "active" : ""} onClick={e => handleBaseLayerClick(e, layerId)}>{layerId}</a>
-                    </>
-                ))}
-                </div>
-                <h4 id="layerstitle">Layers</h4>
-                <div id="layers">
-                {Object.keys(layers).map(layerId => (
-                    <>
-                        <a href="#" id={layerId} className={selectedLayers.includes(layerId) ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
-                    </>
-                ))}
-                </div>
+            <div id="sidebar">
+                <h4>Sidebar</h4>
             </div>
         )
     }
+
+    const getLayers = () => {
+        if (!mapbox.current) return; // wait for map to initialize
+
+        return (
+            <div id="layerswitchermenu">
+                <h4 id="layerstitle">Baselayers</h4>
+                <div id="baselayers">
+                    {Object.keys(baseLayers).map(layerId => (
+                        <>
+                            <a href="#" id={layerId} className={selectedBaseLayer == layerId ? "active" : ""} onClick={e => handleBaseLayerClick(e, layerId)}>{layerId}</a>
+                        </>
+                    ))}
+                </div>
+                <h4 id="layerstitle">Layers</h4>
+                <div id="layers">
+                    {Object.keys(layers).map(layerId => (
+                        <>
+                            <a href="#" id={layerId} className={selectedLayers.includes(layerId) ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
+                        </>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
 
     const handleBaseLayerClick = (e, clickedLayerId) => {
         e.preventDefault();
@@ -434,12 +434,14 @@ function Map() {
         //     onMove={evt => setViewport(evt.viewport)}
         // />
 
-        // layer control
+        // sidebar control
         <>
             <div id="map" ref={mapRef}>
-                <button onClick={() => setDisplaySidebar(!displaySidebar)} style={{"color": "black", "position": "absolute", "zIndex": "999"}}>Sidebar</button>
+                <button id="layerswitcherbutton">LayerSwitcher</button>
+                <button id="sidebarbutton"  onClick={() => setDisplaySidebar(!displaySidebar)}>Sidebar</button>
             </div>
             {displaySidebar ? getSidebar() : ""}
+            {displayLayers ? getLayers() : ""}
         </>
     );
 }

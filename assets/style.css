@@ -41,11 +41,23 @@ textarea#longitude {
     max-width: 46.5%;
 }
 
-button {
+button#submitpoint {
     float: right;
 }
 
-button#deletemarkerbutton {
-    margin: .5em;
-    float: right;
+div#legend {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px;
+    z-index: 400;
+    background-color: white;
+}
+
+/* legend-button should be on top and in the bottom left */
+button#legend-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 500;
 }

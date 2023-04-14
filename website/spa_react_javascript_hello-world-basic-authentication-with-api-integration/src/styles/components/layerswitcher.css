@@ -1,0 +1,64 @@
+#layerswitcherbutton {
+    position: absolute;
+    z-index: 999;
+    right: 0;
+    top: 0;
+}
+
+#layerswitchermenu {
+    background: #ffffff;
+    position: absolute;
+    z-index: 999;
+    top: 80px;
+    right: 0;
+    bottom: 0;
+    width: 256px;
+    border: 1px solid rgba(0,0,0,0.4);
+    font-family: 'Open Sans', sans-serif;
+}
+
+#layerswitcher a {
+    font-size: 13px;
+    color: #404040;
+    display: block;
+    margin: 0;
+    padding: 10px;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,0,0,0.4);
+    text-align: center;
+}
+
+#layerswitcher a:last-child {
+    border: none;
+}
+
+#layerswitcher a:hover {
+    background-color: #f8f8f8;
+    color: #404040;
+}
+
+#layerswitcher a.active {
+    background-color: #be5d17;
+    color: #ffffff;
+}
+
+#layerswitcher a.active:hover {
+    background: #974910;
+}
+
+
+#layerstitle {
+    top: 0;
+    left: 0;
+    margin-bottom: 0;
+    margin-top: 0;
+    width: 100%;
+    text-align: center;
+    background-color: #ffffff;
+    border: 1px solid rgb(0, 0, 0, 0.4);
+}
+
+#baselayers {
+    background-color: #ffffff;
+    border: 1px solid rgb(0, 0, 0, 0.4);
+}

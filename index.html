@@ -42,7 +42,9 @@
 
 <body>
 
-<div id="map"></div>
+<div id="map">
+    <button class="leaflet-bottom leaflet-left" id="legend-button>">Legend</button>
+</div>
 
 <script>
     var categories = {
@@ -380,13 +382,49 @@
 
 
     // Add everything to the map
-    
-    // var searchLayer = L.featureGroup().addTo(map);
-    // map.addControl(new L.Control.Search({layer: searchLayer, propertyName: 'Name', zoom: 15, initial: false, hideMarkerOnCollapse: true, moveToLocation: function(latlng, title, map) {
-    //     //map.fitBounds( latlng.layer.getBounds() );
-    //     var zoom = map.getBoundsZoom(latlng.layer.getBounds());
-    //     map.setView(latlng, zoom); // access the zoom
-    // }}));
+
+    // Legend for the map on the bottom left
+
+    var legend = new L.Control({position: 'bottomleft'});
+    // LEGEND:
+    // Green (#558B2F): Small or unknown abandonment
+    // Orange (#E65100): Massive, possibly difficult exploration
+    // Red (#A52714): High security and or hard to get in without getting spotted
+    // Yellow (#FFD600): Health hazards
+    // Black (#000000): Really sketchy / weird
+    // Purple (#673AB7): Possibly still active, not necessarily abandoned
+    // Magenta (#880E4F): Still could be active and has some amount of security
+    // Blue (#0288D1): Place of interest, not abandoned but just a cool spot to visit
+
+    legend.onAdd = function (map) {
+        console.log("legend added")
+        var div = L.DomUtil.create('div', 'legend'),
+            legend_categories = ['Small or unknown abandonment', 'Massive, possibly difficult exploration', 'High security and or hard to get in without getting spotted', 'Health hazards', 'Really sketchy / weird', 'Possibly still active, not necessarily abandoned', 'Still could be active and has some amount of security', 'Place of interest, not abandoned but just a cool spot to visit'],
+            legend_colors = ['#558B2F', '#E65100', '#A52714', '#FFD600', '#000000', '#673AB7', '#880E4F', '#0288D1'];
+        div.innerHTML += '<b>Legend</b><br>';
+        for (var i = 0; i < legend_categories.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + legend_colors[i] + '"></i> ' +
+                legend_categories[i] + '<br>';
+        }
+        return div;
+    }
+    legend.addTo(map);
+    // Button to toggle the legend
+    showLegend = true;  // default value showing the legend
+
+    var toggleLegend = function(){
+        if(showLegend === true){
+            /* use jquery to select your DOM elements that has the class 'legend' */
+            $('.legend').hide();
+            showLegend = false;
+        }else{
+            $('.legend').show();
+            showLegend = true;
+        }
+    }
+
+
 
     var drawControl = new L.Control.Draw(drawPluginOptions);
     map.addControl(drawControl);
@@ -414,7 +452,6 @@
         popupContent += "<span id='pointtype'><i>type:</i> " + categories[feature.properties.category] + "</span>"
 
         popupContent += "<button type='button' id='editbutton' class='btn btn-primary edit-marker-button'>Edit</button>"
-        //popupContent += "<button type='button' id='editmarkerbutton'>edit</button>"
 
         layer.on({
             click: function(event) {
