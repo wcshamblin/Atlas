@@ -5,3 +5,38 @@ div#map {
   bottom: 0;
   width: 100%;
 }
+
+#towerpopupstat {
+  font-size: smaller;
+  color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: block;
+}
+
+#towerpopuptext {
+  color: #000000;
+  z-index: 999;
+  display: inline;
+}
+
+#towerpopuptitle {
+  font-size: small;
+  color: #000000;
+  z-index: 999;
+  text-align: center;
+  display: block;
+}
+
+#towerpopupcoords {
+  bottom: 0;
+  padding-top: 10px;
+  font-size: smaller;
+  color: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  text-align: center;
+  display: block;
+}
+
+.mapboxgl-popup-content {
+  padding-bottom: 0;
+}

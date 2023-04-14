@@ -2,17 +2,17 @@ import React, {useState, useEffect, createRef, useRef} from 'react';
 
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
 
 // css
 import '../styles/components/map.css';
 import '../styles/components/sidebar.css';
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 // api imports
 import {fetchPoints} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
-
-import { centerOfMass, circle} from "@turf/turf";
 
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
@@ -21,7 +21,8 @@ function Map() {
     const mapRef = useRef(null);
     const mapbox = useRef(null);
     const [displaySidebar, setDisplaySidebar] = useState(false);
-    const [selectedLayer, setSelectedLayer] = useState("Google Hybrid");
+    const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
+    const [selectedLayers, setSelectedLayers] = useState([]);
 
     const baseLayers = {
         "Google Hybrid": {"visible": true},
@@ -30,12 +31,19 @@ function Map() {
         "OpenStreetMap": {"visible": false},
     }
 
+    const layers = {
+        "Decommissioned Towers": {"visible": false},
+        "Safe Towers": {"visible": false},
+    }
+
+
+
     const [points, setPoints] = useState([]);
 
     const { getAccessTokenSilently } = useAuth0();
 
     // menu toggle
-    const [menuOpen, setMenuOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(true);
 
     // menu initialized to false
     const [menuInitialized, setMenuInitialized] = useState(false);
@@ -111,6 +119,7 @@ function Map() {
             }
         });
 
+
         // add safe towers from assets/decom-towers/safe_towers.geojson
         let safe_towers = require('./safe_towers.geojson');
         mapbox.current.addSource('Safe Towers', {
@@ -126,6 +135,14 @@ function Map() {
                 'circle-color': ['get', 'color'],
             }
         });
+
+
+        // set not visible based on layers dict
+        for (const [key, value] of Object.entries(layers)) {
+            if (!value.visible) {
+                mapbox.current.setLayoutProperty(key, 'visibility', 'none');
+            }
+        }
 
         // load points from api and add to the map
         // console.log("points");
@@ -267,10 +284,60 @@ function Map() {
             addSources()
         });
 
+
+            mapbox.current.on('click', 'Safe Towers', (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const name = e.features[0].properties.name;
+                const description = e.features[0].properties.description;
+                console.log("description: ", description);
+
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopup'>" + description + "</text>" + "<text id='towerpopupcoords'>" + coordinates + "</text>")
+                    .addTo(mapbox.current);
+            });
+
+            mapbox.current.on('mouseenter', 'Safe Towers', () => {
+                mapbox.current.getCanvas().style.cursor = 'pointer';
+            });
+
+            mapbox.current.on('mouseleave', 'Safe Tower', () => {
+                mapbox.current.getCanvas().style.cursor = '';
+            });
+
+            mapbox.current.on('click', 'Decommissioned Towers', (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const name = e.features[0].properties.name;
+                const description = e.features[0].properties.description;
+                // convert to feet with 2 decimal places
+                const height = (e.features[0].properties.height * 3.28084).toFixed(2);
+                console.log("description: ", description);
+
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(
+                        "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
+                        // "<text id='towerpopupstat'>height:</text>" +
+                        "<text id='towerpopuptext'>" + height + "</text>" +
+                        "<text id='towerpopupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                    .addTo(mapbox.current);
+            });
+
+            mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
+                mapbox.current.getCanvas().style.cursor = 'pointer';
+            });
+
+            mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
+                mapbox.current.getCanvas().style.cursor = '';
+            });
+
+
         // controls
         mapbox.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
         mapbox.current.addControl(new mapboxgl.FullscreenControl(), 'top-left');
-        mapbox.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
+        mapbox.current.addControl(new mapboxgl.ScaleControl(), 'bottom-left');
         mapbox.current.addControl(new mapboxgl.GeolocateControl({
             positionOptions: {
                 enableHighAccuracy: true,
@@ -280,72 +347,17 @@ function Map() {
             showUserHeading: true
         }), 'top-left');
 
+        // draw control
+        mapbox.current.addControl(new MapboxDraw({
+            displayControlsDefault: true,
+            controls: {
+                polygon: true,
+                trash: true
+            }
+        }), 'top-left');
+
     }, [mapRef]);
 
-
-    // custom controls should all go in the sidebar
-    /*useEffect(() => {
-        if (!mapbox.current) return; // wait for map to initialize
-        if (menuInitialized) return; // initialize menu only once
-
-        // iterate through baselayers
-        var toggleableLayerIds = Object.keys(baseLayers);
-
-        var sidebar = document.getElementById('sidebar');
-        console.log("sidebar: ", sidebar);
-
-        for (var i = 0; i < toggleableLayerIds.length; i++) {
-
-            var id = toggleableLayerIds[i];
-            // make sure the link is in the sidebar
-            var link = document.createElement('a');
-            sidebar.appendChild(link);
-            link.href = '#';
-            link.id = id;
-            link.className = '';
-
-            if (baseLayers[id]["visible"]) {
-                link.className = 'active';
-            }
-            link.textContent = id;
-
-
-            link.onclick = function (e) {
-                var clickedLayer = this.textContent;
-                e.preventDefault();
-                e.stopPropagation();
-
-                var visibility = mapbox.current.getLayoutProperty(clickedLayer, 'visibility');
-
-                if (visibility === 'visible') {
-                    mapbox.current.setLayoutProperty(clickedLayer, 'visibility', 'none');
-                    this.className = '';
-                } else {
-                    // turn off all other layers
-                    for (var i = 0; i < toggleableLayerIds.length; i++) {
-                        if (toggleableLayerIds[i] === clickedLayer) {
-                            continue;
-                        }
-                        mapbox.current.setLayoutProperty(toggleableLayerIds[i], 'visibility', 'none');
-                        var button = document.getElementById(toggleableLayerIds[i]);
-                        button.className = '';
-                    }
-
-                    this.className = 'active';
-                    mapbox.current.setLayoutProperty(clickedLayer, 'visibility', 'visible');
-                }
-
-
-            };
-
-            var layers = document.getElementById('menu');
-            layers.appendChild(link);
-        }
-
-        return () => {
-            setMenuInitialized(true);
-        }
-    } , [menuInitialized]);*/
 
     const getSidebar = () => {  
         if (!mapbox.current) return; // wait for map to initialize
@@ -353,14 +365,44 @@ function Map() {
 
         return (
             <div id="menu">
+                <h4 id="layerstitle">Baselayers</h4>
+                <div id="baselayers">
                 {Object.keys(baseLayers).map(layerId => (
                     <>
-                        <a href="#" id={layerId} className={selectedLayer == layerId ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
-                        <br/>
+                        <a href="#" id={layerId} className={selectedBaseLayer == layerId ? "active" : ""} onClick={e => handleBaseLayerClick(e, layerId)}>{layerId}</a>
                     </>
                 ))}
+                </div>
+                <h4 id="layerstitle">Layers</h4>
+                <div id="layers">
+                {Object.keys(layers).map(layerId => (
+                    <>
+                        <a href="#" id={layerId} className={selectedLayers.includes(layerId) ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
+                    </>
+                ))}
+                </div>
             </div>
         )
+    }
+
+    const handleBaseLayerClick = (e, clickedLayerId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
+
+        if (visibility === 'visible') {
+            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
+            setSelectedBaseLayer("");
+        } else {
+            // turn off all other layers
+            setSelectedBaseLayer(clickedLayerId);
+            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
+            Object.keys(baseLayers).forEach(layerId => {
+                if (layerId == clickedLayerId) return;
+                mapbox.current.setLayoutProperty(layerId, 'visibility', 'none');
+            })
+        }
     }
 
     const handleLayerClick = (e, clickedLayerId) => {
@@ -371,18 +413,17 @@ function Map() {
 
         if (visibility === 'visible') {
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
-            setSelectedLayer("");
-        } else {
-            // turn off all other layers
-            setSelectedLayer(clickedLayerId);
+            setSelectedLayers(selectedLayers.filter(layerId => layerId != clickedLayerId));
+        }
+        else {
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
-            Object.keys(baseLayers).forEach(layerId => {
-                if (layerId == clickedLayerId) return;
-                mapbox.current.setLayoutProperty(layerId, 'visibility', 'none');
-            })
+            setSelectedLayers([...selectedLayers, clickedLayerId]);
         }
     }
-    
+
+    const extrudeTowers = () => {
+    }
+
 
 
     return (
@@ -396,7 +437,6 @@ function Map() {
         // layer control
         <>
             <div id="map" ref={mapRef}>
-                <div id="menu"/>
                 <button onClick={() => setDisplaySidebar(!displaySidebar)} style={{"color": "black", "position": "absolute", "zIndex": "999"}}>Sidebar</button>
             </div>
             {displaySidebar ? getSidebar() : ""}
