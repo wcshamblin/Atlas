@@ -27,13 +27,19 @@ div#map {
   display: block;
 }
 
-#towerpopupcoords {
+#popupcoords {
   bottom: 0;
   padding-top: 10px;
   font-size: smaller;
   color: rgba(0, 0, 0, 0.7);
   z-index: 999;
   text-align: center;
+  display: block;
+}
+#streetview {
+  width: 256px;
+  height: 256px;
+  z-index: 999;
   display: block;
 }
 
