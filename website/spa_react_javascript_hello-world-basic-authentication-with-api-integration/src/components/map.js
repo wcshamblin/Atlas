@@ -15,6 +15,8 @@ import {fetchPoints} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
+import { GoogleMap, LoadScript, StreetViewPanorama} from '@react-google-maps/api';
+// import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
@@ -35,7 +37,8 @@ function Map() {
 
     const layers = {
         "Decommissioned Towers": {"visible": false},
-        "Safe Towers": {"visible": false},
+        "Safe Towers": {"visible": true},
+        "Google StreetView": {"visible": true},
     }
 
 
@@ -116,6 +119,7 @@ function Map() {
             'type': 'geojson',
             'data': safe_towers
         });
+
         mapbox.current.addLayer({
             'id': 'Safe Towers',
             'type': 'circle',
@@ -124,6 +128,23 @@ function Map() {
                 'circle-radius': 6,
                 'circle-color': ['get', 'color'],
             }
+        });
+
+        // google street view overlay should only be visible when zoom level is above 12
+        mapbox.current.addSource('Google StreetView', {
+            'type': 'raster',
+            'tiles': [
+                'https://mts2.google.com/mapslt?lyrs=svv&x={x}&y={y}&z={z}&w=256&h=256&hl=en&style=40,18'
+            ],
+            'tileSize': 256,
+            'minzoom': 12
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Google StreetView',
+            'type': 'raster',
+            'source': 'Google StreetView',
+            'paint': {}
         });
 
 
@@ -164,7 +185,7 @@ function Map() {
                 'source': '00',
                 'paint': {}
             },
-            // 'PlacesToExplore'
+            'Google StreetView'
         );
 
         mapbox.current.addLayer(
@@ -174,7 +195,7 @@ function Map() {
                 'source': '01',
                 'paint': {}
             },
-            // 'PlacesToExplore'
+            'Google StreetView'
         );
 
         mapbox.current.addLayer(
@@ -192,7 +213,8 @@ function Map() {
                 'type': 'raster',
                 'source': '03',
                 'paint': {}
-            }
+            },
+            'Google StreetView'
         );
 
 
@@ -284,7 +306,7 @@ function Map() {
 
                 new mapboxgl.Popup()
                     .setLngLat(coordinates)
-                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopup'>" + description + "</text>" + "<text id='towerpopupcoords'>" + coordinates + "</text>")
+                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopup'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
                     .addTo(mapbox.current);
             });
 
@@ -311,7 +333,7 @@ function Map() {
                         "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
                         // "<text id='towerpopupstat'>height:</text>" +
                         "<text id='towerpopuptext'>" + height + "</text>" +
-                        "<text id='towerpopupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                     .addTo(mapbox.current);
             });
 
@@ -322,6 +344,75 @@ function Map() {
             mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
                 mapbox.current.getCanvas().style.cursor = '';
             });
+
+            // on right click
+            mapbox.current.on('contextmenu', (e) => {
+                // make new popup with coordinates of right click
+                let lat = e.lngLat.lat;
+                let lng = e.lngLat.lng;
+                let popup = new mapboxgl.Popup()
+                    .setLngLat([lng, lat])
+                    .setHTML("<text id='popupcoords'>" + lat + ", " + lng + "</text>")
+                    .addTo(mapbox.current);
+            });
+
+
+        // on left click, if the Google StreetView layer is enabled, see if we can get a streetview image
+        mapbox.current.on('click', (e) => {
+            console.log("click");
+            // if the google streetview layer is enabled
+
+            console.log("mapbox.current.getLayoutProperty('Safe Towers', 'visibility'): ", mapbox.current.getLayoutProperty('Safe Towers', 'visibility'));
+            console.log("mapbox.current.getLayoutProperty('Google StreetView', 'visibility'): ", mapbox.current.getLayoutProperty('Google StreetView', 'visibility'));
+            if (true) {
+                console.log("google streetview layer is visible");
+                // get the coordinates of the click
+                let lat = e.lngLat.lat;
+                let lng = e.lngLat.lng;
+                console.log("lat: ", lat);
+                console.log("lng: ", lng);
+
+                // make a new popup at the coordinates
+                let popup = new mapboxgl.Popup().setLngLat([lng, lat])
+
+
+                // use REACT_APP_GOOGLE_MAPS_API_KEY as the API key
+                // popup.setHTML("<iframe src='https://www.google.com/maps/embed/v1/streetview?location=" + lat + "," + lng +
+                //     "&fov=80&heading=100&pitch=0&key=" + process.env.REACT_APP_GOOGLE_MAPS_API_KEY +
+                //     "' width='300' height='300' frameBorder='0' style='border:0' allowFullScreen" +
+                //     "disableDefaultUI='true' zoomControl='false' mapTypeControl='false' scaleControl='false' streetViewControl='false' rotateControl='false' fullscreenControl='false'></iframe>");
+
+
+                // popup.setHTML("<LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>" +
+                //         "<StreetViewPanorama" +
+                //             "position={{'lat': lat, 'lng': lng}}" +
+                //             "visible={true}" +
+                //         "/>" +
+                //     "</GoogleMap>" +
+                // "</LoadScript>");
+
+                popup.setHTML(
+                "<LoadScript" +
+                "googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}" +
+                ">" +
+                "<GoogleMap" +
+                "mapContainerStyle={{width: '300px', height: '300px'}}" +
+                "center={center}" +
+                "zoom={10}" +
+                ">" +
+                "</GoogleMap>" +
+                "</LoadScript>"
+                );
+
+
+
+
+                    // add the popup to the map
+                popup.addTo(mapbox.current);
+            }
+        });
+
+
 
 
         // controls
@@ -423,7 +514,6 @@ function Map() {
 
     const extrudeTowers = () => {
     }
-
 
 
     return (
