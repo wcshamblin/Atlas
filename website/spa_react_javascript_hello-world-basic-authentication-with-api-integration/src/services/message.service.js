@@ -133,7 +133,7 @@ export const setHome = async (accessToken, lat, lng) => {
     };
 }
 
-export const getHome = async (accessToken) => {
+export const retrieveHome = async (accessToken) => {
     const config = {
         url: `${apiServerUrl}/home`,
         method: "GET",

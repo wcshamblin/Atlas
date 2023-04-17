@@ -15,7 +15,7 @@ import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 
 // api imports
-import {fetchPoints, setHome, getHome} from "../services/message.service";
+import {fetchPoints, setHome, retrieveHome} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
@@ -35,30 +35,13 @@ function Map() {
     const [displayStreetView, setDisplayStreetView] = useState(false);
     const [streetViewPosition, setStreetViewPosition] = useState([]);
     const [homeDraggable, setHomeDraggable] = useState(false);
-    const [homeExists, setHomeExists] = useState(false);
+    const [homeMarker, setHomeMarker] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
     // this will be used to adjust fog color later.
     console.log("isNight");
     console.log(isNight, new Date().getHours());
-
-    const el = document.createElement('div');
-    el.className = 'marker';
-
-    el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
-    el.style.width = '25px';
-    el.style.height = '25px';
-    el.style.backgroundSize = '100%';
-
-    const homeMarker = new mapboxgl.Marker(el, {
-        draggable: true
-    })
-        .setLngLat([0, 0])
-
-    homeMarker.on('dragend', homeDragEnd);
-
-    homeMarker.setLngLat([-88, 35]);
 
 
     const baseLayers = {
@@ -717,32 +700,57 @@ function Map() {
         }
     }
 
-    function homeDragEnd() {
-        // set home location in database
-        setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat).then(() => {
-            console.log("home location set");
-        });
-    }
+    // function homeDragEnd() {
+    //     // set home location in database
+    //     setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat).then(() => {
+    //         console.log("home location set");
+    //     });
+    // }
 
+    // retrieve home and put it on the map if it exists
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
 
-        const makeHome = async (homeMarker) => {
+        const homeDragEnd = async () => {
+            // get access token
             const accessToken = await getAccessTokenSilently();
-            console.log("calling gethome with lat: ", homeMarker.getLngLat().lat, " and lng: ", homeMarker.getLngLat().lng);
-            const {data, error} = await getHome(accessToken, homeMarker.getLngLat().lat, homeMarker.getLngLat().lng);
-            if (data) {
-                console.log("Home data retrieved: ", data);
 
-                homeMarker.setLngLat([data.lng, data.lat]);
-            } else {
-                console.log("Error retrieving home data: ", error);
-                console.log("Setting home to map center.")
-                // add new marker at map center
-                console.log("Home marker: ", homeMarker);
-                homeMarker.setLngLat(mapbox.current.getCenter());
-                homeMarker.remove();
-            }
-            homeMarker.remove();
-        };
+            // set home location in database
+            setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat, accessToken).then(() => {
+                console.log("home location set");
+            });
+        }
+
+        const getHome = async () => {
+            // get access token
+            const accessToken = await getAccessTokenSilently();
+
+            return await retrieveHome(accessToken);
+        }
+
+        // if we got a home, set it on the map
+        getHome().then((home) => {
+            if (home) {
+                console.log("Home retrieved: ", home);
+
+                const el = document.createElement('div');
+                el.className = 'marker';
+
+                el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
+                el.style.width = '25px';
+                el.style.height = '25px';
+                el.style.backgroundSize = '100%';
+
+                setHomeMarker(mapboxgl.Marker(el, {draggable: true})
+                    .setLngLat([home.lng, home.lat])
+                    .on('dragend', homeDragEnd)
+                    .addTo(mapbox.current));
+                }
+        });
+
+    }, [mapbox.current, homeMarker]);
+
+
 
     // escape key handling
     useEffect(() => {
