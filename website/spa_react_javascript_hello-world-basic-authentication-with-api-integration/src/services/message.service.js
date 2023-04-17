@@ -110,3 +110,43 @@ export const putPoint = async (accessToken, point) => {
         error,
     };
 }
+
+export const setHome = async (accessToken, lat, lng) => {
+    const config = {
+        url: `${apiServerUrl}/set_home`,
+        method: "POST",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+        data: {
+            lat,
+            lng
+        }
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    };
+}
+
+export const getHome = async (accessToken) => {
+    const config = {
+        url: `${apiServerUrl}/home`,
+        method: "GET",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    };
+}

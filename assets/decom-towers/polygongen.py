@@ -1,6 +1,6 @@
 from json import load, dump
 
-towers = load(open("decoms.geojson", "r"))
+towers = load(open("../../website/spa_react_javascript_hello-world-basic-authentication-with-api-integration/src/components/decoms.geojson", "r"))
 
 tower_polygons = {
     "type": "FeatureCollection",
@@ -32,4 +32,4 @@ for tower in towers["features"]:
     tower_polygons["features"].append(tower_poly)
 
 
-dump(tower_polygons, open("testpolygons.geojson", "w"))
+dump(tower_polygons, open("../../website/spa_react_javascript_hello-world-basic-authentication-with-api-integration/src/components/decoms_polygons.geojson", "w"))

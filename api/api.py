@@ -5,9 +5,10 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point
-from database.database import add_pte_point, get_pte_point, get_pte_points_json, update_pte_point, delete_pte_point
+from database.database import add_pte_point, get_pte_point, get_pte_points_json, update_pte_point, delete_pte_point, get_home, set_home
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
+
 
 from api.utils import VerifyToken
 
@@ -61,6 +62,9 @@ class PointPut(BaseModel):
     lat: float
     lng: float
 
+class SetHome(BaseModel):
+    lat: float
+    lng: float
 
 @app.get("/api/messages/public")
 def public():
@@ -177,6 +181,46 @@ async def put_point(response: Response, point_id: str, point: PointPut, token: s
     update_pte_point(point_id, new_point)
 
     return {"status": "success", "message": "Point updated", "point": new_point}
+
+
+@app.post("/set_home")
+async def set_home(response: Response, home: SetHome, token: str = Depends(token_auth_scheme)):
+    print("EEEEEEEEEEEEEEEE")
+    print(home)
+
+    result = VerifyToken(token.credentials, scopes="edit").verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    user = result["sub"]
+
+    # set home
+    set_home(user, {"lat": home.lat, "lng": home.lng})
+
+    return {"status": "success", "message": "Home set"}
+
+@app.get("/home")
+async def retrieve_home(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials, scopes="read").verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    user = result["sub"]
+
+    # get home
+    home = get_home(user)
+
+    # if no home is found
+    if home is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Home not found"}
+
+    return {"status": "success", "message": "Home retrieved", "home": home[0]}
+
 
 if __name__ == '__main__':
     import uvicorn

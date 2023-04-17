@@ -3,19 +3,23 @@ import React, {useState, useEffect, createRef, useRef} from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+// search control @mapbox/search-js-react
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 
 // css
 import '../styles/components/map.css';
 import '../styles/components/sidebar.css';
 import '../styles/components/layerswitcher.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
+
 
 // api imports
-import {fetchPoints} from "../services/message.service";
+import {fetchPoints, setHome, getHome} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
-import { GoogleMap, LoadScript, StreetViewPanorama} from '@react-google-maps/api';
+import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@react-google-maps/api';
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
@@ -27,6 +31,35 @@ function Map() {
     const [displayLayers, setDisplayLayers] = useState(false);
     const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
     const [selectedLayers, setSelectedLayers] = useState([]);
+    const [streetViewActive, setStreetViewActive] = useState(false);
+    const [displayStreetView, setDisplayStreetView] = useState(false);
+    const [streetViewPosition, setStreetViewPosition] = useState([]);
+    const [homeDraggable, setHomeDraggable] = useState(false);
+    const [homeExists, setHomeExists] = useState(false);
+
+    // determine if the user's local time is between 6pm and 6am
+    const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
+    // this will be used to adjust fog color later.
+    console.log("isNight");
+    console.log(isNight, new Date().getHours());
+
+    const el = document.createElement('div');
+    el.className = 'marker';
+
+    el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
+    el.style.width = '25px';
+    el.style.height = '25px';
+    el.style.backgroundSize = '100%';
+
+    const homeMarker = new mapboxgl.Marker(el, {
+        draggable: true
+    })
+        .setLngLat([0, 0])
+
+    homeMarker.on('dragend', homeDragEnd);
+
+    homeMarker.setLngLat([-88, 35]);
+
 
     const baseLayers = {
         "Google Hybrid": {"visible": true},
@@ -37,21 +70,13 @@ function Map() {
 
     const layers = {
         "Decommissioned Towers": {"visible": false},
-        "Safe Towers": {"visible": true},
-        "Google StreetView": {"visible": true},
+        "Safe Towers": {"visible": false},
+        "Google StreetView": {"visible": false},
     }
-
-
 
     const [points, setPoints] = useState([]);
 
     const { getAccessTokenSilently } = useAuth0();
-
-    // determine if the user's local time is between 6pm and 6am
-    const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
-    // this will be used to adjust fog color later.
-    console.log("isNight");
-    console.log(isNight, new Date().getHours());
 
     const addSources = () => {
         mapbox.current.addSource('00', {
@@ -129,6 +154,50 @@ function Map() {
                 'circle-color': ['get', 'color'],
             }
         });
+
+        // 3d towers, visibility should be false by default
+        let decom_tower_extrusions = require('./decom_polygons.geojson');
+        // extrude based on height
+        mapbox.current.addSource('Decommissioned Tower Extrusions', {
+            'type': 'geojson',
+            'data': decom_tower_extrusions,
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Decommissioned Tower Extrusions',
+            'type': 'fill-extrusion',
+            'source': 'Decommissioned Tower Extrusions',
+            'paint': {
+                'fill-extrusion-color': ['get', 'color'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
+        });
+
+        let safe_tower_extrusions = require('./safe_towers_polygons.geojson');
+        // extrude based on height
+        mapbox.current.addSource('Safe Tower Extrusions', {
+            'type': 'geojson',
+            'data': safe_tower_extrusions,
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Safe Tower Extrusions',
+            'type': 'fill-extrusion',
+            'source': 'Safe Tower Extrusions',
+            'paint': {
+                'fill-extrusion-color': ['get', 'color'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
+        });
+
+        // make not visible by default
+        mapbox.current.setLayoutProperty('Decommissioned Tower Extrusions', 'visibility', 'none');
+        mapbox.current.setLayoutProperty('Safe Tower Extrusions', 'visibility', 'none');
+
 
         // google street view overlay should only be visible when zoom level is above 12
         mapbox.current.addSource('Google StreetView', {
@@ -246,14 +315,18 @@ function Map() {
         if (points.length > 0) {
             addSources()
         }
-    }, [points])
+    }, [points]);
 
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
         // initialize map
+        let style = 'mapbox://styles/mapbox/streets-v11';
+        if (isNight) {
+            style = 'mapbox://styles/mapbox/dark-v10';
+        }
         mapbox.current = new mapboxgl.Map({
                 container: mapRef.current,
-                style: 'mapbox://styles/mapbox/streets-v11',
+                style: style,
                 projection: 'globe',
                 center: [-74.5, 40],
                 zoom: 4
@@ -293,6 +366,7 @@ function Map() {
         });
 
         mapbox.current.on('load', () => {
+            homeMarker.addTo(mapbox.current);
             addSources()
         });
 
@@ -306,7 +380,7 @@ function Map() {
 
                 new mapboxgl.Popup()
                     .setLngLat(coordinates)
-                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopup'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
+                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
                     .addTo(mapbox.current);
             });
 
@@ -332,7 +406,8 @@ function Map() {
                     .setHTML(
                         "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
                         // "<text id='towerpopupstat'>height:</text>" +
-                        "<text id='towerpopuptext'>" + height + "</text>" +
+                        "<text id='towerpopuptext'>" + description + "</text>" +
+                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
                         "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                     .addTo(mapbox.current);
             });
@@ -359,63 +434,45 @@ function Map() {
 
         // on left click, if the Google StreetView layer is enabled, see if we can get a streetview image
         mapbox.current.on('click', (e) => {
-            console.log("click");
-            // if the google streetview layer is enabled
-
-            console.log("mapbox.current.getLayoutProperty('Safe Towers', 'visibility'): ", mapbox.current.getLayoutProperty('Safe Towers', 'visibility'));
-            console.log("mapbox.current.getLayoutProperty('Google StreetView', 'visibility'): ", mapbox.current.getLayoutProperty('Google StreetView', 'visibility'));
-            if (true) {
-                console.log("google streetview layer is visible");
-                // get the coordinates of the click
-                let lat = e.lngLat.lat;
-                let lng = e.lngLat.lng;
-                console.log("lat: ", lat);
-                console.log("lng: ", lng);
-
-                // make a new popup at the coordinates
-                let popup = new mapboxgl.Popup().setLngLat([lng, lat])
-
-
-                // use REACT_APP_GOOGLE_MAPS_API_KEY as the API key
-                // popup.setHTML("<iframe src='https://www.google.com/maps/embed/v1/streetview?location=" + lat + "," + lng +
-                //     "&fov=80&heading=100&pitch=0&key=" + process.env.REACT_APP_GOOGLE_MAPS_API_KEY +
-                //     "' width='300' height='300' frameBorder='0' style='border:0' allowFullScreen" +
-                //     "disableDefaultUI='true' zoomControl='false' mapTypeControl='false' scaleControl='false' streetViewControl='false' rotateControl='false' fullscreenControl='false'></iframe>");
-
-
-                // popup.setHTML("<LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>" +
-                //         "<StreetViewPanorama" +
-                //             "position={{'lat': lat, 'lng': lng}}" +
-                //             "visible={true}" +
-                //         "/>" +
-                //     "</GoogleMap>" +
-                // "</LoadScript>");
-
-                popup.setHTML(
-                "<LoadScript" +
-                "googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}" +
-                ">" +
-                "<GoogleMap" +
-                "mapContainerStyle={{width: '300px', height: '300px'}}" +
-                "center={center}" +
-                "zoom={10}" +
-                ">" +
-                "</GoogleMap>" +
-                "</LoadScript>"
-                );
-
-
-
-
-                    // add the popup to the map
-                popup.addTo(mapbox.current);
+            // zoom level must be above 12 to get a streetview image
+            if (mapbox.current.getZoom() < 12) {
+                console.log("zoom level too low");
+                return;
             }
+            console.log("click");
+
+            // get the coordinates of the click
+            let lat = e.lngLat.lat;
+            let lng = e.lngLat.lng;
+            console.log("lat: ", lat);
+            console.log("lng: ", lng);
+
+
+            setDisplayStreetView(true);
+            setStreetViewPosition([lat, lng]);
         });
 
 
 
 
         // controls
+        // geocoder
+        mapbox.current.addControl(new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: 'Search for a location',
+            countries: 'us',
+            bbox: [-124.848974, 24.396308, -66.885444, 49.384358],
+            proximity: {
+                longitude: -95.712891,
+                latitude: 37.090240
+            },
+            localGeocoder: coordinatesGeocoder,
+
+        }), 'top-left');
+
+
         mapbox.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
         mapbox.current.addControl(new mapboxgl.FullscreenControl(), 'top-left');
         mapbox.current.addControl(new mapboxgl.ScaleControl(), 'bottom-left');
@@ -440,15 +497,143 @@ function Map() {
     }, [mapRef]);
 
 
+    const coordinatesGeocoder = function (query) {
+        // Match anything which looks like
+        // decimal degrees coordinate pair.
+        const matches = query.match(
+            /^[ ]*(?:Lat: )?(-?\d+\.?\d*)[, ]+(?:Lng: )?(-?\d+\.?\d*)[ ]*$/i
+        );
+        if (!matches) {
+            return null;
+        }
+
+        function coordinateFeature(lng, lat) {
+            return {
+                center: [lat, lng],
+                geometry: {
+                    type: 'Point',
+                    coordinates: [lat, lng]
+                },
+                place_name: 'Lat: ' + lat + ' Lng: ' + lng,
+                place_type: ['coordinate'],
+                properties: {},
+                type: 'Feature'
+            };
+        }
+
+        const coord1 = Number(matches[1]);
+        const coord2 = Number(matches[2]);
+        const geocodes = [];
+
+        if (coord1 < -90 || coord1 > 90) {
+            // must be lng, lat
+            geocodes.push(coordinateFeature(coord1, coord2));
+        }
+
+        if (coord2 < -90 || coord2 > 90) {
+            // must be lat, lng
+            geocodes.push(coordinateFeature(coord2, coord1));
+        }
+
+        if (geocodes.length === 0) {
+            // else could be either lng, lat or lat, lng
+            geocodes.push(coordinateFeature(coord1, coord2));
+            geocodes.push(coordinateFeature(coord2, coord1));
+        }
+
+        return geocodes;
+    };
+
+
     const getSidebar = () => {  
         if (!mapbox.current) return; // wait for map to initialize
 
         return (
             <div id="sidebar">
-                <h4>Sidebar</h4>
+                <div id="sidebar-content">
+                    <text id="sidebar-content-header">Home controls:</text>
+                    <button id="set-home-button" onClick={() => {
+                        //center
+                        homeMarker.setLngLat([0, 0]);
+                    }}>Set home</button>
+                </div>
             </div>
         )
     }
+
+    const getStreetView = () => {
+        let lat = streetViewPosition[0];
+        let lng = streetViewPosition[1];
+
+        if (!mapbox.current) {
+            setDisplayStreetView(false);
+            return;
+        }
+        if (!streetViewPosition.length) {
+            setDisplayStreetView(false);
+            return;
+        }
+        if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') !== 'visible') {
+            setDisplayStreetView(false);
+            return;
+        }
+
+        // // check if streetview is available within 50 feet of the click
+        const onLoad = (streetViewService) => {
+            streetViewService.getPanorama({
+                location: { lat: lat, lng: lng },
+                radius: 50,
+            } , (data, status) => {
+                if (status === "OK") {
+                    console.log("streetview available");
+                    setDisplayStreetView(true);
+                    setStreetViewActive(true);
+                } else {
+                    console.log("streetview not available");
+                    setDisplayStreetView(false);
+                    setStreetViewActive(false);
+                }
+            });
+        }
+
+            return (
+            <div id="streetview" style={{ display: streetViewActive ? "block" : "none" }}>
+                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                    <GoogleMap
+                        mapContainerStyle={{ height: "100%", width: "100%" }}
+                        center={{ lat: lat, lng: lng }}
+                        zoom={14}
+                    >
+                        <StreetViewService onLoad={onLoad} />
+                        <StreetViewPanorama
+                            position={{ lat: lat, lng: lng }}
+                            visible={displayStreetView}
+                            // turn off all controls
+                            options={{
+                                addressControl: false,
+                                fullscreenControl: false,
+                                linksControl: false,
+                                motionTrackingControl: false,
+                                motionTrackingControlOptions: false,
+                                panControl: false,
+                                zoomControl: false,
+                                enableCloseButton: false
+                            }}
+                            // heading and pitch
+                            pov={{
+                                heading: 0,
+                                pitch: 0
+                            }}
+                        />
+                    </GoogleMap>
+                </LoadScript>
+                <button id="closestreetview" onClick={() => { setDisplayStreetView(false)
+                    setStreetViewActive(false);
+                    setStreetViewPosition([]) }}>X</button>
+            </div>
+        )
+    }
+
 
     const getLayers = () => {
         if (!mapbox.current) return; // wait for map to initialize
@@ -503,18 +688,86 @@ function Map() {
         var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
 
         if (visibility === 'visible') {
+            // if click on Decom towers, then turn on Decom tower extrusions as well
+            if (clickedLayerId == "Decommissioned Towers") {
+                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
+            }
+
+            // same thing for safe towers
+            if (clickedLayerId == "Safe Towers") {
+                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'none');
+            }
+
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
             setSelectedLayers(selectedLayers.filter(layerId => layerId != clickedLayerId));
         }
         else {
+            // if click on Decom towers, then turn on Decom tower extrusions as well
+            if (clickedLayerId == "Decommissioned Towers") {
+                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'visible');
+            }
+
+            // same thing for safe towers
+            if (clickedLayerId == "Safe Towers") {
+                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'visible');
+            }
+
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
             setSelectedLayers([...selectedLayers, clickedLayerId]);
         }
     }
 
-    const extrudeTowers = () => {
+    function homeDragEnd() {
+        // set home location in database
+        setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat).then(() => {
+            console.log("home location set");
+        });
     }
 
+
+        const makeHome = async (homeMarker) => {
+            const accessToken = await getAccessTokenSilently();
+            console.log("calling gethome with lat: ", homeMarker.getLngLat().lat, " and lng: ", homeMarker.getLngLat().lng);
+            const {data, error} = await getHome(accessToken, homeMarker.getLngLat().lat, homeMarker.getLngLat().lng);
+            if (data) {
+                console.log("Home data retrieved: ", data);
+
+                homeMarker.setLngLat([data.lng, data.lat]);
+            } else {
+                console.log("Error retrieving home data: ", error);
+                console.log("Setting home to map center.")
+                // add new marker at map center
+                console.log("Home marker: ", homeMarker);
+                homeMarker.setLngLat(mapbox.current.getCenter());
+                homeMarker.remove();
+            }
+            homeMarker.remove();
+        };
+
+    // escape key handling
+    useEffect(() => {
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                // first try to close streetview, if we can then return
+                if (displayStreetView) {
+                    setDisplayStreetView(false);
+                    setStreetViewActive(false);
+                    setStreetViewPosition([]);
+                    return;
+                }
+
+                // then try to close sidebar, if we can then return
+                if (displaySidebar) {
+                    setDisplaySidebar(false);
+                    return;
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeydown);
+        return () => {
+            window.removeEventListener('keydown', handleKeydown);
+        }
+    }, [displaySidebar, displayStreetView]);
 
     return (
         // <ReactMapGL
@@ -532,6 +785,7 @@ function Map() {
             </div>
             {displaySidebar ? getSidebar() : ""}
             {displayLayers ? getLayers() : ""}
+            {displayStreetView ? getStreetView() : ""}
         </>
     );
 }

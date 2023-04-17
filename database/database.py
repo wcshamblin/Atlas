@@ -106,3 +106,11 @@ def update_pte_point(id, point):
 
 def delete_pte_point(id):
     return db.collection(u'places_to_explore').where(u'id', u'==', id).delete()
+
+def set_home(usersub, home):
+    return db.collection(u'home').where(u'owner', u'==', usersub).set(home)
+
+def get_home(usersub):
+    if db.collection(u'home').where(u'owner', u'==', usersub).get():
+        return [home.to_dict() for home in db.collection(u'home').where(u'owner', u'==', usersub).get()]
+    return None
