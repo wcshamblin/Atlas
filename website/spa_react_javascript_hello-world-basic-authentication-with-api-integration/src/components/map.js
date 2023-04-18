@@ -34,7 +34,7 @@ function Map() {
     const [streetViewActive, setStreetViewActive] = useState(false);
     const [displayStreetView, setDisplayStreetView] = useState(false);
     const [streetViewPosition, setStreetViewPosition] = useState([]);
-    const [homeDraggable, setHomeDraggable] = useState(false);
+    const [homeIsSet, setHomeIsSet] = useState(false);
     const [homeMarker, setHomeMarker] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
@@ -302,6 +302,7 @@ function Map() {
 
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
+
         // initialize map
         let style = 'mapbox://styles/mapbox/streets-v11';
         if (isNight) {
@@ -349,7 +350,9 @@ function Map() {
         });
 
         mapbox.current.on('load', () => {
-            homeMarker.addTo(mapbox.current);
+            if (homeIsSet) {
+                homeMarker.addTo(mapbox.current);
+            }
             addSources()
         });
 
@@ -403,7 +406,23 @@ function Map() {
                 mapbox.current.getCanvas().style.cursor = '';
             });
 
-            // on right click
+            // on left click
+            mapbox.current.on('click', (e) => {
+                let lat = e.lngLat.lat;
+                let lng = e.lngLat.lng;
+
+                // zoom level must be above 12 to get a streetview image
+                if (mapbox.current.getZoom() < 12) {
+                    console.log("zoom level too low");
+                    return;
+                }
+
+                setDisplayStreetView(true);
+                setStreetViewPosition([lat, lng]);
+
+            });
+
+        // on right click
             mapbox.current.on('contextmenu', (e) => {
                 // make new popup with coordinates of right click
                 let lat = e.lngLat.lat;
@@ -413,29 +432,6 @@ function Map() {
                     .setHTML("<text id='popupcoords'>" + lat + ", " + lng + "</text>")
                     .addTo(mapbox.current);
             });
-
-
-        // on left click, if the Google StreetView layer is enabled, see if we can get a streetview image
-        mapbox.current.on('click', (e) => {
-            // zoom level must be above 12 to get a streetview image
-            if (mapbox.current.getZoom() < 12) {
-                console.log("zoom level too low");
-                return;
-            }
-            console.log("click");
-
-            // get the coordinates of the click
-            let lat = e.lngLat.lat;
-            let lng = e.lngLat.lng;
-            console.log("lat: ", lat);
-            console.log("lng: ", lng);
-
-
-            setDisplayStreetView(true);
-            setStreetViewPosition([lat, lng]);
-        });
-
-
 
 
         // controls
@@ -535,10 +531,6 @@ function Map() {
             <div id="sidebar">
                 <div id="sidebar-content">
                     <text id="sidebar-content-header">Home controls:</text>
-                    <button id="set-home-button" onClick={() => {
-                        //center
-                        homeMarker.setLngLat([0, 0]);
-                    }}>Set home</button>
                 </div>
             </div>
         )
@@ -700,26 +692,9 @@ function Map() {
         }
     }
 
-    // function homeDragEnd() {
-    //     // set home location in database
-    //     setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat).then(() => {
-    //         console.log("home location set");
-    //     });
-    // }
-
     // retrieve home and put it on the map if it exists
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
-
-        const homeDragEnd = async () => {
-            // get access token
-            const accessToken = await getAccessTokenSilently();
-
-            // set home location in database
-            setHome(homeMarker.getLngLat().lng, homeMarker.getLngLat().lat, accessToken).then(() => {
-                console.log("home location set");
-            });
-        }
 
         const getHome = async () => {
             // get access token
@@ -730,7 +705,11 @@ function Map() {
 
         // if we got a home, set it on the map
         getHome().then((home) => {
-            if (home) {
+            if (homeIsSet) return; // don't do anything if we already have a home set
+
+            home = home.data.home;
+            console.log("Home retrieved: ", home);
+            if (home["lat"] && home["lng"]) {
                 console.log("Home retrieved: ", home);
 
                 const el = document.createElement('div');
@@ -741,16 +720,30 @@ function Map() {
                 el.style.height = '25px';
                 el.style.backgroundSize = '100%';
 
-                setHomeMarker(mapboxgl.Marker(el, {draggable: true})
+
+                setHomeMarker(new mapboxgl.Marker(el)
                     .setLngLat([home.lng, home.lat])
-                    .on('dragend', homeDragEnd)
                     .addTo(mapbox.current));
-                }
+
+                setHomeIsSet(true);
+                } else {
+                console.log("No home retrieved");
+            }
         });
 
     }, [mapbox.current, homeMarker]);
 
+    // setHomePosition(lat, lng)
+    const setHomePosition = async (lat, lng) => {
+        // get access token
+        const accessToken = await getAccessTokenSilently();
 
+
+        // set home location in database
+        homeMarker.setLngLat([lng, lat]);
+        console.log(accessToken, lat, lng)
+        await setHome(accessToken, lat, lng);
+    }
 
     // escape key handling
     useEffect(() => {

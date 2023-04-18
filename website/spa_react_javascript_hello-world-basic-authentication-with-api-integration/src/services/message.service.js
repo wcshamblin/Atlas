@@ -120,10 +120,12 @@ export const setHome = async (accessToken, lat, lng) => {
         Authorization: `Bearer ${accessToken}`,
         },
         data: {
-            lat,
-            lng
+            "lat": lat,
+            "lng": lng
         }
     };
+
+    console.log(config);
 
     const { data, error } = await callExternalApi({ config });
 
@@ -144,6 +146,8 @@ export const retrieveHome = async (accessToken) => {
     };
 
     const { data, error } = await callExternalApi({ config });
+
+    console.log(config);
 
     return {
         data: data || null,

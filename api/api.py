@@ -62,9 +62,9 @@ class PointPut(BaseModel):
     lat: float
     lng: float
 
-class SetHome(BaseModel):
-    lat: float
-    lng: float
+# class SetHome(BaseModel):
+#     lat: float
+#     lng: float
 
 @app.get("/api/messages/public")
 def public():
@@ -184,10 +184,7 @@ async def put_point(response: Response, point_id: str, point: PointPut, token: s
 
 
 @app.post("/set_home")
-async def set_home(response: Response, home: SetHome, token: str = Depends(token_auth_scheme)):
-    print("EEEEEEEEEEEEEEEE")
-    print(home)
-
+async def sethome(response: Response, home: dict, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials, scopes="edit").verify()
 
     if result.get("status"):
@@ -197,7 +194,7 @@ async def set_home(response: Response, home: SetHome, token: str = Depends(token
     user = result["sub"]
 
     # set home
-    set_home(user, {"lat": home.lat, "lng": home.lng})
+    set_home(user, {"lat": home["lat"], "lng": home["lng"]})
 
     return {"status": "success", "message": "Home set"}
 
@@ -219,6 +216,7 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Home not found"}
 
+    print(home[0])
     return {"status": "success", "message": "Home retrieved", "home": home[0]}
 
 
