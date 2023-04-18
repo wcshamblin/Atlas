@@ -1,3 +1,5 @@
 build/
 *.py[cod]
 node_modules/
+.idea/
+assets/placestoexplore/
