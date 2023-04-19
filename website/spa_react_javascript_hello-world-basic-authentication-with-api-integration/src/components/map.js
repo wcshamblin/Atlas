@@ -1,10 +1,16 @@
 import React, {useState, useEffect, createRef, useRef} from 'react';
+import ReactDOM from 'react-dom/client';
+
 
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+
+// right click popup
+import RightClickPopup from "./rightclickpopup";
+
 
 // css
 import '../styles/components/map.css';
@@ -27,15 +33,24 @@ mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwN
 function Map() {
     const mapRef = useRef(null);
     const mapbox = useRef(null);
+
     const [displaySidebar, setDisplaySidebar] = useState(false);
+
     const [displayLayers, setDisplayLayers] = useState(false);
     const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
     const [selectedLayers, setSelectedLayers] = useState([]);
+
     const [streetViewActive, setStreetViewActive] = useState(false);
     const [displayStreetView, setDisplayStreetView] = useState(false);
     const [streetViewPosition, setStreetViewPosition] = useState([]);
+
     const [homeIsSet, setHomeIsSet] = useState(false);
     const [homeMarker, setHomeMarker] = useState(null);
+    const [homeMarkerPosition, setHomeMarkerPosition] = useState([]);
+
+    const [isoProfile, setIsoProfile] = useState("driving");
+    const [isoMinutes, setIsoMinutes] = useState("45");
+    const [showIso, setShowIso] = useState(false);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -192,6 +207,16 @@ function Map() {
             'minzoom': 12
         });
 
+
+        // isochrone source
+        mapbox.current.addSource('Isochrone', {
+            'type': 'geojson',
+            'data': {
+                'type': 'FeatureCollection',
+                'features': []
+            }
+        });
+
         mapbox.current.addLayer({
             'id': 'Google StreetView',
             'type': 'raster',
@@ -237,7 +262,6 @@ function Map() {
                 'source': '00',
                 'paint': {}
             },
-            'Google StreetView'
         );
 
         mapbox.current.addLayer(
@@ -247,7 +271,6 @@ function Map() {
                 'source': '01',
                 'paint': {}
             },
-            'Google StreetView'
         );
 
         mapbox.current.addLayer(
@@ -256,7 +279,7 @@ function Map() {
                 'type': 'raster',
                 'source': '02',
                 'paint': {}
-            }
+            },
         );
 
         mapbox.current.addLayer(
@@ -266,7 +289,18 @@ function Map() {
                 'source': '03',
                 'paint': {}
             },
-            'Google StreetView'
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'Isochrone',
+                'type': 'fill',
+                'source': 'Isochrone',
+                'paint': {
+                    'fill-color': '#5a3fc0',
+                    'fill-opacity': 0.4
+                }
+            },
         );
 
 
@@ -275,6 +309,10 @@ function Map() {
         mapbox.current.setLayoutProperty('Bing Hybrid', 'visibility', 'none');
         mapbox.current.setLayoutProperty('ESRI', 'visibility', 'none');
         mapbox.current.setLayoutProperty('OpenStreetMap', 'visibility', 'none');
+
+        // layer hierarchies... streetview and isochrone should be on top.
+        mapbox.current.moveLayer('Isochrone');
+        mapbox.current.moveLayer('Google StreetView');
     }
 
     // api query
@@ -427,12 +465,23 @@ function Map() {
                 // make new popup with coordinates of right click
                 let lat = e.lngLat.lat;
                 let lng = e.lngLat.lng;
-                let popup = new mapboxgl.Popup()
-                    .setLngLat([lng, lat])
-                    .setHTML("<text id='popupcoords'>" + lat + ", " + lng + "</text>")
-                    .addTo(mapbox.current);
-            });
 
+                console.log("right click at: ", lat, lng);
+                // make popup
+                const placeholder = document.createElement('div');
+                ReactDOM.createRoot(placeholder).render(<button onClick={() => {
+                    setHomePosition(lat, lng);
+                    // close popup
+                    popup.remove();
+                }}>Set Home</button>);
+
+                const popup = new mapboxgl.Popup({closeButton: true, closeOnClick: true})
+                    .setLngLat([lng, lat])
+                    .setDOMContent(placeholder)
+                    .addTo(mapbox.current);
+
+
+            });
 
         // controls
         // geocoder
@@ -531,6 +580,21 @@ function Map() {
             <div id="sidebar">
                 <div id="sidebar-content">
                     <text id="sidebar-content-header">Home controls:</text>
+                    <input id="iso-show" type="checkbox" checked={showIso} onChange={(e) => {
+                        setShowIso(e.target.checked);
+                    }}/>
+                    <select id="iso-profile" onChange={(e) => {
+                        setIsoProfile(e.target.value);
+                    }}>
+                        <option value="driving">Driving</option>
+                        <option value="cycling">Cycling</option>
+                        <option value="walking">Walking</option>
+                    </select>
+
+                    <input id="iso-minutes" type="number" min="1" max="60" value={isoMinutes} onChange={(e) => {
+                        setIsoMinutes(e.target.value);
+                    }}/>
+
                 </div>
             </div>
         )
@@ -692,6 +756,42 @@ function Map() {
         }
     }
 
+    // isochrone API fetch
+    useEffect(() => {
+        console.log("useEffect for isochrone");
+        if (!mapbox.current) return; // wait for map to initialize
+        // if homemarker position is not set (length is less than 2), then don't do anything
+        if (homeMarkerPosition.length < 2) {
+            console.log("homeMarkerPosition not set");
+            return;
+        }
+        // if we aren't showing the isochrone, then remove it's data from the map
+        if (!showIso) {
+            // if the source doesn't exist, then don't do anything
+            if (!mapbox.current.getSource('Isochrone')) return;
+            mapbox.current.getSource('Isochrone').setData({
+                "type": "FeatureCollection",
+                "features": []
+            });
+
+            return;
+        }
+
+        getIso().then((data) => {
+            console.log(data);
+            mapbox.current.getSource('Isochrone').setData(data);
+        });
+    }, [homeMarkerPosition, isoMinutes, isoProfile, showIso]);
+
+    async function getIso() {
+        const query = await fetch(
+            `https://api.mapbox.com/isochrone/v1/mapbox/${isoProfile}/${homeMarkerPosition[0]},${homeMarkerPosition[1]}?contours_minutes=${isoMinutes}&polygons=true&access_token=${mapboxgl.accessToken}`,
+            { method: 'GET' }
+        );
+        const data = await query.json();
+        return data;
+    }
+
     // retrieve home and put it on the map if it exists
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
@@ -710,7 +810,7 @@ function Map() {
             home = home.data.home;
             console.log("Home retrieved: ", home);
             if (home["lat"] && home["lng"]) {
-                console.log("Home retrieved: ", home);
+                console.log("Home retrieved: lat: ", home["lat"], " lng: ", home["lng"]);
 
                 const el = document.createElement('div');
                 el.className = 'marker';
@@ -725,6 +825,7 @@ function Map() {
                     .setLngLat([home.lng, home.lat])
                     .addTo(mapbox.current));
 
+                setHomeMarkerPosition([home["lng"], home["lat"]]);
                 setHomeIsSet(true);
                 } else {
                 console.log("No home retrieved");
@@ -733,15 +834,29 @@ function Map() {
 
     }, [mapbox.current, homeMarker]);
 
-    // setHomePosition(lat, lng)
+    // set home position
+    useEffect(
+        () => {
+            if (!mapbox.current) return; // wait for map to initialize
+
+            // if we have a home marker, set it to the new position
+            if (homeMarker) {
+                console.log("Setting home marker to ", homeMarkerPosition);
+                homeMarker.setLngLat(homeMarkerPosition);
+            }
+        }
+    , [homeMarkerPosition]);
+
     const setHomePosition = async (lat, lng) => {
+        console.log("Trying to set home at ", lat, lng, "...");
+
         // get access token
         const accessToken = await getAccessTokenSilently();
 
+        setHomeIsSet(true);
 
         // set home location in database
-        homeMarker.setLngLat([lng, lat]);
-        console.log(accessToken, lat, lng)
+        setHomeMarkerPosition([lng, lat]);
         await setHome(accessToken, lat, lng);
     }
 
