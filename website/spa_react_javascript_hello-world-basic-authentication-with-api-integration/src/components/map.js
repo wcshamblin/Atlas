@@ -1,16 +1,13 @@
 import React, {useState, useEffect, createRef, useRef} from 'react';
 import ReactDOM from 'react-dom/client';
 
+import SunburstJS from 'sunburst.js';
 
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
-
-// right click popup
-import RightClickPopup from "./rightclickpopup";
-
 
 // css
 import '../styles/components/map.css';
@@ -51,6 +48,8 @@ function Map() {
     const [isoProfile, setIsoProfile] = useState("driving");
     const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
+
+    const [sunburstSession, setSunburstSession] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -884,6 +883,42 @@ function Map() {
             window.removeEventListener('keydown', handleKeydown);
         }
     }, [displaySidebar, displayStreetView]);
+
+    // sunburst API fetching
+    const getSunburstSession = async () => {
+        try {
+            const sunburst = new SunburstJS();
+
+            const session = await sunburst.createSession({
+                email: 'wcshamblin@gmail.com',
+                password: 'ih3t4unh5shedp6sswords',
+                type: 'permanent',
+                scope: ['predictions']
+            });
+
+            setSunburstSession(session.session);
+        } catch (ex) {
+            return console.error(ex);
+        }
+    }
+
+    // get sunburst data at lat, lng, time
+    const getSunburstData = async (lat, lng, time) => {
+        // if our session is not set, then call it, otherwise just use the existing session
+        if (!sunburstSession) {
+            await getSunburstSession();
+        }
+
+        // now we should have a session, so get api keys with it
+        const sunburst = new SunburstJS(sunburstSession);
+
+        // get the data
+        const data = await sunburst.getPredictions({
+            lat: lat,
+            lng: lng,
+            time: time
+        });
+    }
 
     return (
         // <ReactMapGL
