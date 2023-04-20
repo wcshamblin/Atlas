@@ -49,6 +49,7 @@ function Map() {
     const [showIso, setShowIso] = useState(false);
 
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState([]);
+    const [showSunburst, setShowSunburst] = useState(false);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -844,6 +845,7 @@ function Map() {
     }
 
     const getHomeMetrics = () => {
+        // this will break if rendered before the API call is finished
         let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["astronomical"])).toLocaleTimeString();
         let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["nautical"])).toLocaleTimeString();
         let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["civil"])).toLocaleTimeString();
