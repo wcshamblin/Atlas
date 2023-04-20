@@ -1,7 +1,6 @@
 import React, {useState, useEffect, createRef, useRef} from 'react';
 import ReactDOM from 'react-dom/client';
 
-import SunburstJS from 'sunburst.js';
 
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -49,7 +48,7 @@ function Map() {
     const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
 
-    const [sunburstSession, setSunburstSession] = useState(null);
+    const [sunburstHomeInfo, setSunburstHomeInfo] = useState([]);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -578,22 +577,7 @@ function Map() {
         return (
             <div id="sidebar">
                 <div id="sidebar-content">
-                    <text id="sidebar-content-header">Home controls:</text>
-                    <input id="iso-show" type="checkbox" checked={showIso} onChange={(e) => {
-                        setShowIso(e.target.checked);
-                    }}/>
-                    <select id="iso-profile" onChange={(e) => {
-                        setIsoProfile(e.target.value);
-                    }}>
-                        <option value="driving">Driving</option>
-                        <option value="cycling">Cycling</option>
-                        <option value="walking">Walking</option>
-                    </select>
-
-                    <input id="iso-minutes" type="number" min="1" max="60" value={isoMinutes} onChange={(e) => {
-                        setIsoMinutes(e.target.value);
-                    }}/>
-
+                    {homeIsSet ? getHomeMetrics() : ""}
                 </div>
             </div>
         )
@@ -806,29 +790,29 @@ function Map() {
         getHome().then((home) => {
             if (homeIsSet) return; // don't do anything if we already have a home set
 
-            home = home.data.home;
-            console.log("Home retrieved: ", home);
-            if (home["lat"] && home["lng"]) {
-                console.log("Home retrieved: lat: ", home["lat"], " lng: ", home["lng"]);
-
-                const el = document.createElement('div');
-                el.className = 'marker';
-
-                el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
-                el.style.width = '25px';
-                el.style.height = '25px';
-                el.style.backgroundSize = '100%';
-
-
-                setHomeMarker(new mapboxgl.Marker(el)
-                    .setLngLat([home.lng, home.lat])
-                    .addTo(mapbox.current));
-
-                setHomeMarkerPosition([home["lng"], home["lat"]]);
-                setHomeIsSet(true);
-                } else {
+            try {
+                home = home.data.home;
+            } catch (e) {
                 console.log("No home retrieved");
+                return;
             }
+            console.log("Home retrieved: lat: ", home["lat"], " lng: ", home["lng"]);
+
+            const el = document.createElement('div');
+            el.className = 'marker';
+
+            el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
+            el.style.width = '25px';
+            el.style.height = '25px';
+            el.style.backgroundSize = '100%';
+
+
+            setHomeMarker(new mapboxgl.Marker(el)
+                .setLngLat([home.lng, home.lat])
+                .addTo(mapbox.current));
+
+            setHomeMarkerPosition([home["lng"], home["lat"]]);
+            setHomeIsSet(true);
         });
 
     }, [mapbox.current, homeMarker]);
@@ -859,6 +843,48 @@ function Map() {
         await setHome(accessToken, lat, lng);
     }
 
+    const getHomeMetrics = () => {
+        let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["astronomical"])).toLocaleTimeString();
+        let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["nautical"])).toLocaleTimeString();
+        let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["civil"])).toLocaleTimeString();
+
+        return (
+            <div id="home-metrics">
+                <text id="sidebar-content-header">Home:</text>
+                <input id="iso-show" type="checkbox" checked={showIso} onChange={(e) => {
+                    setShowIso(e.target.checked);
+                }}/>
+                <select id="iso-profile" onChange={(e) => {
+                    setIsoProfile(e.target.value);
+                }}>
+                    <option value="driving">Driving</option>
+                    <option value="cycling">Cycling</option>
+                    <option value="walking">Walking</option>
+                </select>
+
+
+                <input id="iso-minutes" type="number" min="1" max="60" value={isoMinutes} onChange={(e) => {
+                    setIsoMinutes(e.target.value);
+                }}/>
+
+                <h4>Sunset / sunrise metrics</h4>
+
+                <div id="sunrise-sunset-metrics">
+                    <text id="sunburst-sunrise-sunset">Type:
+                        {sunburstHomeInfo["features"][0]["properties"]["type"] === "Sunrise" ? "Sunrise" : "Sunset"}
+                        Quality:
+                        {sunburstHomeInfo["features"][0]["properties"]["quality"]} ({sunburstHomeInfo["features"][0]["properties"]["quality_percent"]}%)
+                        Times:
+                        Astronomical: {astro_time}
+                        Nautical: {nautical_time}
+                        Civil: {civil_time}
+                    </text>
+            </div>
+            </div>
+        );
+    }
+
+
     // escape key handling
     useEffect(() => {
         const handleKeydown = (e) => {
@@ -884,51 +910,45 @@ function Map() {
         }
     }, [displaySidebar, displayStreetView]);
 
-    // sunburst API fetching
-    const getSunburstSession = async () => {
-        try {
-            const sunburst = new SunburstJS();
 
-            const session = await sunburst.createSession({
-                email: 'wcshamblin@gmail.com',
-                password: 'ih3t4unh5shedp6sswords',
-                type: 'permanent',
-                scope: ['predictions']
-            });
+    // sunburst home info - update on home change
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
 
-            setSunburstSession(session.session);
-        } catch (ex) {
-            return console.error(ex);
-        }
-    }
+        // if we don't have a home, then don't do anything
+        if (!homeIsSet) return;
 
-    // get sunburst data at lat, lng, time
-    const getSunburstData = async (lat, lng, time) => {
-        // if our session is not set, then call it, otherwise just use the existing session
-        if (!sunburstSession) {
-            await getSunburstSession();
-        }
+        // if we don't have a home marker position, then don't do anything
+        if (homeMarkerPosition.length < 2) return;
 
-        // now we should have a session, so get api keys with it
-        const sunburst = new SunburstJS(sunburstSession);
-
-        // get the data
-        const data = await sunburst.getPredictions({
-            lat: lat,
-            lng: lng,
-            time: time
+        // get sunburst data
+        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0]).then((data) => {
+            setSunburstHomeInfo(data);
         });
+    }, [homeMarkerPosition]);
+
+
+    // sunburst API fetch
+    const getSunburstData = async (lat, lng) => {
+        let sunburstToken = process.env.REACT_APP_SUNBURST_API_TOKEN;
+        console.log("Using Sunburst token: ", sunburstToken);
+
+        const query = await fetch(
+            `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}`,
+            {
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${sunburstToken}`
+                }
+            }
+        );
+
+        const data = await query.json();
+        console.log("Sunburst retrieved data: ", data);
+        return data;
     }
 
     return (
-        // <ReactMapGL
-        //     mapboxAccessToken="pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw"
-        //     mapStyle="mapbox://styles/mapbox/satellite-v9"
-        //     {...viewport}
-        //     onMove={evt => setViewport(evt.viewport)}
-        // />
-
-        // sidebar control
         <>
             <div id="map" ref={mapRef}>
                 <button id="layerswitcherbutton">LayerSwitcher</button>
