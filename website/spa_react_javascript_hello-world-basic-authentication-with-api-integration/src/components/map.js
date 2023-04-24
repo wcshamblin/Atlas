@@ -767,13 +767,23 @@ function Map() {
         });
     }, [homeMarkerPosition, isoMinutes, isoProfile, showIso]);
 
+
+
+    // curl https://dev.virtualearth.net/REST/v1/Routes/Isochrones\?waypoint\=47.65431,-122.1291891\&maxTime\=\7200\&key\=AsFnJ6P5VNWfmjEsdjkH2SJjeIwplOKzfdiewwZCX7jBUX7ixSp64VfDjw6mMzBz
     async function getIso() {
+
         const query = await fetch(
-            `https://api.mapbox.com/isochrone/v1/mapbox/${isoProfile}/${homeMarkerPosition[0]},${homeMarkerPosition[1]}?contours_minutes=${isoMinutes}&polygons=true&access_token=${mapboxgl.accessToken}`,
-            { method: 'GET' }
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones\\?waypoint\\=${homeMarkerPosition[1]},${homeMarkerPosition[0]}\\&maxTime\\=\\${isoMinutes * 60}\\&key\\=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
+            {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+            }
         );
         const data = await query.json();
-        return data;
+        return data
     }
 
     // retrieve home and put it on the map if it exists
@@ -845,11 +855,6 @@ function Map() {
     }
 
     const getHomeMetrics = () => {
-        // this will break if rendered before the API call is finished
-        let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["astronomical"])).toLocaleTimeString();
-        let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["nautical"])).toLocaleTimeString();
-        let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"]["dawn"]["civil"])).toLocaleTimeString();
-
         return (
             <div id="home-metrics">
                 <text id="sidebar-content-header">Home:</text>
@@ -870,18 +875,7 @@ function Map() {
                 }}/>
 
                 <h4>Sunset / sunrise metrics</h4>
-
-                <div id="sunrise-sunset-metrics">
-                    <text id="sunburst-sunrise-sunset">Type:
-                        {sunburstHomeInfo["features"][0]["properties"]["type"] === "Sunrise" ? "Sunrise" : "Sunset"}
-                        Quality:
-                        {sunburstHomeInfo["features"][0]["properties"]["quality"]} ({sunburstHomeInfo["features"][0]["properties"]["quality_percent"]}%)
-                        Times:
-                        Astronomical: {astro_time}
-                        Nautical: {nautical_time}
-                        Civil: {civil_time}
-                    </text>
-            </div>
+                {sunburstHomeInfo ? getSunburstSegment() : ""}
             </div>
         );
     }
@@ -948,6 +942,39 @@ function Map() {
         const data = await query.json();
         console.log("Sunburst retrieved data: ", data);
         return data;
+    }
+
+    const getSunburstSegment = () => {
+        // this will break if rendered before the API call is finished, so this should only be called after sunburstHomeInfo is set
+        let type = sunburstHomeInfo["features"][0]["properties"]["type"];
+        let twilight;
+        if (type === "Sunrise") {
+            twilight = "dawn";
+        } else {
+            twilight = "dusk";
+        }
+        let quality = sunburstHomeInfo["features"][0]["properties"]["quality"];
+        let quality_percent = sunburstHomeInfo["features"][0]["properties"]["quality_percent"];
+
+        let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
+        let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
+        let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
+
+        return (
+            <div id="sunburst-segment">
+                <div id="sunrise-sunset-metrics">
+                    <text id="sunburst-sunrise-sunset">Type:
+                        {sunburstHomeInfo["features"][0]["properties"]["type"] === "Sunrise" ? "Sunrise" : "Sunset"}
+                        Quality:
+                        {sunburstHomeInfo["features"][0]["properties"]["quality"]} ({sunburstHomeInfo["features"][0]["properties"]["quality_percent"]}%)
+                        Times:
+                        Astronomical: {astro_time}
+                        Nautical: {nautical_time}
+                        Civil: {civil_time}
+                    </text>
+                </div>
+            </div>
+    )
     }
 
     return (
