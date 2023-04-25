@@ -763,7 +763,18 @@ function Map() {
 
         getIso().then((data) => {
             console.log(data);
-            mapbox.current.getSource('Isochrone').setData(data);
+            mapbox.current.getSource('Isochrone').setData(
+                {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': []
+                        }
+                    }
+                  }
+            );
         });
     }, [homeMarkerPosition, isoMinutes, isoProfile, showIso]);
 
@@ -773,7 +784,7 @@ function Map() {
     async function getIso() {
 
         const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones\\?waypoint\\=${homeMarkerPosition[1]},${homeMarkerPosition[0]}\\&maxTime\\=\\${isoMinutes * 60}\\&key\\=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${isoMinutes * 60}&key=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
             {
                 method: 'GET',
                 headers: {
