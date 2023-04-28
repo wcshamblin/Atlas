@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "leaflet-search": "^3.0.9",
+    "mapbox-gl-shadow-simulator": "^0.25.1",
     "react-map-gl-geocoder": "^2.2.0"
   },
   "devDependencies": {
