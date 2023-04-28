@@ -7,6 +7,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import ShadeMap from 'mapbox-gl-shadow-simulator';
 
 // css
 import '../styles/components/map.css';
@@ -50,6 +51,33 @@ function Map() {
 
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState([]);
     const [showSunburst, setShowSunburst] = useState(false);
+    const [showShadeMap, setShowShadeMap] = useState(false);
+
+    const [mapDatetime, setMapDatetime] = useState(new Date());
+
+    const shadeMap = new ShadeMap({
+        date: new Date(),    // display shadows for current date
+        color: '#0f1624',    // shade color
+        opacity: 0.7,        // opacity of shade color
+        apiKey: process.env.REACT_APP_SHADE_MAP_API_KEY,
+        terrainSource: {
+            tileSize: 256,       // DEM tile size
+            maxZoom: 15,         // Maximum zoom of DEM tile set
+            getSourceUrl: ({ x, y, z }) => {
+                // return DEM tile url for given x,y,z coordinates
+                return `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`
+            },
+            getElevation: ({ r, g, b, a }) => {
+                // return elevation in meters for a given DEM tile pixel
+                return (r * 256 + g + b / 256) - 32768
+            }
+        },
+        debug: (msg) => { console.log(new Date().toISOString(), msg) },
+    })
+
+    const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
+
+
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -69,6 +97,7 @@ function Map() {
         "Decommissioned Towers": {"visible": false},
         "Safe Towers": {"visible": false},
         "Google StreetView": {"visible": false},
+        "Shade Map": {"visible": false},
     }
 
     const [points, setPoints] = useState([]);
@@ -115,7 +144,6 @@ function Map() {
             ],
             'tileSize': 256
         });
-
 
         // add decom towers from file assets/geojson/decoms.geojson
         let decoms = require('./decoms.geojson');
@@ -390,7 +418,7 @@ function Map() {
             if (homeIsSet) {
                 homeMarker.addTo(mapbox.current);
             }
-            addSources()
+            addSources();
         });
 
 
@@ -579,6 +607,16 @@ function Map() {
             <div id="sidebar">
                 <div id="sidebar-content">
                     {homeIsSet ? getHomeMetrics() : ""}
+
+                    <h4>Map date time selector</h4>
+                    <input type="datetime-local" id="map-date-time-selector" name="map-date-time-selector" value={mapDatetime} onChange={(e) => {
+                        setMapDatetime(e.target.value);
+                    }}/>
+
+                    <h4>Shade Map</h4>
+                    <input type="checkbox" id="shade-map-checkbox" name="shade-map-checkbox" value="shade-map-checkbox" onChange={() => {
+                        setShowShadeMap(!showShadeMap);
+                    }} checked={showShadeMap}/>
                 </div>
             </div>
         )
@@ -712,13 +750,18 @@ function Map() {
 
         if (visibility === 'visible') {
             // if click on Decom towers, then turn on Decom tower extrusions as well
-            if (clickedLayerId == "Decommissioned Towers") {
+            if (clickedLayerId === "Decommissioned Towers") {
                 mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
             }
 
             // same thing for safe towers
-            if (clickedLayerId == "Safe Towers") {
+            if (clickedLayerId === "Safe Towers") {
                 mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'none');
+            }
+
+            if (clickedLayerId === "Shade Map") {
+                setShowShadeMap(false);
+                return;
             }
 
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
@@ -726,13 +769,18 @@ function Map() {
         }
         else {
             // if click on Decom towers, then turn on Decom tower extrusions as well
-            if (clickedLayerId == "Decommissioned Towers") {
+            if (clickedLayerId === "Decommissioned Towers") {
                 mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'visible');
             }
 
             // same thing for safe towers
-            if (clickedLayerId == "Safe Towers") {
+            if (clickedLayerId === "Safe Towers") {
                 mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'visible');
+            }
+
+            if (clickedLayerId === "Shade Map") {
+                setShowShadeMap(true);
+                return;
             }
 
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
@@ -762,19 +810,8 @@ function Map() {
         }
 
         getIso().then((data) => {
-            console.log(data);
-            mapbox.current.getSource('Isochrone').setData(
-                {
-                    'type': 'geojson',
-                    'data': {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Polygon',
-                            'coordinates': []
-                        }
-                    }
-                  }
-            );
+            console.log(data)
+            mapbox.current.getSource('Isochrone').setData(data);
         });
     }, [homeMarkerPosition, isoMinutes, isoProfile, showIso]);
 
@@ -784,7 +821,7 @@ function Map() {
     async function getIso() {
 
         const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${isoMinutes * 60}&key=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${isoMinutes * 60}&travelMode=${isoProfile}&key=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
             {
                 method: 'GET',
                 headers: {
@@ -793,9 +830,44 @@ function Map() {
                 }
             }
         );
-        const data = await query.json();
-        return data
+        let data = await query.json();
+        let coordinates = data.resourceSets[0].resources[0].polygons[0].coordinates;
+        // for coordinate in coordinates, reverse the order of the coordinates
+        coordinates = coordinates.map((coordinate) => {
+            return coordinate.map((point) => {
+                return [point[1], point[0]];
+            })
+        })
+
+        data = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Polygon",
+                        // test sample of coordinates
+                        "coordinates": coordinates
+                    }
+                }
+            ]
+        }
+        return data;
     }
+
+    // shade map useEffect for adding and removing the shade map
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showShadeMap) {
+            console.log("removing shade map");
+            shadeMapObject.remove();
+        }
+        else {
+            shadeMapObject.addTo(mapbox.current);
+        }
+
+    }, [showShadeMap]);
 
     // retrieve home and put it on the map if it exists
     useEffect(() => {
@@ -878,10 +950,11 @@ function Map() {
                     <option value="driving">Driving</option>
                     <option value="cycling">Cycling</option>
                     <option value="walking">Walking</option>
+                    <option value="transit">Transit</option>
                 </select>
 
 
-                <input id="iso-minutes" type="number" min="1" max="60" value={isoMinutes} onChange={(e) => {
+                <input id="iso-minutes" type="number" min="1" max="240" value={isoMinutes} onChange={(e) => {
                     setIsoMinutes(e.target.value);
                 }}/>
 
