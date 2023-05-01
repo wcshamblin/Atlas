@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom/client';
 
 
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
+
+import DateTimePicker from 'react-datetime-picker'
 
 // css
 import '../styles/components/map.css';
@@ -15,6 +16,8 @@ import '../styles/components/sidebar.css';
 import '../styles/components/layerswitcher.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import 'mapbox-gl/dist/mapbox-gl.css';
+import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
 // api imports
@@ -49,7 +52,7 @@ function Map() {
     const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
 
-    const [sunburstHomeInfo, setSunburstHomeInfo] = useState([]);
+    const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
     const [showSunburst, setShowSunburst] = useState(false);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
@@ -609,9 +612,11 @@ function Map() {
                     {homeIsSet ? getHomeMetrics() : ""}
 
                     <h4>Map date time selector</h4>
-                    <input type="datetime-local" id="map-date-time-selector" name="map-date-time-selector" value={mapDatetime} onChange={(e) => {
-                        setMapDatetime(e.target.value);
-                    }}/>
+                    <DateTimePicker
+                        onChange={setMapDatetime}
+                        value={mapDatetime}
+                    />
+
 
                     <h4>Shade Map</h4>
                     <input type="checkbox" id="shade-map-checkbox" name="shade-map-checkbox" value="shade-map-checkbox" onChange={() => {
@@ -869,6 +874,13 @@ function Map() {
 
     }, [showShadeMap]);
 
+    // shade map useEffect that updates when the general map time is updated
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showShadeMap) return;
+        shadeMapObject.setDate(mapDatetime);
+    }, [mapDatetime]);
+
     // retrieve home and put it on the map if it exists
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
@@ -940,6 +952,7 @@ function Map() {
     const getHomeMetrics = () => {
         return (
             <div id="home-metrics">
+                <h4>At home:</h4>
                 <text id="sidebar-content-header">Home:</text>
                 <input id="iso-show" type="checkbox" checked={showIso} onChange={(e) => {
                     setShowIso(e.target.checked);
@@ -958,7 +971,6 @@ function Map() {
                     setIsoMinutes(e.target.value);
                 }}/>
 
-                <h4>Sunset / sunrise metrics</h4>
                 {sunburstHomeInfo ? getSunburstSegment() : ""}
             </div>
         );
@@ -991,7 +1003,7 @@ function Map() {
     }, [displaySidebar, displayStreetView]);
 
 
-    // sunburst home info - update on home change
+    // sunburst home info - update on home change or map datetime change
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
 
@@ -1001,20 +1013,26 @@ function Map() {
         // if we don't have a home marker position, then don't do anything
         if (homeMarkerPosition.length < 2) return;
 
+        // if map datetime is more than 4 days in the future, we don't have sunburst data, so unset it
+        if (mapDatetime > new Date().getTime() + 4 * 24 * 60 * 60 * 1000) {
+            setSunburstHomeInfo(null);
+            return;
+        }
+
         // get sunburst data
-        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0]).then((data) => {
+        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0], mapDatetime.toISOString()).then((data) => {
             setSunburstHomeInfo(data);
         });
-    }, [homeMarkerPosition]);
+    }, [homeMarkerPosition, mapDatetime]);
 
 
     // sunburst API fetch
-    const getSunburstData = async (lat, lng) => {
+    const getSunburstData = async (lat, lng, after) => {
         let sunburstToken = process.env.REACT_APP_SUNBURST_API_TOKEN;
         console.log("Using Sunburst token: ", sunburstToken);
 
         const query = await fetch(
-            `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}`,
+            `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}&after=${after}`,
             {
                 method: 'GET',
                 headers: {
@@ -1047,10 +1065,8 @@ function Map() {
         return (
             <div id="sunburst-segment">
                 <div id="sunrise-sunset-metrics">
-                    <text id="sunburst-sunrise-sunset">Type:
-                        {sunburstHomeInfo["features"][0]["properties"]["type"] === "Sunrise" ? "Sunrise" : "Sunset"}
-                        Quality:
-                        {sunburstHomeInfo["features"][0]["properties"]["quality"]} ({sunburstHomeInfo["features"][0]["properties"]["quality_percent"]}%)
+                    <text id="sunburst-sunrise-sunset">Type: {type}
+                        Quality: {quality} ({quality_percent}%)
                         Times:
                         Astronomical: {astro_time}
                         Nautical: {nautical_time}
@@ -1059,6 +1075,23 @@ function Map() {
                 </div>
             </div>
     )
+    }
+
+
+    const getWeatherInfo = async (lat, lng, datetime) => {
+        let weatherToken = process.env.REACT_APP_WEATHER_API_TOKEN;
+        console.log("Using Weather token: ", weatherToken);
+
+        let query = await fetch(
+            `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,
+            {
+                method: 'GET',
+            }
+        );
+
+        let data = await query.json();
+        console.log("Weather retrieved data: ", data);
+        return data;
     }
 
     return (
