@@ -250,9 +250,13 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
     results = retrieve_fcc_data(lat, lng, radius, "asr_locations") #feet
 
     # parse results
-    towers_triangles = towers_points = {"type": "FeatureCollection",
+    towers_triangles = {"type": "FeatureCollection",
                       "features": []
                      }
+
+    towers_points = {"type": "FeatureCollection",
+                        "features": []
+                        }
 
     # loop through towers and make geojson triangles
     for tower in results:
