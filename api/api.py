@@ -261,7 +261,8 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
     # loop through towers and make geojson triangles
     for tower in results:
         print(tower)
-        triangle_coordinates = [[tower[tower_indicies["lng"]], tower[tower_indicies["lat"]]],
+        # centered around coordinates
+        triangle_coordinates = [[tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] - 0.0001],
                                 [tower[tower_indicies["lng"]] + 0.0001, tower[tower_indicies["lat"]] + 0.0001],
                                 [tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] + 0.0001],
                                 ]
