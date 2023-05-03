@@ -247,7 +247,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
         return result
 
     # find towers
-    results = retrieve_fcc_data(lat, lng, radius, "uls_locations") #feet
+    results = retrieve_fcc_data(lat, lng, radius, "asr_locations") #feet
 
     # parse results
     towers_triangles = towers_points = {"type": "FeatureCollection",
