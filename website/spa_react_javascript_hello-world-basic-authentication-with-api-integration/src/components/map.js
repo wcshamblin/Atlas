@@ -21,7 +21,7 @@ import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
 // api imports
-import {fetchPoints, setHome, retrieveHome} from "../services/message.service";
+import {fetchPoints, setHome, retrieveHome, retrieveTowers} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
@@ -31,6 +31,21 @@ import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@r
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
 function Map() {
+    const { getAccessTokenSilently } = useAuth0();
+    const [accessToken, setAccessToken] = useState(null);
+
+    // set access token
+    useEffect(() => {
+        (async () => {
+            try {
+                const accessToken = await getAccessTokenSilently();
+                setAccessToken(accessToken);
+            } catch (e) {
+                console.log(e.message);
+            }
+        })();
+    }, [getAccessTokenSilently]);
+
     const mapRef = useRef(null);
     const mapbox = useRef(null);
 
@@ -53,8 +68,10 @@ function Map() {
     const [showIso, setShowIso] = useState(false);
 
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
-    const [showSunburst, setShowSunburst] = useState(false);
     const [showShadeMap, setShowShadeMap] = useState(false);
+
+    const [allTowersPoints, setAllTowersPoints] = useState(null);
+    const [allTowerTriangles, setAllTowerTriangles] = useState(null);
 
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
@@ -101,11 +118,12 @@ function Map() {
         "Safe Towers": {"visible": false},
         "Google StreetView": {"visible": false},
         "Shade Map": {"visible": false},
+        "All Towers": {"visible": false},
+        "All Tower Extrusions": {"visible": false},
+        "Antennas": {"visible": false},
     }
 
     const [points, setPoints] = useState([]);
-
-    const { getAccessTokenSilently } = useAuth0();
 
     const addSources = () => {
         mapbox.current.addSource('00', {
@@ -146,6 +164,42 @@ function Map() {
                 'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
             ],
             'tileSize': 256
+        });
+
+        // all towers source
+        mapbox.current.addSource('All Towers', {
+            'type': 'geojson',
+            'data': allTowersPoints
+        });
+
+        // all towers layer
+        mapbox.current.addLayer({
+            'id': 'All Towers',
+            'type': 'circle',
+            'source': 'All Towers',
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': ['get' , 'color'],
+            }
+        });
+
+        // all towers extrusion source
+        mapbox.current.addSource('All Tower Extrusions', {
+            'type': 'geojson',
+            'data': allTowerTriangles
+        });
+
+        // all towers extrusion layer
+        mapbox.current.addLayer({
+            'id': 'All Tower Extrusions',
+            'type': 'fill-extrusion',
+            'source': 'All Tower Extrusions',
+            'paint': {
+                'fill-extrusion-color': ['get', 'color'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
         });
 
         // add decom towers from file assets/geojson/decoms.geojson
@@ -348,7 +402,7 @@ function Map() {
     // api query
     useEffect(() => {
         const getPoints = async () => {
-            const accessToken = await getAccessTokenSilently();
+            // const accessToken = await getAccessTokenSilently();
             const { data, error } = await fetchPoints(accessToken);
             if (data) {
                 // need to extract the points array from the http Object
@@ -617,11 +671,12 @@ function Map() {
                         value={mapDatetime}
                     />
 
+                    <h4>Show towers</h4>
+                    {/*<button onClick={() => {*/}
+                    {/*    */}
+                    {/*}*/}
 
-                    <h4>Shade Map</h4>
-                    <input type="checkbox" id="shade-map-checkbox" name="shade-map-checkbox" value="shade-map-checkbox" onChange={() => {
-                        setShowShadeMap(!showShadeMap);
-                    }} checked={showShadeMap}/>
+
                 </div>
             </div>
         )
@@ -754,9 +809,18 @@ function Map() {
         var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
 
         if (visibility === 'visible') {
+            // if All Towers then turn off
+            if (clickedLayerId === "All Towers") {
+                // turn off all tower extrusions
+                mapbox.current.setLayoutProperty("All Tower Extrusions", 'visibility', 'none');
+            }
+
             // if click on Decom towers, then turn on Decom tower extrusions as well
             if (clickedLayerId === "Decommissioned Towers") {
                 mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
+
+                // also turn off All Towers
+                mapbox.current.setLayoutProperty("All Towers", 'visibility', 'none');
             }
 
             // same thing for safe towers
@@ -770,9 +834,23 @@ function Map() {
             }
 
             mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
-            setSelectedLayers(selectedLayers.filter(layerId => layerId != clickedLayerId));
+            setSelectedLayers(selectedLayers.filter(layerId => layerId !== clickedLayerId));
         }
         else {
+            // if click on All Towers, then turn on All tower extrusions as well as disabling all other towers so we don't have overlapping extrusions
+            if (clickedLayerId === "All Towers") {
+                // turn on all tower extrusions
+                mapbox.current.setLayoutProperty("All Tower Extrusions", 'visibility', 'visible');
+
+                // turn off all other towers
+                mapbox.current.setLayoutProperty("Decommissioned Towers", 'visibility', 'none');
+                mapbox.current.setLayoutProperty("Safe Towers", 'visibility', 'none');
+
+                // along with their extrusions
+                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
+                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'none');
+            }
+
             // if click on Decom towers, then turn on Decom tower extrusions as well
             if (clickedLayerId === "Decommissioned Towers") {
                 mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'visible');
@@ -887,7 +965,7 @@ function Map() {
 
         const getHome = async () => {
             // get access token
-            const accessToken = await getAccessTokenSilently();
+            // const accessToken = await getAccessTokenSilently();
 
             return await retrieveHome(accessToken);
         }
@@ -919,6 +997,11 @@ function Map() {
 
             setHomeMarkerPosition([home["lng"], home["lat"]]);
             setHomeIsSet(true);
+
+            // just to test our tower data thing, let's get the towers around the home
+            retrieveTowers(accessToken, home["lat"], home["lng"], 5000).then((towers) => {
+                console.log("Towers retrieved: ", towers);
+            });
         });
 
     }, [mapbox.current, homeMarker]);
@@ -940,7 +1023,7 @@ function Map() {
         console.log("Trying to set home at ", lat, lng, "...");
 
         // get access token
-        const accessToken = await getAccessTokenSilently();
+        // const accessToken = await getAccessTokenSilently();
 
         setHomeIsSet(true);
 

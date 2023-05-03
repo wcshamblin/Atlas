@@ -250,17 +250,17 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
     results = retrieve_fcc_data(lat, lng, radius, "uls_locations") #feet
 
     # parse results
-    towers_geojson = {"type": "FeatureCollection",
+    towers_triangles = towers_points = {"type": "FeatureCollection",
                       "features": []
                      }
 
     # loop through towers and make geojson triangles
     for tower in results:
-        geometry_coordinates = [[tower["longitude"] - 0.0001, tower["latitude"] - 0.0001],
+        triangle_coordinates = [[tower["longitude"] - 0.0001, tower["latitude"] - 0.0001],
                                 [tower["longitude"] + 0.0001, tower["latitude"] - 0.0001],
                                 [tower["longitude"], tower["latitude"] + 0.0001]]
 
-        towers_geojson.append({"type": "Feature", "properties": {
+        towers_triangles["features"].append({"type": "Feature", "properties": {
             "name": tower[tower_indicies["registration_number"]],
             "description": "",
             "overall_height": float(tower[tower_indicies["overall_height"]]),
@@ -268,22 +268,34 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
             "structure_type": tower[tower_indicies["structure_type"]],
             "color": "#008066"},
                                 "geometry": {"type": "Polygon", "coordinates":
-                                    [geometry_coordinates]
+                                    [triangle_coordinates]
                     }})
-    return {"status": "success", "message": "Towers retrieved", "towers": towers_geojson}
 
-@app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
-async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
+        towers_points["features"].append({"type": "Feature", "properties": {
+            "name": tower[tower_indicies["registration_number"]],
+            "description": "",
+            "overall_height": float(tower[tower_indicies["overall_height"]]),
+            "height_support": float(tower[tower_indicies["height_support"]]),
+            "structure_type": tower[tower_indicies["structure_type"]],
+            "color": "#008066"},
+                                "geometry": {"type": "Point", "coordinates":
+                                    [tower["longitude"], tower["latitude"]]
+                    }})
 
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
+    return {"status": "success", "message": "Towers retrieved", "towers_triangles": towers_triangles, "towers_points": towers_points}
 
-    # find antennas
-    results_am = retrieve_fcc_data(lat, lng, radius, "am_locations")
-    results_fm = retrieve_fcc_data(lat, lng, radius, "fm_locations")
-    results_tv = retrieve_fcc_data(lat, lng, radius, "tv_locations")
+# @app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
+# async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+#     result = VerifyToken(token.credentials, scopes="read").verify()
+#
+#     if result.get("status"):
+#         response.status_code = status.HTTP_400_BAD_REQUEST
+#         return result
+#
+#     # find antennas
+#     results_am = retrieve_fcc_data(lat, lng, radius, "am_locations")
+#     results_fm = retrieve_fcc_data(lat, lng, radius, "fm_locations")
+#     results_tv = retrieve_fcc_data(lat, lng, radius, "tv_locations")
 
 
 
