@@ -32,19 +32,6 @@ mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwN
 
 function Map() {
     const { getAccessTokenSilently } = useAuth0();
-    const [accessToken, setAccessToken] = useState(null);
-
-    // set access token
-    useEffect(() => {
-        (async () => {
-            try {
-                const accessToken = await getAccessTokenSilently();
-                setAccessToken(accessToken);
-            } catch (e) {
-                console.log(e.message);
-            }
-        })();
-    }, [getAccessTokenSilently]);
 
     const mapRef = useRef(null);
     const mapbox = useRef(null);
@@ -402,7 +389,7 @@ function Map() {
     // api query
     useEffect(() => {
         const getPoints = async () => {
-            // const accessToken = await getAccessTokenSilently();
+            const accessToken = await getAccessTokenSilently();
             const { data, error } = await fetchPoints(accessToken);
             if (data) {
                 // need to extract the points array from the http Object
@@ -965,9 +952,16 @@ function Map() {
 
         const getHome = async () => {
             // get access token
-            // const accessToken = await getAccessTokenSilently();
+            const accessToken = await getAccessTokenSilently();
 
             return await retrieveHome(accessToken);
+        }
+
+        const getTowersAroundHome = async (lat, lng) => {
+            // get access token
+            const accessToken = await getAccessTokenSilently();
+
+            return await retrieveTowers(accessToken, lat, lng, 5000);
         }
 
         // if we got a home, set it on the map
@@ -999,11 +993,10 @@ function Map() {
             setHomeIsSet(true);
 
             // just to test our tower data thing, let's get the towers around the home
-            retrieveTowers(accessToken, home["lat"], home["lng"], 5000).then((towers) => {
-                console.log("Towers retrieved: ", towers);
+            getTowersAroundHome(home["lat"], home["lng"]).then((towers) => {
+                console.log("Towers retrieved: ", towers.data);
             });
         });
-
     }, [mapbox.current, homeMarker]);
 
     // set home position
@@ -1023,7 +1016,7 @@ function Map() {
         console.log("Trying to set home at ", lat, lng, "...");
 
         // get access token
-        // const accessToken = await getAccessTokenSilently();
+        const accessToken = await getAccessTokenSilently();
 
         setHomeIsSet(true);
 
