@@ -256,9 +256,11 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
 
     # loop through towers and make geojson triangles
     for tower in results:
-        triangle_coordinates = [[tower["longitude"] - 0.0001, tower["latitude"] - 0.0001],
-                                [tower["longitude"] + 0.0001, tower["latitude"] - 0.0001],
-                                [tower["longitude"], tower["latitude"] + 0.0001]]
+        print(tower)
+        triangle_coordinates = [[tower[tower_indicies["lng"]], tower[tower_indicies["lat"]]],
+                                [tower[tower_indicies["lng"]] + 0.0001, tower[tower_indicies["lat"]] + 0.0001],
+                                [tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] + 0.0001],
+                                ]
 
         towers_triangles["features"].append({"type": "Feature", "properties": {
             "name": tower[tower_indicies["registration_number"]],
@@ -279,7 +281,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
             "structure_type": tower[tower_indicies["structure_type"]],
             "color": "#008066"},
                                 "geometry": {"type": "Point", "coordinates":
-                                    [tower["longitude"], tower["latitude"]]
+                                    [tower[tower_indicies["lng"]], tower[tower_indicies["lat"]]]
                     }})
 
     return {"status": "success", "message": "Towers retrieved", "towers_triangles": towers_triangles, "towers_points": towers_points}
