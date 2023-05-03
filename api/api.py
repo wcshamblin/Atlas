@@ -8,11 +8,29 @@ from database.classes import Point
 from database.database import add_pte_point, get_pte_point, get_pte_points_json, update_pte_point, delete_pte_point, get_home, set_home
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
-
+import psycopg2
 
 from api.utils import VerifyToken
 
 import logging
+
+# db initialization
+connection = psycopg2.connect(user="postgres", password="postgres_2034", dbname="fccdata", host="localhost", port="5432")
+fcccursor = connection.cursor()
+
+# declarations
+tower_declaration = "st_x    |       st_y        | record_type | content_indicator | file_number | registration_number | unique_system_identifier | coordinate_type | latitude_degrees | latitude_minutes | latitude_seconds | latitude_direction | latitude_total_seconds | longitude_degrees | longitude_minutes | longitude_seconds | longitude_direction | longitude_total_seconds | array_tower_position | array_total_tower | record_type2 | content_indicator2 | file_number2 | registration_number2 | unique_system_identifier2 | application_purpose | previous_purpose | input_source_code | status_code | date_entered | date_received | date_issued | date_constructed | date_dismantled | date_action | archive_flag_code | version | signature_first_name | signature_middle_initial | signature_last_name | signature_suffix |       signature_title       | invalid_signature |      structure_street_address       | structure_city | structure_state_code | county_code | zip_code | height_of_structure | ground_elevation | overall_height_above_ground | overall_height_amsl | structure_type | date_faa_determination_issued | faa_study_number | faa_circular_number | specification_option | painting_and_lighting | mark_light_code | mark_light_other | faa_emi_flag | nepa_flag | date_signed | signature_last_or | signature_first_or | signature_mi_or | signature_suffix_or | title_signed_or | date_signed_or |                   location_point"
+tower_declaration = tower_declaration.replace(" ", "").split("|")
+tower_indicies = {"overall_height": tower_declaration.index("overall_height_above_ground"), "height_support": tower_declaration.index("height_of_structure"), "lat": tower_declaration.index("st_y"), "lng": tower_declaration.index("st_x"), "registration_number": tower_declaration.index("registration_number"), "structure_type": tower_declaration.index("structure_type")}
+
+
+
+def retrieve_fcc_data(lat: float, lng: float, radius: float, table: str):
+    # radius should be in feet
+    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
+    fcccursor.execute(querystring)
+    return fcccursor.fetchall()
+
 
 # Scheme for the Authorization header
 token_auth_scheme = HTTPBearer()
@@ -218,6 +236,56 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
 
     print(home[0])
     return {"status": "success", "message": "Home retrieved", "home": home[0]}
+
+
+@app.get("/fcc/towers/nearby/{lat}/{lng}/{radius}")
+async def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials, scopes="read").verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    # find towers
+    results = retrieve_fcc_data(lat, lng, radius, "uls_locations") #feet
+
+    # parse results
+    towers_geojson = {"type": "FeatureCollection",
+                      "features": []
+                     }
+
+    # loop through towers and make geojson triangles
+    for tower in results:
+        geometry_coordinates = [[tower["longitude"] - 0.0001, tower["latitude"] - 0.0001],
+                                [tower["longitude"] + 0.0001, tower["latitude"] - 0.0001],
+                                [tower["longitude"], tower["latitude"] + 0.0001]]
+
+        towers_geojson.append({"type": "Feature", "properties": {
+            "name": tower[tower_indicies["registration_number"]],
+            "description": "",
+            "overall_height": float(tower[tower_indicies["overall_height"]]),
+            "height_support": float(tower[tower_indicies["height_support"]]),
+            "structure_type": tower[tower_indicies["structure_type"]],
+            "color": "#008066"},
+                                "geometry": {"type": "Polygon", "coordinates":
+                                    [geometry_coordinates]
+                    }})
+    return {"status": "success", "message": "Towers retrieved", "towers": towers_geojson}
+
+@app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
+async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials, scopes="read").verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    # find antennas
+    results_am = retrieve_fcc_data(lat, lng, radius, "am_locations")
+    results_fm = retrieve_fcc_data(lat, lng, radius, "fm_locations")
+    results_tv = retrieve_fcc_data(lat, lng, radius, "tv_locations")
+
+
 
 
 if __name__ == '__main__':
