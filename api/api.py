@@ -268,7 +268,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
             "overall_height": float(tower[tower_indicies["overall_height"]]),
             "height_support": float(tower[tower_indicies["height_support"]]),
             "structure_type": tower[tower_indicies["structure_type"]],
-            "color": "#008066"},
+            "color": "#BD1313"},
                                 "geometry": {"type": "Polygon", "coordinates":
                                     [triangle_coordinates]
                     }})
@@ -279,7 +279,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
             "overall_height": float(tower[tower_indicies["overall_height"]]),
             "height_support": float(tower[tower_indicies["height_support"]]),
             "structure_type": tower[tower_indicies["structure_type"]],
-            "color": "#008066"},
+            "color": "#BD1313"},
                                 "geometry": {"type": "Point", "coordinates":
                                     [tower[tower_indicies["lng"]], tower[tower_indicies["lat"]]]
                     }})
