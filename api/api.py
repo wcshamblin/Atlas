@@ -262,9 +262,9 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
     for tower in results:
         print(tower)
         # centered around coordinates
-        triangle_coordinates = [[tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] - 0.0001],
-                                [tower[tower_indicies["lng"]] + 0.0001, tower[tower_indicies["lat"]] + 0.0001],
-                                [tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] + 0.0001],
+        triangle_coordinates = [[tower[tower_indicies["lng"]], tower[tower_indicies["lat"]] + 0.0001],
+                                [tower[tower_indicies["lng"]] - 0.0001, tower[tower_indicies["lat"]] - 0.0001],
+                                [tower[tower_indicies["lng"]] + 0.0001, tower[tower_indicies["lat"]] - 0.0001],
                                 ]
 
         towers_triangles["features"].append({"type": "Feature", "properties": {
