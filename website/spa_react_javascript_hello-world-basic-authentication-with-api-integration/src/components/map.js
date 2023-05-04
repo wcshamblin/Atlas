@@ -164,6 +164,7 @@ function Map() {
             'id': 'All Towers',
             'type': 'circle',
             'source': 'All Towers',
+            'minzoom': 14,
             'paint': {
                 'circle-radius': 6,
                 'circle-color': ['get' , 'color'],
@@ -181,9 +182,10 @@ function Map() {
             'id': 'All Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'All Tower Extrusions',
+            'minzoom': 14,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
-                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-height': ['get', 'overall_height'],
                 'fill-extrusion-base': 0,
                 'fill-extrusion-opacity': 0.8
             }
@@ -236,6 +238,7 @@ function Map() {
             'id': 'Decommissioned Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'Decommissioned Tower Extrusions',
+            'minzoom': 14,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'height'],
@@ -255,6 +258,7 @@ function Map() {
             'id': 'Safe Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'Safe Tower Extrusions',
+            'minzoom': 14,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'height'],
@@ -384,6 +388,9 @@ function Map() {
         // layer hierarchies... streetview and isochrone should be on top.
         mapbox.current.moveLayer('Isochrone');
         mapbox.current.moveLayer('Google StreetView');
+        mapbox.current.moveLayer('PlacesToExplore');
+        mapbox.current.moveLayer('All Tower Extrusions');
+        mapbox.current.moveLayer('All Towers');
     }
 
     // api query
@@ -550,9 +557,19 @@ function Map() {
                     .setLngLat([lng, lat])
                     .setDOMContent(placeholder)
                     .addTo(mapbox.current);
-
-
             });
+
+            // on move, if all towers are visible, and we're above a zoom level of 12, then update the tower list
+            mapbox.current.on('moveend', () => {
+                if (mapbox.current.getZoom() > 12) {
+                    if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
+                        // update all towers from the center of the map
+                        updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    }
+                }
+            });
+
+            mapbox.current.on('zoomout')
 
         // controls
         // geocoder
@@ -659,9 +676,10 @@ function Map() {
                     />
 
                     <h4>Show towers</h4>
-                    {/*<button onClick={() => {*/}
-                    {/*    */}
-                    {/*}*/}
+                    <button onClick={() => {
+                        mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
+                        mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
+                    }}>Show All Towers</button>
 
 
                 </div>
@@ -768,6 +786,15 @@ function Map() {
         );
     }
 
+    const updateAllTowers = async (lat, lng) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveTowers(accessToken, lat, lng, 5000).then(
+            (response) => {
+                setAllTowerTriangles(response.data.towers_triangles);
+                setAllTowersPoints(response.data.towers_points);
+            }
+        )
+    }
 
     const handleBaseLayerClick = (e, clickedLayerId) => {
         e.preventDefault();
@@ -957,13 +984,6 @@ function Map() {
             return await retrieveHome(accessToken);
         }
 
-        const getTowersAroundHome = async (lat, lng) => {
-            // get access token
-            const accessToken = await getAccessTokenSilently();
-
-            return await retrieveTowers(accessToken, lat, lng, 5000);
-        }
-
         // if we got a home, set it on the map
         getHome().then((home) => {
             if (homeIsSet) return; // don't do anything if we already have a home set
@@ -992,10 +1012,6 @@ function Map() {
             setHomeMarkerPosition([home["lng"], home["lat"]]);
             setHomeIsSet(true);
 
-            // just to test our tower data thing, let's get the towers around the home
-            getTowersAroundHome(home["lat"], home["lng"]).then((towers) => {
-                console.log("Towers retrieved: ", towers.data);
-            });
         });
     }, [mapbox.current, homeMarker]);
 
@@ -1051,6 +1067,23 @@ function Map() {
             </div>
         );
     }
+
+    // all towers useEffect
+    useEffect(() => {
+        // if the all towers data changes then update the all towers and the all tower extrusions
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!allTowersPoints) return; // wait for all towers data to be set
+        if (!allTowerTriangles) return; // wait for all tower extrusions data to be set
+
+        console.log("Setting tower points: ", allTowersPoints);
+        console.log("Setting tower triangles: ", allTowerTriangles);
+        // set layer data
+        mapbox.current.getSource('All Towers').setData(allTowersPoints);
+
+        // set extrusion data
+        mapbox.current.getSource('All Tower Extrusions').setData(allTowerTriangles);
+
+    }, [allTowersPoints, allTowerTriangles]);
 
 
     // escape key handling
