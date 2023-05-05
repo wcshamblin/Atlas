@@ -436,7 +436,7 @@ function Map() {
             if (isNight) {
                 mapbox.current.setFog(
                     {
-                        'range': [1, 2],
+                        'range': [3, 4],
                         'horizon-blend': 0.3,
                         'color': '#242B4B',
                         'high-color': '#161B36',
@@ -447,7 +447,7 @@ function Map() {
             } else {
                 mapbox.current.setFog(
                     {
-                        'range': [1, 2],
+                        'range': [3, 4],
                         'horizon-blend': 0.3,
                         'color': 'white',
                         'high-color': '#add8e6',
@@ -486,13 +486,13 @@ function Map() {
                     .addTo(mapbox.current);
             });
 
-            mapbox.current.on('mouseenter', 'Safe Towers', () => {
-                mapbox.current.getCanvas().style.cursor = 'pointer';
-            });
-
-            mapbox.current.on('mouseleave', 'Safe Tower', () => {
-                mapbox.current.getCanvas().style.cursor = '';
-            });
+            // mapbox.current.on('mouseenter', 'Safe Towers', () => {
+            //     mapbox.current.getCanvas().style.cursor = 'pointer';
+            // });
+            //
+            // mapbox.current.on('mouseleave', 'Safe Tower', () => {
+            //     mapbox.current.getCanvas().style.cursor = '';
+            // });
 
             mapbox.current.on('click', 'Decommissioned Towers', (e) => {
                 const coordinates = e.features[0].geometry.coordinates.slice();
@@ -501,7 +501,6 @@ function Map() {
                 // convert to feet with 2 decimal places
                 const height = (e.features[0].properties.height * 3.28084).toFixed(2);
                 console.log("description: ", description);
-
 
                 new mapboxgl.Popup()
                     .setLngLat(coordinates)
@@ -514,18 +513,43 @@ function Map() {
                     .addTo(mapbox.current);
             });
 
-            mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
-                mapbox.current.getCanvas().style.cursor = 'pointer';
+            mapbox.current.on('click', 'All Towers', (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const name = e.features[0].properties.name;
+                // convert to feet with 2 decimal places
+                const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
+                const support_height = (e.features[0].properties.height_support * 3.28084).toFixed(2);
+                const description = "Overall height: " + overall_height + " ft" + "<br>" + "Support height: " + support_height + " ft";
+
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(
+                        "<text id='towerpopuptitle'>Tower: " + name + "</text>" +
+                        // "<text id='towerpopupstat'>height:</text>" +
+                        "<text id='towerpopuptext'>" + description + "</text>" +
+                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                    .addTo(mapbox.current);
             });
 
-            mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
-                mapbox.current.getCanvas().style.cursor = '';
-            });
+            // mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
+            //     mapbox.current.getCanvas().style.cursor = 'pointer';
+            // });
+            //
+            // mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
+            //     mapbox.current.getCanvas().style.cursor = '';
+            // });
 
             // on left click
             mapbox.current.on('click', (e) => {
                 let lat = e.lngLat.lat;
                 let lng = e.lngLat.lng;
+
+                if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') !== 'visible') {
+                    console.log("street view not visible");
+                    return;
+                }
 
                 // zoom level must be above 12 to get a streetview image
                 if (mapbox.current.getZoom() < 12) {
@@ -538,7 +562,7 @@ function Map() {
 
             });
 
-        // on right click
+            // on right click
             mapbox.current.on('contextmenu', (e) => {
                 // make new popup with coordinates of right click
                 let lat = e.lngLat.lat;
@@ -677,8 +701,15 @@ function Map() {
 
                     <h4>Show towers</h4>
                     <button onClick={() => {
-                        mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
-                        mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
+                        if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
+                            mapbox.current.setLayoutProperty('All Towers', 'visibility', 'none');
+                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'none');
+                            mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'none');
+                        } else {
+                            mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
+                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
+                            mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'visible');
+                        }
                     }}>Show All Towers</button>
 
 
