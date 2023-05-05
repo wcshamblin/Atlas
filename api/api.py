@@ -27,7 +27,7 @@ tower_indicies = {"overall_height": tower_declaration.index("overall_height_abov
 
 def retrieve_fcc_data(lat: float, lng: float, radius: float, table: str):
     # radius should be in feet
-    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
+    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE status_code = 'C' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
     fcccursor.execute(querystring)
     return fcccursor.fetchall()
 
