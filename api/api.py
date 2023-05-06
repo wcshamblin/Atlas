@@ -389,6 +389,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
 
     return {"status": "success", "message": "Towers retrieved", "towers_triangles": towers_triangles, "towers_points": towers_points}
 
+
 @app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
 async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials, scopes="read").verify()
@@ -410,6 +411,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
         antennas["features"].append({"type": "Feature", "properties": {
             "name": antenna["facility-id"],
             "description": "",
+            "transmitter-type": "tv",
             "erp": float(antenna["erp"]),
             "facility_id": antenna["facility-id"],
             "channel": antenna["channel"],
