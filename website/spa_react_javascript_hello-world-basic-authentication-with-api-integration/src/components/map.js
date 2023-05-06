@@ -21,7 +21,7 @@ import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
 // api imports
-import {fetchPoints, setHome, retrieveHome, retrieveTowers} from "../services/message.service";
+import {fetchPoints, setHome, retrieveHome, retrieveTowers, retrieveAntennas} from "../services/message.service";
 
 import {useAuth0} from "@auth0/auth0-react";
 
@@ -59,6 +59,8 @@ function Map() {
 
     const [allTowersPoints, setAllTowersPoints] = useState(null);
     const [allTowerTriangles, setAllTowerTriangles] = useState(null);
+
+    const [antennaPoints, setAntennaPoints] = useState(null);
 
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
@@ -188,6 +190,24 @@ function Map() {
                 'fill-extrusion-height': ['get', 'overall_height'],
                 'fill-extrusion-base': 0,
                 'fill-extrusion-opacity': 0.8
+            }
+        });
+
+        // antennas source
+        mapbox.current.addSource('Antennas', {
+            'type': 'geojson',
+            'data': antennaPoints
+        });
+
+        // antennas layer
+        mapbox.current.addLayer({
+            'id': 'Antennas',
+            'type': 'circle',
+            'source': 'Antennas',
+            'minzoom': 14,
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': ['get' , 'color'],
             }
         });
 
@@ -533,6 +553,34 @@ function Map() {
                     .addTo(mapbox.current);
             });
 
+            mapbox.current.on('click', 'Antennas', (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const name = e.features[0].properties.name;
+                const transmitter_type = e.features[0].properties.transmitter_type;
+                let description = "";
+
+                if (transmitter_type === "FM" || transmitter_type === "TV") {
+                    // display safe zone
+                    const safe_zone_controlled = e.features[0].properties.safe_distance_controlled_feet;
+                    const safe_zone_uncontrolled = e.features[0].properties.safe_distance_uncontrolled_feet;
+                    description = "Transmitter type: " + transmitter_type + "<br>" + "Safe zone controlled: " + safe_zone_controlled + " ft" + "<br>" + "Safe zone uncontrolled: " + safe_zone_uncontrolled + " ft";
+                } else {
+                    description = "Transmitter type: " + transmitter_type;
+                }
+
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(
+                        "<text id='towerpopuptitle'>Antenna: " + name + "</text>" +
+                        // "<text id='towerpopupstat'>height:</text>" +
+                        "<text id='towerpopuptext'>" + description + "</text>" +
+                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                    .addTo(mapbox.current);
+            });
+
+
             // mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
             //     mapbox.current.getCanvas().style.cursor = 'pointer';
             // });
@@ -583,12 +631,17 @@ function Map() {
                     .addTo(mapbox.current);
             });
 
-            // on move, if all towers are visible, and we're above a zoom level of 12, then update the tower list
+            // on move, if zoom is above 14, try to update towers and / or antennas
             mapbox.current.on('moveend', () => {
-                if (mapbox.current.getZoom() > 12) {
+                if (mapbox.current.getZoom() >= 14) {
                     if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                         // update all towers from the center of the map
                         updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    }
+
+                    if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
+                        // update decommissioned towers from the center of the map
+                        updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                     }
                 }
             });
@@ -703,10 +756,12 @@ function Map() {
                     <button onClick={() => {
                         if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                             mapbox.current.setLayoutProperty('All Towers', 'visibility', 'none');
+                            mapbox.current.setLayoutProperty('Antennas', 'visibility', 'none');
                             mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'none');
                             mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'none');
                         } else {
                             mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
+                            mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
                             mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
                             mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'visible');
                         }
@@ -819,10 +874,20 @@ function Map() {
 
     const updateAllTowers = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
+        console.log("updateAllTowers");
         await retrieveTowers(accessToken, lat, lng, 5000).then(
             (response) => {
                 setAllTowerTriangles(response.data.towers_triangles);
                 setAllTowersPoints(response.data.towers_points);
+            }
+        )
+    }
+
+    const updateAntennas = async(lat, lng) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveAntennas(accessToken, lat, lng, 5000).then(
+            (response) => {
+                setAntennaPoints(response.data.antennas);
             }
         )
     }
@@ -1116,6 +1181,17 @@ function Map() {
 
     }, [allTowersPoints, allTowerTriangles]);
 
+    // antennas useEffect
+    useEffect(() => {
+        // if the antennas data changes then update the antennas points
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!antennaPoints) return; // wait for antennas data to be set
+
+        console.log("Setting antennas points: ", antennaPoints);
+        // set layer data
+        mapbox.current.getSource('Antennas').setData(antennaPoints);
+
+    }, [antennaPoints]);
 
     // escape key handling
     useEffect(() => {
