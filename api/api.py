@@ -31,7 +31,7 @@ tv_frequencies = {2:60, 3:66, 4:72, 5:82, 6:88, 7:180, 8:186, 9:192, 10:198, 11:
 
 def retrieve_fcc_towers(lat: float, lng: float, radius: float):
     # radius should be in feet
-    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM asr_locations WHERE status_code = 'C' AND tv_dom_status = 'LIC' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
+    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM asr_locations WHERE status_code = 'C' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
     fcccursor.execute(querystring)
     return fcccursor.fetchall()
 
