@@ -423,7 +423,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
         antennas["features"].append({"type": "Feature", "properties": {
             "name": antenna["facility_id"],
             "description": "",
-            "transmitter-type": "tv",
+            "transmitter_type": "tv",
             "erp": float(antenna["max_erp"]),
             "facility_id": antenna["facility_id"],
             "channel": antenna["channel"],
