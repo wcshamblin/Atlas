@@ -89,8 +89,8 @@ def calculate_safe_zone(kilowatts: float, gain: int, freq: float, ground_reflect
     dx2 = ((dx2 * 10) + 0.5) / 10
 
     return {
-        "safe-distance-controlled-feet": round(dx1, 4),
-        "safe-distance-uncontrolled-feet": round(dx2, 4)
+        "safe_distance-controlled-feet": round(dx1, 4),
+        "safe_distance-uncontrolled-feet": round(dx2, 4)
     }
 
 
@@ -135,8 +135,8 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
             "facility_id": facility_id,
             "max_erp": max_erp,
             "channel": channel,
-            "safe-distance-controlled-feet": safe_distances["safe-distance-controlled-feet"],
-            "safe-distance-uncontrolled-feet": safe_distances["safe-distance-uncontrolled-feet"],
+            "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
+            "safe_distance_uncontrolled_feet": safe_distances["safe_distance-uncontrolled_feet"],
             "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["facility_id"]]
         })
 
@@ -427,8 +427,8 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "erp": float(antenna["max_erp"]),
             "facility_id": antenna["facility_id"],
             "channel": antenna["channel"],
-            "safe-distance-controlled-feet": antenna["safe-distance-controlled-feet"],
-            "safe-distance-uncontrolled-feet": antenna["safe-distance-uncontrolled-feet"],
+            "safe_distance_controlled-feet": antenna["safe_distance-controlled_feet"],
+            "safe_distance-uncontrolled_feet": antenna["safe_distance-uncontrolled_feet"],
             "color": "#BD1313"},
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
