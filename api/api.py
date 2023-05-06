@@ -103,11 +103,11 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
         by_facility_id[antenna[tv_indicies["facility_id"]]]["antennas"].append(antenna)
 
     # Take the highest power antenna for each facility and calculate the safe zone
-    for facility_id in by_facility_id:
+    for facility_id, antennas in by_facility_id.items():
 
         # find the antenna with the highest erp
-        antenna_with_max_erp = facility_id["antennas"][0]
-        for antenna in facility_id["antennas"]:
+        antenna_with_max_erp = antennas[0]
+        for antenna in antennas:
             if antenna[tv_indicies["effective_erp"]] > antenna_with_max_erp[tv_indicies["effective_erp"]]:
                 antenna_with_max_erp = antenna
 
