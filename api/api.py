@@ -94,13 +94,17 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
     antennas = retrieve_fcc_antennas(lat, lng, radius, "tv_locations")
 
     by_facility_id = {} # contains a list of antennas for each facility id
-    stations = {} # to return, contains facilities and summarized data
+    stations = [] # to return, contains facilities and summarized data
 
     for antenna in antennas:
         if antenna[tv_indicies["facility_id"]] not in by_facility_id:
             by_facility_id[antenna[tv_indicies["facility_id"]]] = {"antennas": []}
             by_facility_id[antenna[tv_indicies["facility_id"]]]["antennas"].append(antenna)
         by_facility_id[antenna[tv_indicies["facility_id"]]]["antennas"].append(antenna)
+
+    # if there aren't any antennas, return None
+    if len(by_facility_id) == 0:
+        return []
 
     # Take the highest power antenna for each facility and calculate the safe zone
     for facility_id, antennas in by_facility_id.items():
@@ -117,7 +121,7 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
         # We're assuming no ground reflections for TV antennas
         safe_distances = calculate_safe_zone(max_erp, 0.0, freq, False)
 
-        stations[facility_id] = {
+        stations.append({
             "lat": antenna_with_max_erp[tv_indicies["lat"]],
             "lng": antenna_with_max_erp[tv_indicies["lng"]],
             "facility_id": antenna_with_max_erp[tv_indicies["facility_id"]],
@@ -125,8 +129,8 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
             "channel": channel,
             "safe-distance-controlled-feet": safe_distances["safe-distance-controlled-feet"],
             "safe-distance-uncontrolled-feet": safe_distances["safe-distance-uncontrolled-feet"],
-            "RabbitEars:" : "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["station_callsign"]]
-        }
+            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["station_callsign"]]
+        })
 
     return stations
 
