@@ -427,8 +427,8 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "erp": float(antenna["max_erp"]),
             "facility_id": antenna["facility_id"],
             "channel": antenna["channel"],
-            "safe_distance_controlled-feet": antenna["safe_distance-controlled_feet"],
-            "safe_distance-uncontrolled_feet": antenna["safe_distance-uncontrolled_feet"],
+            "safe_distance_controlled-feet": antenna["safe_distance_controlled_feet"],
+            "safe_distance-uncontrolled_feet": antenna["safe_distance_uncontrolled_feet"],
             "color": "#BD1313"},
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
