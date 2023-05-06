@@ -42,14 +42,17 @@ def retrieve_fcc_antennas(lat: float, lng: float, radius: float, table: str):
     fcccursor.execute(querystring)
     return fcccursor.fetchall()
 
-def calculate_safe_zone(kilowatts: float, gain: float, freq: float, ground_reflections: bool):
+def calculate_safe_zone(kilowatts: float, gain: int, freq: float, ground_reflections: bool):
     # frequency should be in MHz
     if ground_reflections:
         gf = .64
     else:
         gf = .25
+
     power = 1000 * 1000 * kilowatts
+
     eirp = power * pow(10, (gain/10))
+
     if freq < 1.34:
         # Below 1.34 MHz
         std1 = 100.0
@@ -77,12 +80,14 @@ def calculate_safe_zone(kilowatts: float, gain: float, freq: float, ground_refle
     else:
         # Frequency too high
         return None
+    
     dx1 = sqrt((gf * eirp)/(std1 * 3.14159))
     dx1 = dx1/30.48
     dx1 = ((dx1 * 10) + 0.5) / 10
     dx2 = sqrt((gf * eirp)/(std2 * 3.14159))
     dx2 = dx2/30.48
     dx2 = ((dx2 * 10) + 0.5) / 10
+
     return {
         "safe-distance-controlled-feet": round(dx1, 4),
         "safe-distance-uncontrolled-feet": round(dx2, 4)
@@ -105,31 +110,34 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
     # if there aren't any antennas, return None
     if len(by_facility_id) == 0:
         return []
+    
+    print(by_facility_id)
 
     # Take the highest power antenna for each facility and calculate the safe zone
     for facility_id, antennas in by_facility_id.items():
-
+        print("Facility ID:", facility_id)
+        print("Antennas:", antennas)
         # find the antenna with the highest erp
-        antenna_with_max_erp = antennas[0]
-        for antenna in antennas:
+        antenna_with_max_erp = antennas["antennas"][0]
+        for antenna in antennas["antennas"]:
             if antenna[tv_indicies["effective_erp"]] > antenna_with_max_erp[tv_indicies["effective_erp"]]:
                 antenna_with_max_erp = antenna
 
-        max_erp = antenna_with_max_erp[tv_indicies["effective_erp"]]
+        max_erp = float(antenna_with_max_erp[tv_indicies["effective_erp"]])
         channel = int(antenna_with_max_erp[tv_indicies["station_channel"]])
         freq = tv_frequencies[channel]
         # We're assuming no ground reflections for TV antennas
-        safe_distances = calculate_safe_zone(max_erp, 0.0, freq, False)
+        safe_distances = calculate_safe_zone(kilowatts=max_erp, gain=0, freq=freq, ground_reflections=False)
 
         stations.append({
             "lat": antenna_with_max_erp[tv_indicies["lat"]],
             "lng": antenna_with_max_erp[tv_indicies["lng"]],
-            "facility_id": antenna_with_max_erp[tv_indicies["facility_id"]],
+            "facility_id": facility_id,
             "max_erp": max_erp,
             "channel": channel,
             "safe-distance-controlled-feet": safe_distances["safe-distance-controlled-feet"],
             "safe-distance-uncontrolled-feet": safe_distances["safe-distance-uncontrolled-feet"],
-            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["station_callsign"]]
+            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["facility_id"]]
         })
 
     return stations
@@ -413,17 +421,17 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
     # loop through antennas and add to geojson
     for antenna in tv_antennas:
         antennas["features"].append({"type": "Feature", "properties": {
-            "name": antenna["facility-id"],
+            "name": antenna["facility_id"],
             "description": "",
             "transmitter-type": "tv",
-            "erp": float(antenna["erp"]),
-            "facility_id": antenna["facility-id"],
+            "erp": float(antenna["max_erp"]),
+            "facility_id": antenna["facility_id"],
             "channel": antenna["channel"],
             "safe-distance-controlled-feet": antenna["safe-distance-controlled-feet"],
             "safe-distance-uncontrolled-feet": antenna["safe-distance-uncontrolled-feet"],
             "color": "#BD1313"},
             "geometry": {"type": "Point", "coordinates":
-                                    [antenna["longitude"], antenna["latitude"]]
+                                    [antenna["lng"], antenna["lat"]]
                     }})
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
