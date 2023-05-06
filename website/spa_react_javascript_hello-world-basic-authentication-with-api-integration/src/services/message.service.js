@@ -154,3 +154,21 @@ export const retrieveHome = async (accessToken) => {
         error,
     };
 }
+
+export const retrieveTowers = async (accessToken, lat, lng, radius) => {
+    const config = {
+        url: `${apiServerUrl}/fcc/towers/nearby/${lat}/${lng}/${radius}`,
+        method: "GET",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
