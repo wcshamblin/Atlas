@@ -111,8 +111,8 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
             "channel": antenna[tv_indicies["station_channel"]],
             "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
             "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
-            "height_agl": antenna[tv_indicies["height_agl"]],
-            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_indicies["facility_id"]]
+            "height_agl": antenna[tv_indicies["hag_overall_mtr"]],
+            "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_indicies["facility_id"]]
         })
 
     return antennas_out
