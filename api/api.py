@@ -98,50 +98,24 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
     # radius should be in feet
     antennas = retrieve_fcc_antennas(lat, lng, radius, "tv_locations")
 
-    by_facility_id = {} # contains a list of antennas for each facility id
-    stations = [] # to return, contains facilities and summarized data
+    antennas_out = []
 
     for antenna in antennas:
-        if antenna[tv_indicies["facility_id"]] not in by_facility_id:
-            by_facility_id[antenna[tv_indicies["facility_id"]]] = {"antennas": []}
-            by_facility_id[antenna[tv_indicies["facility_id"]]]["antennas"].append(antenna)
-        by_facility_id[antenna[tv_indicies["facility_id"]]]["antennas"].append(antenna)
+        safe_distances = calculate_safe_zone(antenna[tv_indicies["effective_erp"]], 0, tv_frequencies[antenna[tv_indicies["station_channel"]]], False)
 
-    # if there aren't any antennas, return None
-    if len(by_facility_id) == 0:
-        return []
-    
-    print(by_facility_id)
-
-    # Take the highest power antenna for each facility and calculate the safe zone
-    for facility_id, antennas in by_facility_id.items():
-        print("Facility ID:", facility_id)
-        print("Antennas:", antennas)
-        # find the antenna with the highest erp
-        antenna_with_max_erp = antennas["antennas"][0]
-        for antenna in antennas["antennas"]:
-            if antenna[tv_indicies["effective_erp"]] > antenna_with_max_erp[tv_indicies["effective_erp"]]:
-                antenna_with_max_erp = antenna
-
-        max_erp = float(antenna_with_max_erp[tv_indicies["effective_erp"]])
-        channel = int(antenna_with_max_erp[tv_indicies["station_channel"]])
-        freq = tv_frequencies[channel]
-        # We're assuming no ground reflections for TV antennas
-        safe_distances = calculate_safe_zone(kilowatts=max_erp, gain=0, freq=freq, ground_reflections=False)
-
-        stations.append({
-            "lat": antenna_with_max_erp[tv_indicies["lat"]],
-            "lng": antenna_with_max_erp[tv_indicies["lng"]],
-            "facility_id": facility_id,
-            "max_erp": max_erp,
-            "channel": channel,
+        antennas_out.append({
+            "lat": antenna[tv_indicies["lat"]],
+            "lng": antenna[tv_indicies["lng"]],
+            "facility_id": antenna[tv_indicies["facility_id"]],
+            "effective_erp": antenna[tv_indicies["effective_erp"]],
+            "channel": antenna[tv_indicies["station_channel"]],
             "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
             "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
-            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna_with_max_erp[tv_indicies["facility_id"]]
+            "height_agl": antenna[tv_indicies["height_agl"]],
+            "RabbitEars:": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_indicies["facility_id"]]
         })
 
-    return stations
-
+    return antennas_out
 # Scheme for the Authorization header
 token_auth_scheme = HTTPBearer()
 
