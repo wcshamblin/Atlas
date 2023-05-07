@@ -398,7 +398,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "name": antenna["facility_id"],
             "description": "",
             "transmitter_type": "tv",
-            "height_agl": float(antenna["height_agl"]),
+            "height_agl": float(antenna["height_agl"]) * 3.28084,
             "RabbitEars": antenna["RabbitEars"],
             "erp": float(antenna["max_erp"]),
             "facility_id": antenna["facility_id"],
