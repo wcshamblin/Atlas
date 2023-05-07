@@ -557,13 +557,25 @@ function Map() {
                 const coordinates = e.features[0].geometry.coordinates.slice();
                 const name = e.features[0].properties.name;
                 const transmitter_type = e.features[0].properties.transmitter_type;
+                const height_agl = e.features[0].properties.height_agl;
                 let description = "";
 
-                if (transmitter_type === "FM" || transmitter_type === "TV") {
+                if (transmitter_type === "fm" || transmitter_type === "tv") {
+                    const facility_id = e.features[0].properties.facility_id;
+                    const channel = e.features[0].properties.channel;
+                    const erp = e.features[0].properties.erp;
+                    const rabbitEarsLink = e.features[0].properties.RabbitEars;
                     // display safe zone
                     const safe_zone_controlled = e.features[0].properties.safe_distance_controlled_feet;
                     const safe_zone_uncontrolled = e.features[0].properties.safe_distance_uncontrolled_feet;
-                    description = "Transmitter type: " + transmitter_type + "<br>" + "Safe zone controlled: " + safe_zone_controlled + " ft" + "<br>" + "Safe zone uncontrolled: " + safe_zone_uncontrolled + " ft";
+                    description = "Transmitter type: " + transmitter_type + "<br>" +
+                        "Facility ID: " + facility_id + "<br>" +
+                        "Channel: " + channel + "<br>" +
+                        "ERP: " + erp + " kW" + "<br>" +
+                        "Height AGL: " + height_agl + "ft" + "<br>" +
+                        "Safe zone controlled: " + safe_zone_controlled + " ft" + "<br>" +
+                        "Safe zone uncontrolled: " + safe_zone_uncontrolled + " ft" + "<br>" +
+                        "RabbitEars: " + "<a href='" + rabbitEarsLink + "'>" + facility_id + "</a>";
                 } else {
                     description = "Transmitter type: " + transmitter_type;
                 }
