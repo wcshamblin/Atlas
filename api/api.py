@@ -26,8 +26,11 @@ tower_indicies = {"overall_height": tower_declaration.index("overall_height_abov
 
 tv_declaration = "st_x        |        st_y        | ant_input_pwr | ant_max_pwr_gain | ant_polarization | antenna_id | antenna_type | application_id | asrn_na_ind |  asrn   | aural_freq | avg_horiz_pwr_gain | biased_lat | biased_long | border_code | carrier_freq | docket_num | effective_erp | electrical_deg |  elev_amsl  | elev_bldg_ag | eng_record_type | fac_zone | facility_id | freq_offset | gain_area | haat_rc_mtr | hag_overall_mtr | hag_rc_mtr | horiz_bt_erp | lat_deg | lat_dir | lat_min |  lat_sec  | lon_deg | lon_dir | lon_min |  lon_sec  | loss_area | max_ant_pwr_gain | max_erp_dbk | max_erp_kw  |  max_haat  | mechanical_deg | multiplexor_loss | power_output_vis_dbk | power_output_vis_kw | predict_coverage_area | predict_pop | terrain_data_src_other | terrain_data_src | tilt_towards_azimuth |  true_deg  | tv_dom_status | upperband_freq | vert_bt_erp| visual_freq | vsd_service | rcamsl_horiz_mtr | ant_rotation | input_trans_line | max_erp_to_hor | trans_line_loss | lottery_group | analog_channel | lat_whole_secs | lon_whole_secs | max_erp_any_angle | station_channel | lic_ant_make | lic_ant_model_num  | dt_emission_mask | whatisthiscol1 | whatisthiscol2 | last_change_date |location_point                   "
 tv_declaration = tv_declaration.replace(" ", "").split("|")
-tv_indicies = {"lat": tv_declaration.index("st_y"), "lng": tv_declaration.index("st_x"), "facility_id": tv_declaration.index("facility_id"), "station_channel": tv_declaration.index("station_channel"), "effective_erp": tv_declaration.index("effective_erp"), "hag_overall_mtr": tv_declaration.index("hag_overall_mtr")}
 tv_frequencies = {2:60, 3:66, 4:72, 5:82, 6:88, 7:180, 8:186, 9:192, 10:198, 11:204, 12:210, 13:216, 14:476, 15:482, 16:488, 17:494, 18:500, 19:506, 20:512, 21:518, 22:524, 23:530, 24:536, 25:542, 26:548, 27:554, 28:560, 29:566, 30:572, 31:578, 32:584, 33:590, 34:596, 35:602, 36:608, 37:614, 38:620, 39:626, 40:632, 41:638, 42:644, 43:650, 44:656, 45:662, 46:668, 47:674, 48:680, 49:686, 50:692, 51:698, 52:704, 53:710, 54:716, 55:722, 56:728, 57:734, 58:740, 59:746, 60:752, 61:758, 62:764, 63:770, 64:776, 65:782, 66:788, 67:794, 68:800, 69:806}
+
+fm_declaration = "st_x        |       st_y        | antenna_id | antenna_type | ant_input_pwr | ant_max_pwr_gain | ant_polarization | ant_rotation | application_id | asd_service | asrn | asrn_na_ind |     biased_lat     |    biased_long     | border_code | border_dist | docket_num | effective_erp | elev_amsl | eng_record_type | erp_w | facility_id | fm_dom_status | gain_area | haat_horiz_calc_ind | haat_horiz_rc_mtr | haat_vert_rc_mtr | hag_horiz_rc_mtr | hag_overall_mtr | hag_vert_rc_mtr | horiz_bt_erp | horiz_erp |    last_update_date     | lat_deg | lat_dir | lat_min | lat_sec | lic_ant_make | lic_ant_model_num | lon_deg | lon_dir | lon_min | lon_sec | loss_area |     mainkey      | market_group_num | max_haat | max_horiz_erp | max_vert_erp | min_horiz_erp | num_sections | power_output_vis_kw | rcamsl_horiz_mtr | rcamsl_vert_mtr | spacing | station_channel | station_class | trans_power_output | trans_power_output_w | vert_bt_erp | vert_erp |                   location_point                   "
+fm_declaration = fm_declaration.replace(" ", "").split("|")
+
 
 def retrieve_fcc_towers(lat: float, lng: float, radius: float):
     # radius should be in feet
@@ -101,18 +104,57 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
     antennas_out = []
 
     for antenna in antennas:
-        safe_distances = calculate_safe_zone(float(antenna[tv_indicies["effective_erp"]]), 0, tv_frequencies[int(antenna[tv_indicies["station_channel"]])], False)
+        safe_distances = calculate_safe_zone(float(antenna[tv_declaration.index("effective_erp")]), 0, tv_frequencies[int(antenna[tv_declaration.index("station_channel")])], False)
+
+        polarity = antenna[tv_declaration.index("ant_polarization")]
+
+        if polarity == "C":
+            polarity = "Circular"
+        elif polarity == "E":
+            polarity = "Elliptical"
+        elif polarity == "H":
+            polarity = "Horizontal"
+        else:
+            polarity = "?"
+
 
         antennas_out.append({
-            "lat": antenna[tv_indicies["lat"]],
-            "lng": antenna[tv_indicies["lng"]],
-            "facility_id": antenna[tv_indicies["facility_id"]],
-            "effective_erp": antenna[tv_indicies["effective_erp"]],
-            "channel": antenna[tv_indicies["station_channel"]],
+            "lat": antenna[tv_declaration.index("st_y")],
+            "lng": antenna[tv_declaration.index("st_x")],
+            "facility_id": antenna[tv_declaration.index("facility_id")],
+            "effective_erp": antenna[tv_declaration.index("effective_erp")],
+            "channel": antenna[tv_declaration.index("station_channel")],
+            "polarization": antenna[tv_declaration.index("ant_polarization")],
             "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
             "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
-            "height_agl": antenna[tv_indicies["hag_overall_mtr"]],
-            "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_indicies["facility_id"]]
+            "height_agl": antenna[tv_declaration.index("hag_overall_mtr")],
+            "status": antenna[tv_declaration.index("tv_dom_status")],
+            "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_declaration.index("facility_id")]
+        })
+
+    return antennas_out
+
+def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
+    # radius should be in feet
+    antennas = retrieve_fcc_antennas(lat, lng, radius, "fm_locations")
+
+    antennas_out = []
+
+    for antenna in antennas:
+        # safe_distances = calculate_safe_zone(float(antenna[fm_declaration.index("erp")]), 0, float(antenna[fm_declaration.index("frequency")]), False)
+
+        antennas_out.append({
+            "lat": antenna[fm_declaration.index("st_y")],
+            "lng": antenna[fm_declaration.index("st_x")],
+            "facility_id": antenna[fm_declaration.index("facility_id")],
+            # "effective_erp": antenna[fm_declaration.index("erp")],
+            # "frequency": antenna[fm_declaration.index("frequency")],
+            "polarization": antenna[fm_declaration.index("ant_polarization")],
+            # "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
+            # "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
+            "height_agl": antenna[fm_declaration.index("hag_overall_mtr")],
+            "status": antenna[fm_declaration.index("fm_dom_status")],
+            # "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[fm_declaration.index("facility_id")]
         })
 
     return antennas_out
@@ -400,7 +442,9 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "transmitter_type": "TV",
             "height_agl": float(antenna["height_agl"]) * 3.28084,
             "RabbitEars": antenna["RabbitEars"],
+            "status": antenna["status"],
             "erp": float(antenna["effective_erp"]),
+            "polarization": antenna["polarization"],
             "facility_id": antenna["facility_id"],
             "channel": antenna["channel"],
             "safe_distance_controlled_feet": antenna["safe_distance_controlled_feet"],
