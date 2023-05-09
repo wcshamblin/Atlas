@@ -7,11 +7,14 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 export const MapPage = () => {
     const { getAccessTokenSilently } = useAuth0();
-    // only give access to the map if the user is authenticated
+    // redirect to root if not authenticated
     const { isAuthenticated } = useAuth0();
+    if (!isAuthenticated) {
+        window.location.href = "/";
+    }
     return (
-        isAuthenticated && <PageLayout>
-            <Map getAccessTokenSilently={getAccessTokenSilently} />
+        <PageLayout>
+            <Map accessToken={getAccessTokenSilently} />
         </PageLayout>
     );
 };
