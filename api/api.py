@@ -9,6 +9,7 @@ from database.database import add_pte_point, get_pte_point, get_pte_points_json,
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import psycopg2
+import re
 from math import sqrt, sin, cos
 
 from api.utils import VerifyToken
@@ -22,7 +23,40 @@ fcccursor = connection.cursor()
 # declarations
 tower_declaration = "st_x    |       st_y        | record_type | content_indicator | file_number | registration_number | unique_system_identifier | coordinate_type | latitude_degrees | latitude_minutes | latitude_seconds | latitude_direction | latitude_total_seconds | longitude_degrees | longitude_minutes | longitude_seconds | longitude_direction | longitude_total_seconds | array_tower_position | array_total_tower | record_type2 | content_indicator2 | file_number2 | registration_number2 | unique_system_identifier2 | application_purpose | previous_purpose | input_source_code | status_code | date_entered | date_received | date_issued | date_constructed | date_dismantled | date_action | archive_flag_code | version | signature_first_name | signature_middle_initial | signature_last_name | signature_suffix |       signature_title       | invalid_signature |      structure_street_address       | structure_city | structure_state_code | county_code | zip_code | height_of_structure | ground_elevation | overall_height_above_ground | overall_height_amsl | structure_type | date_faa_determination_issued | faa_study_number | faa_circular_number | specification_option | painting_and_lighting | mark_light_code | mark_light_other | faa_emi_flag | nepa_flag | date_signed | signature_last_or | signature_first_or | signature_mi_or | signature_suffix_or | title_signed_or | date_signed_or |                   location_point"
 tower_declaration = tower_declaration.replace(" ", "").split("|")
-tower_types = {"B": "Building", "BANT": "Building with Antenna on top", "BMAST": "Building with Mast", "BPIPE": "Building with Pipe", "BPOLE": "Building with Pole", "BRIDG": "Bridge", "BTWR": "Building with Tower", "GTOWER": "Guyed Structure Used for Communication", "LTOWER": "Lattice Tower", "MAST": "Mast", "MTOWER": "Monopole", "NNGTANN": "Guyed Tower Array", "NNLTANN": "Lattice Tower Array", "NNMTANN": "Monopole Array", "NNTANN": "Antenna Tower Array", "NTOWER": "Multiple Structures", "PIPE": "Any type of Pipe", "POLE": "Any type of Pole", "RIG": "Oil or other type of Rig", "SIGN": "Any Type of Sign or Billboard", "SILO": "Any type of Silo", "STACK": "Smoke Stack", "TANK": "Any type of Tank (Water, Gas, etc)", "TOWER": "Free standing or Guyed Structure", "TREE": "When used as a support for an antenna", "UPOLE": "Utility Pole/Tower used to provide power", "UTOWER": "Unguyed - Free Standing Tower"}
+tower_types = {"B": "Building", "BANT": "Building with Antenna on top", "BMAST": "Building with Mast", "BPIPE": "Building with Pipe", "BPOLE": "Building with Pole", "BRIDG": "Bridge", "BTWR": "Building with Tower", "GTOWER": "Guyed Structure Used for Communication", "LTOWER": "Lattice Tower", "MAST": "Mast", "MTOWER": "Monopole", "PIPE": "Any type of Pipe", "POLE": "Any type of Pole", "RIG": "Oil or other type of Rig", "SIGN": "Any Type of Sign or Billboard", "SILO": "Any type of Silo", "STACK": "Smoke Stack", "TANK": "Any type of Tank (Water, Gas, etc)", "TOWER": "Free standing or Guyed Structure", "TREE": "When used as a support for an antenna", "UPOLE": "Utility Pole/Tower used to provide power", "UTOWER": "Unguyed - Free Standing Tower"}
+def get_tower_description(tower_type: str):
+    if tower_type in tower_types.keys():
+        return tower_types[tower_type]
+
+    elif tower_type.endswith("NGTANN"):
+        return "Guyed Tower Array with " + tower_type[0] + " towers"
+    elif tower_type.endswith("NLTANN"):
+        return "Lattice Tower Array with " + tower_type[0] + " towers"
+    elif tower_type.endswith("NMTANN"):
+        return "Monopole Array with " + tower_type[0] + " towers"
+    elif tower_type.endswith("NTANN"):
+        return "Antenna Tower Array with " + tower_type[0] + " towers"
+    elif len(tower_type) > 5 and tower_type.endswith("TOWER"):
+        return "Multiple Structures with " + tower_type[0] + " towers"
+    else:
+        group = re.search("[0-9]TA[0-9]", tower_type)
+        if group:
+            return "Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
+    
+        group = re.search("[0-9]GTA[0-9]", tower_type)
+        if group:
+            return "Guyed Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
+        
+        group = re.search("[0-9]LTA[0-9]", tower_type)
+        if group:
+            return "Lattice Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
+        
+        group = re.search("[0-9]MTA[0-9]", tower_type)
+        if group:
+            return "Monopole #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
+    
+    return "Unknown Tower Type"
+
 
 tv_declaration = "st_x        |        st_y        | ant_input_pwr | ant_max_pwr_gain | ant_polarization | antenna_id | antenna_type | application_id | asrn_na_ind |  asrn   | aural_freq | avg_horiz_pwr_gain | biased_lat | biased_long | border_code | carrier_freq | docket_num | effective_erp | electrical_deg |  elev_amsl  | elev_bldg_ag | eng_record_type | fac_zone | facility_id | freq_offset | gain_area | haat_rc_mtr | hag_overall_mtr | hag_rc_mtr | horiz_bt_erp | lat_deg | lat_dir | lat_min |  lat_sec  | lon_deg | lon_dir | lon_min |  lon_sec  | loss_area | max_ant_pwr_gain | max_erp_dbk | max_erp_kw  |  max_haat  | mechanical_deg | multiplexor_loss | power_output_vis_dbk | power_output_vis_kw | predict_coverage_area | predict_pop | terrain_data_src_other | terrain_data_src | tilt_towards_azimuth |  true_deg  | tv_dom_status | upperband_freq | vert_bt_erp| visual_freq | vsd_service | rcamsl_horiz_mtr | ant_rotation | input_trans_line | max_erp_to_hor | trans_line_loss | lottery_group | analog_channel | lat_whole_secs | lon_whole_secs | max_erp_any_angle | station_channel | lic_ant_make | lic_ant_model_num  | dt_emission_mask | whatisthiscol1 | whatisthiscol2 | last_change_date |location_point                   "
 tv_declaration = tv_declaration.replace(" ", "").split("|")
@@ -141,7 +175,7 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
                         
         # square shapes
         # B, BANT, BMAST, BPIPE, BPOLE, BTWR, RIG, SIGN, BRIDGE
-        elif tower[tower_declaration.index("structure_type")] in ["B", "BANT", "BMAST", "BPIPE", "BPOLE", "BTWR", , "RIG", "SIGN", "BRIDGE"]:
+        elif tower[tower_declaration.index("structure_type")] in ["B", "BANT", "BMAST", "BPIPE", "BPOLE", "BTWR", "RIG", "SIGN", "BRIDGE"]:
             polygon_coordinates = [[tower[tower_declaration.index("st_x")] + offset, tower[tower_declaration.index("st_y")] + offset], # 1 1
                                     [tower[tower_declaration.index("st_x")] - offset, tower[tower_declaration.index("st_y")] + offset], # -1 1
                                     [tower[tower_declaration.index("st_x")] - offset, tower[tower_declaration.index("st_y")] - offset], # -1 -1
@@ -180,7 +214,7 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
             "description": "",
             "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
             "height_support": float(tower[tower_declaration.index("height_of_structure")]),
-            "structure_type": tower[tower_declaration.index("structure_type")] + " - " + tower_types[tower[tower_declaration.index("structure_type")]],
+            "structure_type": tower[tower_declaration.index("structure_type")] + " - " + get_tower_description(tower[tower_declaration.index("structure_type")]),
             "color": towers_polygons["features"][-1]["properties"]["color"]},
                                 "geometry": {"type": "Point", "coordinates":
                                     [tower[tower_declaration.index("st_x")], tower[tower_declaration.index("st_y")]]
@@ -592,7 +626,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "channel": antenna["channel"],
             "safe_distance_controlled_feet": antenna["safe_distance_controlled_feet"],
             "safe_distance_uncontrolled_feet": antenna["safe_distance_uncontrolled_feet"],
-            "color": "#BD1313"},
+            "color": "#d66400"},
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
                     }})
@@ -611,7 +645,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "channel": antenna["channel"],
             "safe_distance_controlled_feet": antenna["safe_distance_controlled_feet"],
             "safe_distance_uncontrolled_feet": antenna["safe_distance_uncontrolled_feet"],
-            "color": "#BD1313"},
+            "color": "#d60000"},
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
                     }})
@@ -627,7 +661,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
             "facility_id": antenna["appid"],
             "hours_operation": antenna["hours_operation"],
             "towers_in_array": antenna["towers_in_array"],
-            "color": "#BD1313"},
+            "color": "#000000"},
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
                     }})
