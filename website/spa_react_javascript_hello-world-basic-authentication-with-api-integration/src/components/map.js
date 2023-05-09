@@ -58,7 +58,7 @@ function Map() {
     const [showShadeMap, setShowShadeMap] = useState(false);
 
     const [allTowersPoints, setAllTowersPoints] = useState(null);
-    const [allTowerTriangles, setAllTowerTriangles] = useState(null);
+    const [allTowerPolygons, setAllTowerPolygons] = useState(null);
 
     const [antennaPoints, setAntennaPoints] = useState(null);
 
@@ -106,6 +106,7 @@ function Map() {
         "Decommissioned Towers": {"visible": false},
         "Safe Towers": {"visible": false},
         "Google StreetView": {"visible": false},
+        "3D Buildings": {"visible": false},
         "Shade Map": {"visible": false},
         "All Towers": {"visible": false},
         "All Tower Extrusions": {"visible": false},
@@ -176,7 +177,7 @@ function Map() {
         // all towers extrusion source
         mapbox.current.addSource('All Tower Extrusions', {
             'type': 'geojson',
-            'data': allTowerTriangles
+            'data': allTowerPolygons
         });
 
         // all towers extrusion layer
@@ -199,15 +200,24 @@ function Map() {
             'data': antennaPoints
         });
 
+        mapbox.current.loadImage('https://i.imgur.com/s2Wgdgx.png', (error, image) => {
+            if (error) throw error;
+            mapbox.current.addImage('transmitter-icon', image, { sdf: true });
+        });
+
+
         // antennas layer
         mapbox.current.addLayer({
             'id': 'Antennas',
-            'type': 'circle',
+            'type': 'symbol',
+            'layout': {
+                'icon-image': 'transmitter-icon',
+                'icon-size': 1,
+            },
             'source': 'Antennas',
             'minzoom': 14,
             'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get' , 'color'],
+                'icon-color': ['get', 'color'],
             }
         });
 
@@ -301,6 +311,24 @@ function Map() {
             'tileSize': 256,
             'minzoom': 12
         });
+
+        // 3d buildings layer
+        mapbox.current.addLayer(
+            {
+                'id': '3D Buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#404040',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'min_height'],
+                    'fill-extrusion-opacity': 0.87
+                }
+            },
+        );
 
 
         // isochrone source
@@ -409,8 +437,8 @@ function Map() {
         mapbox.current.moveLayer('Isochrone');
         mapbox.current.moveLayer('Google StreetView');
         mapbox.current.moveLayer('PlacesToExplore');
-        mapbox.current.moveLayer('All Tower Extrusions');
         mapbox.current.moveLayer('All Towers');
+        mapbox.current.moveLayer('Antennas');
     }
 
     // api query
@@ -539,6 +567,7 @@ function Map() {
                 // convert to feet with 2 decimal places
                 const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
                 const support_height = (e.features[0].properties.height_support * 3.28084).toFixed(2);
+                const structure_type = e.features[0].properties.structure_type;
                 const description = "Overall height: " + overall_height + " ft" + "<br>" + "Support height: " + support_height + " ft";
 
 
@@ -547,8 +576,8 @@ function Map() {
                     .setHTML(
                         "<text id='towerpopuptitle'>Tower: " + name + "</text>" +
                         // "<text id='towerpopupstat'>height:</text>" +
-                        "<text id='towerpopuptext'>" + description + "</text>" +
-                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                        "<text id='towerpopuptext'>" + description + "<br>" +
+                        "Structure type: " + structure_type + "</text>" +
                         "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                     .addTo(mapbox.current);
             });
@@ -557,27 +586,46 @@ function Map() {
                 const coordinates = e.features[0].geometry.coordinates.slice();
                 const name = e.features[0].properties.name;
                 const transmitter_type = e.features[0].properties.transmitter_type;
-                const height_agl = e.features[0].properties.height_agl;
+                const facility_id = e.features[0].properties.facility_id;
+                const erp = e.features[0].properties.erp;
+                const status = e.features[0].properties.status;
+                const last_update = e.features[0].properties.last_update;
                 let description = "";
 
-                if (transmitter_type === "fm" || transmitter_type === "tv") {
-                    const facility_id = e.features[0].properties.facility_id;
-                    const channel = e.features[0].properties.channel;
-                    const erp = e.features[0].properties.erp;
-                    const rabbitEarsLink = e.features[0].properties.RabbitEars;
+                if (transmitter_type === "TV") {
                     // display safe zone
-                    const safe_zone_controlled = e.features[0].properties.safe_distance_controlled_feet;
-                    const safe_zone_uncontrolled = e.features[0].properties.safe_distance_uncontrolled_feet;
                     description = "Transmitter type: " + transmitter_type + "<br>" +
                         "Facility ID: " + facility_id + "<br>" +
-                        "Channel: " + channel + "<br>" +
+                        "Status: " + status + "<br>" +
+                        "Channel: " + e.features[0].properties.channel + "<br>" +
                         "ERP: " + erp + " kW" + "<br>" +
-                        "Height AGL: " + height_agl + "ft" + "<br>" +
-                        "Safe zone controlled: " + safe_zone_controlled + " ft" + "<br>" +
-                        "Safe zone uncontrolled: " + safe_zone_uncontrolled + " ft" + "<br>" +
-                        "RabbitEars: " + "<a href='" + rabbitEarsLink + "'>" + facility_id + "</a>";
-                } else {
-                    description = "Transmitter type: " + transmitter_type;
+                        "Polarization: " + e.features[0].properties.polarization + "<br>" +
+                        "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
+                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled + " ft" + "<br>" +
+                        "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
+                        "RabbitEars: " + "<a href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
+                        "Last updated: " + last_update;
+                } else if (transmitter_type === "FM") {
+                    description = "Transmitter type: " + transmitter_type + "<br>" +
+                        "Facility ID: " + facility_id + "<br>" +
+                        "Status: " + status + "<br>" +
+                        "Channel: " + e.features[0].properties.channel + "<br>" +
+                        "ERP: " + erp + " kW" + "<br>" +
+                        "Polarization: " + e.features[0].properties.polarization + "<br>" +
+                        "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
+                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
+                        "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
+                        "Last updated: " + last_update;
+                } else if (transmitter_type === "AM") {
+                    description = "Transmitter type: " + transmitter_type + "<br>" +
+                        "Application ID: " + facility_id + "<br>" +
+                        "Status: " + status + "<br>" +
+                        "Nominal power: " + erp + " kW" + "<br>" +
+                        "Hours of operation: " + e.features[0].properties.hours_operation + "<br>" +
+                        "Towers in array: " + e.features[0].properties.towers_in_array + "<br>" +
+                        "Safe zone controlled: 🕱" + "<br>" +
+                        "Safe zone uncontrolled: 🕱" + "<br>" +
+                        "Last updated: " + last_update;
                 }
 
 
@@ -665,10 +713,12 @@ function Map() {
         mapbox.current.addControl(new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
-            marker: false,
+            marker: {
+                color: 'orange'
+            },
             placeholder: 'Search for a location',
-            countries: 'us',
-            bbox: [-124.848974, 24.396308, -66.885444, 49.384358],
+            // countries: 'us',
+            bbox: [-180.0, -90.0, 180.0, 90],
             proximity: {
                 longitude: -95.712891,
                 latitude: 37.090240
@@ -714,12 +764,12 @@ function Map() {
 
         function coordinateFeature(lng, lat) {
             return {
-                center: [lat, lng],
+                center: [lng, lat],
                 geometry: {
                     type: 'Point',
-                    coordinates: [lat, lng]
+                    coordinates: [lng, lat]
                 },
-                place_name: 'Lat: ' + lat + ' Lng: ' + lng,
+                place_name: lat + ', ' + lng,
                 place_type: ['coordinate'],
                 properties: {},
                 type: 'Feature'
@@ -731,24 +781,23 @@ function Map() {
         const geocodes = [];
 
         if (coord1 < -90 || coord1 > 90) {
-            // must be lng, lat
+        // must be lng, lat
             geocodes.push(coordinateFeature(coord1, coord2));
         }
 
         if (coord2 < -90 || coord2 > 90) {
-            // must be lat, lng
+        // must be lat, lng
             geocodes.push(coordinateFeature(coord2, coord1));
         }
 
         if (geocodes.length === 0) {
-            // else could be either lng, lat or lat, lng
+        // else could be either lng, lat or lat, lng
             geocodes.push(coordinateFeature(coord1, coord2));
             geocodes.push(coordinateFeature(coord2, coord1));
         }
 
         return geocodes;
     };
-
 
     const getSidebar = () => {  
         if (!mapbox.current) return; // wait for map to initialize
@@ -769,13 +818,13 @@ function Map() {
                         if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                             mapbox.current.setLayoutProperty('All Towers', 'visibility', 'none');
                             mapbox.current.setLayoutProperty('Antennas', 'visibility', 'none');
-                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'none');
-                            mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'none');
+                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'none');        // set visibility of 3d buildings to true by default
+                            mapbox.current.setLayoutProperty('3D Buildings', 'visibility', 'none');
                         } else {
                             mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
                             mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
                             mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
-                            mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'visible');
+                            mapbox.current.setLayoutProperty('3D Buildings', 'visibility', 'visible');
                         }
                     }}>Show All Towers</button>
 
@@ -806,7 +855,7 @@ function Map() {
         const onLoad = (streetViewService) => {
             streetViewService.getPanorama({
                 location: { lat: lat, lng: lng },
-                radius: 50,
+                radius: 20,
             } , (data, status) => {
                 if (status === "OK") {
                     console.log("streetview available");
@@ -889,7 +938,7 @@ function Map() {
         console.log("updateAllTowers");
         await retrieveTowers(accessToken, lat, lng, 5000).then(
             (response) => {
-                setAllTowerTriangles(response.data.towers_triangles);
+                setAllTowerPolygons(response.data.towers_polygons);
                 setAllTowersPoints(response.data.towers_points);
             }
         )
@@ -1181,17 +1230,17 @@ function Map() {
         // if the all towers data changes then update the all towers and the all tower extrusions
         if (!mapbox.current) return; // wait for map to initialize
         if (!allTowersPoints) return; // wait for all towers data to be set
-        if (!allTowerTriangles) return; // wait for all tower extrusions data to be set
+        if (!allTowerPolygons) return; // wait for all tower extrusions data to be set
 
         console.log("Setting tower points: ", allTowersPoints);
-        console.log("Setting tower triangles: ", allTowerTriangles);
+        console.log("Setting tower polygons: ", allTowerPolygons);
         // set layer data
         mapbox.current.getSource('All Towers').setData(allTowersPoints);
 
         // set extrusion data
-        mapbox.current.getSource('All Tower Extrusions').setData(allTowerTriangles);
+        mapbox.current.getSource('All Tower Extrusions').setData(allTowerPolygons);
 
-    }, [allTowersPoints, allTowerTriangles]);
+    }, [allTowersPoints, allTowerPolygons]);
 
     // antennas useEffect
     useEffect(() => {
