@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from fastapi import Depends, FastAPI, Response, Request, status
 from fastapi.security import HTTPBearer
@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.tower_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_user_in_map
+from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -44,36 +44,20 @@ class PointPost(BaseModel):
     name: str
     description: str
     color: str
-    special: bool
+    icon: str
     category: str
     lat: float
     lng: float
 
 
 class MapPost(BaseModel):
-    owner: str
     name: str
     description: str
     legend: str
-    colors: List[str]
+    colors: Dict
     categories: List[str]
     icons: List[str]
-    points: List[PointPost]
 
-
-class PointPut(BaseModel):
-    delete: bool
-    name: str
-    description: str
-    color: str
-    special: bool
-    category: str
-    lat: float
-    lng: float
-
-# class SetHome(BaseModel):
-#     lat: float
-#     lng: float
 
 @app.get("/api/messages/public")
 def public():
@@ -156,7 +140,7 @@ async def get_my_maps(response: Response, token: str = Depends(token_auth_scheme
 
 @app.get("/maps/contributor")
 async def get_contributor_maps(response: Response, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="maps:contributor").verify()
+    result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -183,77 +167,60 @@ async def get_map(response: Response, map_id: str, token: str = Depends(token_au
 
     return {"status": "success", "message": "Map retrieved", "map": map}
 
+
 @app.post("/maps")
-async def post_map(response: Response, map: dict, token: str = Depends(token_auth_scheme)):
+async def post_map(response: Response, map: MapPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
+    print("Result from VerifyToken:", result)
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
-    
-    # self, owner, name, description, legend, points
+    # owner: str, name: str, description: str, legend: str, colors: list, categories: list, icons: list
+    print(map)
 
     new_map = Map(owner=result["sub"],
-                    name=map["name"],
-                    description=map["description"],
-                    legend=map["legend"],
-                    points=map["points"])
+                    name=map.name,
+                    description=map.description,
+                    legend=map.legend,
+                    colors=map.colors,
+                    categories=map.categories,
+                    icons=map.icons)
     
 
-    add_map(new_map)
+    add_map(new_map.to_dict())
 
-    return {"status": "success", "message": "Map added", "map": new_map}
-
-# @app.put("/maps/{map_id}")
-# async def put_map_info(response: Response, map_id: str, map: dict, token: str = Depends(token_auth_scheme)):
-#     result = VerifyToken(token.credentials).verify()
-
-#     if result.get("status"):
-#         response.status_code = status.HTTP_400_BAD_REQUEST
-#         return result
-    
-#     # self, owner, name, description, legend, points
-
-#     old_map = get_map_by_id(map_id)
-
-#     if old_map is None:
-#         response.status_code = status.HTTP_404_NOT_FOUND
-#         return {"status": "error", "message": "Map not found"}
-
-#     new_map = Map(owner=old_map.get_owner(),
-#                     name=map["name"] if map["name"] != "" else old_map.get_name(),
-#                     description=map["description"] if map["description"] != "" else old_map.get_description(),
-#                     legend=map["legend"] if map["legend"] != "" else old_map.get_legend(),
-#                     points=map["points"] if map["points"] != "" else old_map.get_points())
-    
-#     new_map.set_id(old_map.get_id())
-#     new_map.set_edit_date(datetime.now())
-#     new_map.set_editor(result["sub"])
-
-#     update_map(map_id, new_map)
-
-#     return {"status": "success", "message": "Map updated", "map": new_map}
+    return {"status": "success", "message": "Map created", "map": new_map}
 
 
-@app.get("/maps/{map_id}/points")
-async def get_map_points(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+@app.put("/maps/{map_id}/info")
+async def put_map_info(response: Response, map_id: str, info: dict, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
+
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
+    
+    current_map = get_map_by_id(map_id)
 
-    map = get_map_by_id(map_id)
 
-    if map is None:
+    if current_map is None:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
 
-    return {"status": "success", "message": "Map points retrieved", "points": map.get_points()}
+    # verify permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+    
+    # update map info
+    update_map_info(map_id, info, result["sub"])
 
+    return {"status": "success", "message": "Map updated"}
 
 # edit map point - covers edit and delete
 @app.put("/maps/{map_id}/points/{point_id}")
-async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
+async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -279,6 +246,7 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
 
     # return
 
+# add new point to the map
 @app.post("/maps/{map_id}/points")
 async def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
@@ -287,13 +255,40 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
         return result
     
     # get map
+    map = get_map_by_id(map_id)
 
-    # add point
-    # self, owner, name, description, color, icon, category, lat, lng
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
 
-    # add point to map and push
+    # create Point object
+    new_point = Point(owner=result["sub"],
+                        name=point.name,
+                        description=point.description,
+                        color=point.color,
+                        icon=point.icon,
+                        category=point.category,
+                        lat=point.lat,
+                        lng=point.lng)
 
-    # return
+    # verify Point data makes sense for the map
+    if new_point.get_category() not in map["categories"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Category not allowed for this map"}
+    
+    if new_point.get_color() not in map["colors"].values():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Color not allowed for this map"}
+    
+    if new_point.get_icon() not in map["icons"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Icon not allowed for this map"}
+  
+    
+    # add point to map in db
+    add_point_to_map(map_id, new_point.to_dict())
+
+    return {"status": "success", "message": "Point added to map", "point": new_point}
 
 @app.delete("/maps/{map_id}/points/{point_id}")
 async def delete_map_point(response: Response, map_id: str, point_id: str, token: str = Depends(token_auth_scheme)):
