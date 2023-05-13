@@ -71,12 +71,12 @@ class VerifyToken():
 
         if self.scopes:
             result = self._check_claims(payload, 'scope', str, self.scopes.split(' '))
-            if result.get("error"):
+            if result.get("status") == "error":
                 return result
 
         if self.permissions:
             result = self._check_claims(payload, 'permissions', list, self.permissions)
-            if result.get("error"):
+            if result.get("status") == "error":
                 return result
 
         return payload
@@ -98,7 +98,7 @@ class VerifyToken():
 
         if claim_name == 'scope':
             payload_claim = payload[claim_name].split(' ')
-
+        
         for value in expected_value:
             if value not in payload_claim:
                 result["status"] = "error"

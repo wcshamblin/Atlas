@@ -60,6 +60,19 @@ def delete_map(id) -> str:
 def add_point_to_map(map_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
 
+def remove_point_from_map(map_id, point_id) -> str:
+    return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([get_point_from_map(map_id, point_id)])})
+    
+def get_point_from_map(map_id, point_id) -> dict:
+    points = db.collection(u'maps').where(u'id', u'==', map_id).get()[0].to_dict()['points']
+
+    # find point with id
+    for point in points:
+        if point['id'] == point_id:
+            return point
+
+    return None
+
 def update_point_in_map(map_id, point_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).update(point)
 
