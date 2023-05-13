@@ -1,6 +1,7 @@
 import React, {useState, useEffect, createRef, useRef} from 'react';
 import ReactDOM from 'react-dom/client';
 
+import Sidebar from '../components/sidebar';
 
 import mapboxgl from 'mapbox-gl';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
@@ -792,24 +793,6 @@ function Map() {
         return geocodes;
     };
 
-    const getSidebar = () => {  
-        if (!mapbox.current) return; // wait for map to initialize
-
-        return (
-            <div id="sidebar">
-                <div id="sidebar-content">
-                    {homeIsSet ? getHomeMetrics() : ""}
-
-                    <h4>Map date time selector</h4>
-                    <DateTimePicker
-                        onChange={setMapDatetime}
-                        value={mapDatetime}
-                    />
-                </div>
-            </div>
-        )
-    }
-
     const getStreetView = () => {
         let lat = streetViewPosition[0];
         let lng = streetViewPosition[1];
@@ -1349,10 +1332,9 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}>
-                <button id="layerswitcherbutton">LayerSwitcher</button>
-                <button id="sidebarbutton"  onClick={() => setDisplaySidebar(!displaySidebar)}>Sidebar</button>
+                {/* <button id="layerswitcherbutton">LayerSwitcher</button> */}
             </div>
-            {displaySidebar ? getSidebar() : ""}
+            {<Sidebar expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar}/>}
             {displayLayers ? getLayers() : ""}
             {displayStreetView ? getStreetView() : ""}
         </>
