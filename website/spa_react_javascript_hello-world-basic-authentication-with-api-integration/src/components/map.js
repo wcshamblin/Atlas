@@ -805,23 +805,6 @@ function Map() {
                         onChange={setMapDatetime}
                         value={mapDatetime}
                     />
-
-                    <h4>Show towers</h4>
-                    <button onClick={() => {
-                        if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
-                            mapbox.current.setLayoutProperty('All Towers', 'visibility', 'none');
-                            mapbox.current.setLayoutProperty('Antennas', 'visibility', 'none');
-                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'none');        // set visibility of 3d buildings to true by default
-                            mapbox.current.setLayoutProperty('3D Buildings', 'visibility', 'none');
-                        } else {
-                            mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
-                            mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
-                            mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
-                            mapbox.current.setLayoutProperty('3D Buildings', 'visibility', 'visible');
-                        }
-                    }}>Show All Towers</button>
-
-
                 </div>
             </div>
         )
