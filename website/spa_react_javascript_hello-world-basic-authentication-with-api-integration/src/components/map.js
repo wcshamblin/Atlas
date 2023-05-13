@@ -601,7 +601,7 @@ function Map() {
                         "ERP: " + erp + " kW" + "<br>" +
                         "Polarization: " + e.features[0].properties.polarization + "<br>" +
                         "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
-                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled + " ft" + "<br>" +
+                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
                         "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
                         "RabbitEars: " + "<a href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
                         "Last updated: " + last_update;
@@ -640,14 +640,6 @@ function Map() {
                     .addTo(mapbox.current);
             });
 
-
-            // mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
-            //     mapbox.current.getCanvas().style.cursor = 'pointer';
-            // });
-            //
-            // mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
-            //     mapbox.current.getCanvas().style.cursor = '';
-            // });
 
             // on left click
             mapbox.current.on('click', (e) => {
@@ -719,9 +711,10 @@ function Map() {
             placeholder: 'Search for a location',
             // countries: 'us',
             bbox: [-180.0, -90.0, 180.0, 90],
+            // use the center of the map as the proximity
             proximity: {
-                longitude: -95.712891,
-                latitude: 37.090240
+                longitude: mapbox.current.getCenter().longitude,
+                latitude: mapbox.current.getCenter().latitude
             },
             localGeocoder: coordinatesGeocoder,
 
@@ -1210,7 +1203,6 @@ function Map() {
                     setIsoProfile(e.target.value);
                 }}>
                     <option value="driving">Driving</option>
-                    <option value="cycling">Cycling</option>
                     <option value="walking">Walking</option>
                     <option value="transit">Transit</option>
                 </select>
