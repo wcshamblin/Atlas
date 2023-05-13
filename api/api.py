@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.tower_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info
+from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -218,34 +218,6 @@ async def put_map_info(response: Response, map_id: str, info: dict, token: str =
 
     return {"status": "success", "message": "Map updated"}
 
-# edit map point - covers edit and delete
-@app.put("/maps/{map_id}/points/{point_id}")
-async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials).verify()
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-    
-    # get map
-    map = get_map_by_id(map_id)
-
-    if map is None:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"status": "error", "message": "Map not found"}
-    
-    # get point
-    old_point = get_map_point_by_id(map_id, point_id)
-
-    if old_point is None:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"status": "error", "message": "Point not found"}
-    
-    # edit point
-
-    # update point in map and push
-
-    # return
-
 # add new point to the map
 @app.post("/maps/{map_id}/points")
 async def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
@@ -298,13 +270,57 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
         return result
     
     # get map
+    map = get_map_by_id(map_id)
+
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
     
-    # delete point
+    remove_point_from_map(map_id, point_id)
 
-    # delete point from map and push
 
-    # return
+# edit map point
+@app.put("/maps/{map_id}/points/{point_id}")
+async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get map
+    map = get_map_by_id(map_id)
 
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # create Point object
+    new_point = Point(owner=result["sub"],
+                        name=point.name,
+                        description=point.description,
+                        color=point.color,
+                        icon=point.icon,
+                        category=point.category,
+                        lat=point.lat,
+                        lng=point.lng)
+
+    # verify Point data makes sense for the map
+    if new_point.get_category() not in map["categories"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Category not allowed for this map"}
+    
+    if new_point.get_color() not in map["colors"].values():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Color not allowed for this map"}
+    
+    if new_point.get_icon() not in map["icons"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Icon not allowed for this map"}
+    
+    # update point in map
+    update_point_in_map(map_id, point_id, new_point.to_dict())
+
+    return {"status": "success", "message": "Point updated", "point": new_point}
 
 
 
