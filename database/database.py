@@ -3,6 +3,7 @@ from typing import List
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+from datetime import datetime
 
 from json import dumps, load
 
@@ -14,98 +15,59 @@ def init(path="database/atlas-50a45-firebase-adminsdk-wvx8v-06724e2f8c.json"):
 db = init()
 
 
-# GET, POST, PUT (delete)
-def get_pte_points() -> str:
-    return [doc.to_dict() for doc in db.collection(u'places_to_explore').get()]
+def get_map_by_id(id) -> dict:
+    # the id is within the document
+    return db.collection(u'maps').where(u'id', u'==', id).get()[0].to_dict()
 
-def get_pte_points_json() -> str:
-    # convert all timestamps to strings
-    # test geojson return
-    # points = [
-    #         {
-    #                 "type": "Feature",
-    #                 "properties": {
-    #                     "Name": "Cape Fear Trestle",
-    #                     "description": None,
-    #                     "gx_media_links": None,
-    #                     "color": "#673AB7",
-    #                     "special": False,
-    #                     "category": "Bridges"
-    #                 },
-    #                 "geometry": {
-    #                     "type": "Point",
-    #                     "coordinates": [
-    #                         -79.045938,
-    #                         35.568646
-    #                     ]
-    #                 }
-    #             },
-    #         {
-    #                 "type": "Feature",
-    #                 "properties": {
-    #                     "Name": "Cape Fear Trestle",
-    #                     "description": None,
-    #                     "gx_media_links": None,
-    #                     "color": "#673AB7",
-    #                     "special": False,
-    #                     "category": "Bridges"
-    #                 },
-    #                 "geometry": {
-    #                     "type": "Point",
-    #                     "coordinates": [
-    #                         -79.045938,
-    #                         35.568646
-    #                     ]
-    #                 }
-    #             }
-    #         ]
-    # return dumps(points)
+def get_maps_by_user(usersub) -> List[dict]:
+    return [doc.to_dict() for doc in db.collection(u'maps').where(u'owner', u'==', usersub).get()]
 
-    points = [doc.to_dict() for doc in db.collection(u'places_to_explore').get()]
-    geojson_points = []
-
-    for point in points:
-        point["creation_date"] = point["creation_date"].strftime("%Y-%m-%dT%H:%M:%S:%fZ")
-
-        if point["edit_date"] is not None:
-            point["edit_date"] = point["edit_date"].strftime("%Y-%m-%dT%H:%M:%S:%fZ")
-
-        geojson_points.append({
-            "type": "Feature",
-            "properties": {
-                "name": point["name"],
-                "description": point["description"],
-                "color": point["color"],
-                "special": point["special"],
-                "category": point["category"],
-                "id": point["id"],
-                "owner": point["owner"],
-                "creation_date": point["creation_date"],
-                "edit_date": point["edit_date"],
-                "editor": point["editor"],
-                "deleted": point["deleted"]
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [point["lng"], point["lat"]]
-            }
-        })
-
-    return dumps(geojson_points)
-def get_pte_point(id):
-    return db.collection(u'places_to_explore').where(u'id', u'==', id).get().to_dict()
+def get_maps_for_user(usersub) -> List[dict]:
+    return [doc.to_dict() for doc in db.collection(u'maps').where(u'users', u'array_contains', usersub).get()]
 
 
-def add_pte_point(point):
-    return db.collection(u'places_to_explore').add(point)
+def add_map(map) -> str:
+    return db.collection(u'maps').add(map)
+
+def update_map_info(id, info, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    for key, value in info.items():
+            # if key is not in map_dict, skip it
+            if key not in map_dict.keys():
+                continue
+            if key in ["id", "points", "view_count", "edit_date", "creation_date"]:
+                continue
+            map_dict[key] = value
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
 
 
-def update_pte_point(id, point):
-    return db.collection(u'places_to_explore').where(u'id', u'==', id).update(point)
+def delete_map(id) -> str:
+    return db.collection(u'maps').where(u'id', u'==', id).delete()
 
+# def get_points_for_map(map_id) -> List[dict]:
+#     return [doc.to_dict() for doc in db.collection(u'maps').document(map_id).collection(u'points').get()]
 
-def delete_pte_point(id):
-    return db.collection(u'places_to_explore').where(u'id', u'==', id).delete()
+def add_point_to_map(map_id, point) -> str:
+    return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
+
+def update_point_in_map(map_id, point_id, point) -> str:
+    return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).update(point)
+
+def delete_point_from_map(map_id, point_id) -> str:
+    return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).delete()
+
+def get_users_for_map(map_id) -> List[dict]:
+    return [doc.to_dict() for doc in db.collection(u'maps').where(u'id', u'==', map_id).collection(u'users').get()]
 
 
 def set_home(usersub, home):

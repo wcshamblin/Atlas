@@ -1,375 +1,20 @@
-from typing import List
+from typing import List, Dict
 
 from fastapi import Depends, FastAPI, Response, Request, status
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
-from database.classes import Point
-from database.database import add_pte_point, get_pte_point, get_pte_points_json, update_pte_point, delete_pte_point, get_home, set_home
+from database.classes import Point, Map
+from api.tower_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
+from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
-import psycopg2
 import re
 from math import sqrt, sin, cos
 
 from api.utils import VerifyToken
 
 import logging
-
-# db initialization
-connection = psycopg2.connect(user="postgres", password="postgres_2034", dbname="fccdata", host="localhost", port="5432")
-fcccursor = connection.cursor()
-
-# declarations
-tower_declaration = "st_x    |       st_y        | record_type | content_indicator | file_number | registration_number | unique_system_identifier | coordinate_type | latitude_degrees | latitude_minutes | latitude_seconds | latitude_direction | latitude_total_seconds | longitude_degrees | longitude_minutes | longitude_seconds | longitude_direction | longitude_total_seconds | array_tower_position | array_total_tower | record_type2 | content_indicator2 | file_number2 | registration_number2 | unique_system_identifier2 | application_purpose | previous_purpose | input_source_code | status_code | date_entered | date_received | date_issued | date_constructed | date_dismantled | date_action | archive_flag_code | version | signature_first_name | signature_middle_initial | signature_last_name | signature_suffix |       signature_title       | invalid_signature |      structure_street_address       | structure_city | structure_state_code | county_code | zip_code | height_of_structure | ground_elevation | overall_height_above_ground | overall_height_amsl | structure_type | date_faa_determination_issued | faa_study_number | faa_circular_number | specification_option | painting_and_lighting | mark_light_code | mark_light_other | faa_emi_flag | nepa_flag | date_signed | signature_last_or | signature_first_or | signature_mi_or | signature_suffix_or | title_signed_or | date_signed_or |                   location_point"
-tower_declaration = tower_declaration.replace(" ", "").split("|")
-tower_types = {"B": "Building", "BANT": "Building with Antenna on top", "BMAST": "Building with Mast", "BPIPE": "Building with Pipe", "BPOLE": "Building with Pole", "BRIDG": "Bridge", "BTWR": "Building with Tower", "GTOWER": "Guyed Structure Used for Communication", "LTOWER": "Lattice Tower", "MAST": "Mast", "MTOWER": "Monopole", "PIPE": "Any type of Pipe", "POLE": "Any type of Pole", "RIG": "Oil or other type of Rig", "SIGN": "Any Type of Sign or Billboard", "SILO": "Any type of Silo", "STACK": "Smoke Stack", "TANK": "Any type of Tank (Water, Gas, etc)", "TOWER": "Free standing or Guyed Structure", "TREE": "When used as a support for an antenna", "UPOLE": "Utility Pole/Tower used to provide power", "UTOWER": "Unguyed - Free Standing Tower"}
-def get_tower_description(tower_type: str):
-    if tower_type in tower_types.keys():
-        return tower_types[tower_type]
-
-    elif tower_type.endswith("NGTANN"):
-        return "Guyed Tower Array with " + tower_type[0] + " towers"
-    elif tower_type.endswith("NLTANN"):
-        return "Lattice Tower Array with " + tower_type[0] + " towers"
-    elif tower_type.endswith("NMTANN"):
-        return "Monopole Array with " + tower_type[0] + " towers"
-    elif tower_type.endswith("NTANN"):
-        return "Antenna Tower Array with " + tower_type[0] + " towers"
-    elif len(tower_type) > 5 and tower_type.endswith("TOWER"):
-        return "Multiple Structures with " + tower_type[0] + " towers"
-    else:
-        group = re.search("[0-9]TA[0-9]", tower_type)
-        if group:
-            return "Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
-    
-        group = re.search("[0-9]GTA[0-9]", tower_type)
-        if group:
-            return "Guyed Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
-        
-        group = re.search("[0-9]LTA[0-9]", tower_type)
-        if group:
-            return "Lattice Tower #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
-        
-        group = re.search("[0-9]MTA[0-9]", tower_type)
-        if group:
-            return "Monopole #" + group.group()[-1] + " in array of " + group.group()[0] + " antenna towers"
-    
-    return "Unknown Tower Type"
-
-
-tv_declaration = "st_x        |        st_y        | ant_input_pwr | ant_max_pwr_gain | ant_polarization | antenna_id | antenna_type | application_id | asrn_na_ind |  asrn   | aural_freq | avg_horiz_pwr_gain | biased_lat | biased_long | border_code | carrier_freq | docket_num | effective_erp | electrical_deg |  elev_amsl  | elev_bldg_ag | eng_record_type | fac_zone | facility_id | freq_offset | gain_area | haat_rc_mtr | hag_overall_mtr | hag_rc_mtr | horiz_bt_erp | lat_deg | lat_dir | lat_min |  lat_sec  | lon_deg | lon_dir | lon_min |  lon_sec  | loss_area | max_ant_pwr_gain | max_erp_dbk | max_erp_kw  |  max_haat  | mechanical_deg | multiplexor_loss | power_output_vis_dbk | power_output_vis_kw | predict_coverage_area | predict_pop | terrain_data_src_other | terrain_data_src | tilt_towards_azimuth |  true_deg  | tv_dom_status | upperband_freq | vert_bt_erp| visual_freq | vsd_service | rcamsl_horiz_mtr | ant_rotation | input_trans_line | max_erp_to_hor | trans_line_loss | lottery_group | analog_channel | lat_whole_secs | lon_whole_secs | max_erp_any_angle | station_channel | lic_ant_make | lic_ant_model_num  | dt_emission_mask | whatisthiscol1 | whatisthiscol2 | last_change_date |location_point                   "
-tv_declaration = tv_declaration.replace(" ", "").split("|")
-tv_frequencies = {2:60, 3:66, 4:72, 5:82, 6:88, 7:180, 8:186, 9:192, 10:198, 11:204, 12:210, 13:216, 14:476, 15:482, 16:488, 17:494, 18:500, 19:506, 20:512, 21:518, 22:524, 23:530, 24:536, 25:542, 26:548, 27:554, 28:560, 29:566, 30:572, 31:578, 32:584, 33:590, 34:596, 35:602, 36:608, 37:614, 38:620, 39:626, 40:632, 41:638, 42:644, 43:650, 44:656, 45:662, 46:668, 47:674, 48:680, 49:686, 50:692, 51:698, 52:704, 53:710, 54:716, 55:722, 56:728, 57:734, 58:740, 59:746, 60:752, 61:758, 62:764, 63:770, 64:776, 65:782, 66:788, 67:794, 68:800, 69:806}
-
-fm_declaration = "st_x        |       st_y        | antenna_id | antenna_type | ant_input_pwr | ant_max_pwr_gain | ant_polarization | ant_rotation | application_id | asd_service | asrn | asrn_na_ind |     biased_lat     |    biased_long     | border_code | border_dist | docket_num | effective_erp | elev_amsl | eng_record_type | erp_w | facility_id | fm_dom_status | gain_area | haat_horiz_calc_ind | haat_horiz_rc_mtr | haat_vert_rc_mtr | hag_horiz_rc_mtr | hag_overall_mtr | hag_vert_rc_mtr | horiz_bt_erp | horiz_erp |    last_update_date     | lat_deg | lat_dir | lat_min | lat_sec | lic_ant_make | lic_ant_model_num | lon_deg | lon_dir | lon_min | lon_sec | loss_area |     mainkey      | market_group_num | max_haat | max_horiz_erp | max_vert_erp | min_horiz_erp | num_sections | power_output_vis_kw | rcamsl_horiz_mtr | rcamsl_vert_mtr | spacing | station_channel | station_class | trans_power_output | trans_power_output_w | vert_bt_erp | vert_erp |                   location_point                   "
-fm_declaration = fm_declaration.replace(" ", "").split("|")
-fm_frequencies = {200: 87.9, 226: 93.1, 251: 98.1, 276: 103.1, 201: 88.1, 227: 93.3, 252: 98.3, 277: 103.3, 202: 88.3, 228: 93.5, 253: 98.5, 278: 103.5, 203: 88.5, 229: 93.7, 254: 98.7, 279: 103.7, 204: 88.7, 230: 93.9, 255: 98.9, 280: 103.9, 205: 88.9, 231: 94.1, 256: 99.1, 281: 104.1, 206: 89.1, 232: 94.3, 257: 99.3, 282: 104.3, 207: 89.3, 233: 94.5, 258: 99.5, 283: 104.5, 208: 89.5, 234: 94.7, 259: 99.7, 284: 104.7, 209: 89.7, 235: 94.9, 260: 99.9, 285: 104.9, 210: 89.9, 236: 95.1, 261: 100.1, 286: 105.1, 211: 90.1, 237: 95.3, 262: 100.3, 287: 105.3, 212: 90.3, 238: 95.5, 263: 100.5, 288: 105.5, 213: 90.5, 239: 95.7, 264: 100.7, 289: 105.7, 214: 90.7, 240: 95.9, 265: 100.9, 290: 105.9, 215: 90.9, 241: 96.1, 266: 101.1, 291: 106.1, 216: 91.1, 242: 96.3, 267: 101.3, 292: 106.3, 217: 91.3, 243: 96.5, 268: 101.5, 293: 106.5, 218: 91.5, 244: 96.7, 269: 101.7, 294: 106.7, 219: 91.7, 245: 96.9, 270: 101.9, 295: 106.9, 220: 91.9, 246: 97.1, 271: 102.1, 296: 107.1, 221: 92.1, 247: 97.3, 272: 102.3, 297: 107.3, 222: 92.3, 248: 97.5, 273: 102.5, 298: 107.5, 223: 92.5, 249: 97.7, 274: 102.7, 299: 107.7, 224: 92.7, 250: 97.9, 275: 102.9, 300: 107.9, 225: 92.9}
-fm_classes = {"A": 6, "B1": 25, "B": 50, "C3": 25, "C2": 50, "C1": 100, "C0": 100, "C": 100}
-
-am_declaration = "st_x | st_y | am_dom_status | ant_dir_ind | ant_mode | any_sys_id | application_id | aug_count | augmented_ind | bad_data_switch | biased_lat | biased_long | domestic_pattern | dummy_data_switch | efficiency_restricted | efficiency_theoretical | eng_record_type | feed_circ_other | feed_circ_type | grandfathered_ind | hours_operation | last_update_date | lat_deg | lat_dir | lat_min | lat_sec | lat_whole_secs | lon_deg | lon_dir | lon_min | lon_sec | lon_whole_secs | mainkey | power | q_factor | q_factor_custom_ind | rms_augmented | rms_standard | rms_theoretical | specified_hrs_range | tower_count | location_point "
-am_declaration = am_declaration.replace(" ", "").split("|")
-am_hours = {"U": "Unlimited", "N": "Nighttime", "D": "Daytime", "C": "Critical Hours", "R": "Canadian Restricted", "P": "Pre-sunrise"}
-
-def create_circle_polygon(lat: float, lng: float, radius: float):
-    # radius should be in feet
-    polygon_coordinates = []
-    for i in range(0, 360, 5):
-        polygon_coordinates.append([lng + radius * cos(i), lat + radius * sin(i)])
-    return polygon_coordinates
-
-
-def retrieve_fcc_towers(lat: float, lng: float, radius: float):
-    # radius should be in feet
-    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM asr_locations WHERE status_code = 'C' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
-    fcccursor.execute(querystring)
-    return fcccursor.fetchall()
-
-def retrieve_fcc_antennas(lat: float, lng: float, radius: float, table: str):
-    # radius should be in feet
-    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE eng_record_type = 'C' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
-    fcccursor.execute(querystring)
-    return fcccursor.fetchall()
-
-def calculate_safe_zone(kilowatts: float, gain: int, freq: float, ground_reflections: bool):
-    # frequency should be in MHz
-    if ground_reflections:
-        gf = .64
-    else:
-        gf = .25
-
-    power = 1000 * 1000 * kilowatts
-
-    eirp = power * pow(10, (gain/10))
-
-    if freq < 1.34:
-        # Below 1.34 MHz
-        std1 = 100.0
-        std2 = 100.0
-    elif freq < 3.0:
-        # Below 3.0 MHz
-        std1 = 100.0
-        std2 = 180.0 / (pow(freq,2))
-    elif freq < 30.0:
-        # Below 30 MHz
-        std1 = 900.0 / pow(freq,2)
-        std2 = 180.0 / (pow(freq,2))
-    elif freq < 300.0:
-        # Below 300 MHz
-        std1 = 1.0
-        std2 = 0.2
-    elif freq < 1500.0:
-        # Below 1500 MHz
-        std1 = freq / 300.0
-        std2 = freq / 1500.0
-    elif freq < 100000.0:
-        # Below 100 GHz
-        std1 = 5.0
-        std2 = 1.0
-    else:
-        # Frequency too high
-        return None
-    
-    dx1 = sqrt((gf * eirp)/(std1 * 3.14159))
-    dx1 = dx1/30.48
-    dx1 = ((dx1 * 10) + 0.5) / 10
-    dx2 = sqrt((gf * eirp)/(std2 * 3.14159))
-    dx2 = dx2/30.48
-    dx2 = ((dx2 * 10) + 0.5) / 10
-
-    return {
-        "safe_distance_controlled_feet": round(dx1, 4),
-        "safe_distance_uncontrolled_feet": round(dx2, 4)
-    }
-
-def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
-    offset = 0.0001
-    results = retrieve_fcc_towers(lat, lng, radius) #feet
-
-    # parse results
-    towers_polygons = {"type": "FeatureCollection",
-                      "features": []
-                     }
-
-    towers_points = {"type": "FeatureCollection",
-                        "features": []
-                        }
-
-    # loop through towers and make geojson triangles
-    for tower in results:
-        # circular shapes
-        # PIPE, POLE, SILO, STACK, TANK, TREE, UPOLE, MTOWER, []NMTANN
-        # we can't really get a circle so let's just do an octogon
-        if tower[tower_declaration.index("structure_type")] in ["PIPE", "POLE", "SILO", "STACK", "TANK", "TREE", "UPOLE", "MTOWER"] or tower[tower_declaration.index("structure_type")].endswith("NMTANN"):
-            polygon_coordinates = create_circle_polygon(tower[tower_declaration.index("st_y")], tower[tower_declaration.index("st_x")], offset/2)
-            
-            towers_polygons["features"].append({"type": "Feature", "properties": {
-                "name": tower[tower_declaration.index("registration_number")],
-                "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
-                "color": "#BD1313"},
-                                    "geometry": {"type": "Polygon", "coordinates":
-                                        [polygon_coordinates]
-                        }})
-                        
-        # square shapes
-        # B, BANT, BMAST, BPIPE, BPOLE, BTWR, RIG, SIGN, BRIDGE
-        elif tower[tower_declaration.index("structure_type")] in ["B", "BANT", "BMAST", "BPIPE", "BPOLE", "BTWR", "RIG", "SIGN", "BRIDGE"]:
-            polygon_coordinates = [[tower[tower_declaration.index("st_x")] + offset, tower[tower_declaration.index("st_y")] + offset], # 1 1
-                                    [tower[tower_declaration.index("st_x")] - offset, tower[tower_declaration.index("st_y")] + offset], # -1 1
-                                    [tower[tower_declaration.index("st_x")] - offset, tower[tower_declaration.index("st_y")] - offset], # -1 -1
-                                    [tower[tower_declaration.index("st_x")] + offset, tower[tower_declaration.index("st_y")] - offset], # 1 -1
-                                    ]
-            
-            towers_polygons["features"].append({"type": "Feature", "properties": {
-                "name": tower[tower_declaration.index("registration_number")],
-                "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
-                "color": "#6813bd"},
-                                    "geometry": {"type": "Polygon", "coordinates":
-                                        [polygon_coordinates]
-                        }})
-        
-        # triangular shapes for everything else
-        else:
-            polygon_coordinates = [[tower[tower_declaration.index("st_x")], tower[tower_declaration.index("st_y")] + offset],
-                                [tower[tower_declaration.index("st_x")] - offset, tower[tower_declaration.index("st_y")] - offset],
-                                [tower[tower_declaration.index("st_x")] + offset, tower[tower_declaration.index("st_y")] - offset],
-                                ]
-            
-            towers_polygons["features"].append({"type": "Feature", "properties": {
-                "name": tower[tower_declaration.index("registration_number")],
-                "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
-                "color": "#1370bd"},
-                                    "geometry": {"type": "Polygon", "coordinates":
-                                        [polygon_coordinates]
-                        }})
-
-        towers_points["features"].append({"type": "Feature", "properties": {
-            "name": tower[tower_declaration.index("registration_number")],
-            "description": "",
-            "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-            "height_support": float(tower[tower_declaration.index("height_of_structure")]),
-            "structure_type": tower[tower_declaration.index("structure_type")] + " - " + get_tower_description(tower[tower_declaration.index("structure_type")]),
-            "color": towers_polygons["features"][-1]["properties"]["color"]},
-                                "geometry": {"type": "Point", "coordinates":
-                                    [tower[tower_declaration.index("st_x")], tower[tower_declaration.index("st_y")]]
-                    }})
-        
-        
-    return towers_polygons, towers_points
-
-
-
-def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
-    # radius should be in feet
-    antennas = retrieve_fcc_antennas(lat, lng, radius, "tv_locations")
-
-    antennas_out = []
-
-    for antenna in antennas:
-        try:
-            safe_distances = calculate_safe_zone(float(antenna[tv_declaration.index("effective_erp")]), 0, tv_frequencies[int(antenna[tv_declaration.index("station_channel")])], False)
-        except ValueError:
-            safe_distances = {"safe_distance_controlled_feet": -1, "safe_distance_uncontrolled_feet": -1}
-
-        polarity = antenna[tv_declaration.index("ant_polarization")]
-
-        if polarity == "C":
-            polarity = "Circular"
-        elif polarity == "E":
-            polarity = "Elliptical"
-        elif polarity == "H":
-            polarity = "Horizontal"
-        else:
-            polarity = "?"
-
-        try:
-            height = float(antenna[tv_declaration.index("hag_overall_mtr")]) * 3.28084
-        except ValueError:
-            height = 0
-
-        try:
-            erp_kw = float(antenna[tv_declaration.index("effective_erp")])
-        except ValueError:
-            erp_kw = 0
-
-        antennas_out.append({
-            "lat": antenna[tv_declaration.index("st_y")],
-            "lng": antenna[tv_declaration.index("st_x")],
-            "facility_id": antenna[tv_declaration.index("facility_id")],
-            "effective_erp": erp_kw,
-            "channel": antenna[tv_declaration.index("station_channel")],
-            "polarization": polarity,
-            "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
-            "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
-            "height_agl": height,
-            "status": antenna[tv_declaration.index("tv_dom_status")],
-            "last_update": antenna[tv_declaration.index("last_change_date")].split(" ")[0],
-            "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_declaration.index("facility_id")]
-        })
-
-    # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
-    return antennas_out
-
-def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
-    # radius should be in feet
-    antennas = retrieve_fcc_antennas(lat, lng, radius, "fm_locations")
-    antennas_out = []
-    for antenna in antennas:
-
-        # determining ERP
-        erp_kw = 0
-        # if we have absolute erp watts, use that..
-        if antenna[fm_declaration.index("erp_w")] != "":
-            erp_kw = float(antenna[fm_declaration.index("erp_w")]) / 1000
-        # otherwise, use the max of the horizontal and vertical erps
-        elif antenna[fm_declaration.index("horiz_erp")] != "" and antenna[fm_declaration.index("vert_erp")] != "":
-            erp_kw = max(float(antenna[fm_declaration.index("horiz_erp")]), float(antenna[fm_declaration.index("vert_erp")]))
-        # else if only one exists
-        elif antenna[fm_declaration.index("horiz_erp")] != "":
-            erp_kw = float(antenna[fm_declaration.index("horiz_erp")])
-        elif antenna[fm_declaration.index("vert_erp")] != "":
-            erp_kw = float(antenna[fm_declaration.index("vert_erp")])
-        # if none of these are present, use the max ERP that the station class can transmit
-        else:
-            erp_kw = fm_classes[antenna[fm_declaration.index("station_class")]]
-
-        try:
-            erp_kw = float(erp_kw)
-        except ValueError:
-            erp_kw = 0
-
-
-        # calculate safe distances
-        try:
-            safe_distances = calculate_safe_zone(erp_kw, 0, fm_frequencies[int(antenna[fm_declaration.index("station_channel")])], False)
-        except ValueError:
-            safe_distances = {"safe_distance_controlled_feet": -1, "safe_distance_uncontrolled_feet": -1}
-
-        polarity = antenna[fm_declaration.index("ant_polarization")]
-
-        if polarity == "C":
-            polarity = "Circular"
-        elif polarity == "E":
-            polarity = "Elliptical"
-        elif polarity == "H":
-            polarity = "Horizontal"
-        else:
-            polarity = "?"
-
-        try:
-            height = float(antenna[fm_declaration.index("hag_overall_mtr")]) * 3.28084
-        except ValueError:
-            height = 0
-
-        try:
-            channel = str(fm_frequencies[int(antenna[fm_declaration.index("station_channel")])]) + " MHz"
-        except ValueError:
-            channel = antenna[fm_declaration.index("station_channel")]
-        except KeyError:
-            channel = "?"
-        
-        antennas_out.append({
-            "lat": antenna[fm_declaration.index("st_y")],
-            "lng": antenna[fm_declaration.index("st_x")],
-            "facility_id": antenna[fm_declaration.index("facility_id")],
-            "effective_erp": erp_kw,
-            "channel": channel,
-            "polarization": polarity,
-            "safe_distance_controlled_feet": safe_distances["safe_distance_controlled_feet"],
-            "safe_distance_uncontrolled_feet": safe_distances["safe_distance_uncontrolled_feet"],
-            "height_agl": height,
-            "status": antenna[fm_declaration.index("fm_dom_status")],
-            "last_update": antenna[fm_declaration.index("last_update_date")].split(" ")[0],
-        })
-
-    # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
-    return antennas_out
-
-def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
-    antennas = retrieve_fcc_antennas(lat, lng, radius, "am_locations")
-    antennas_out = []
-
-    for antenna in antennas:
-        antennas_out.append({
-            "lat": antenna[am_declaration.index("st_y")],
-            "lng": antenna[am_declaration.index("st_x")],
-            "appid": antenna[am_declaration.index("application_id")],
-            "towers_in_array": antenna[am_declaration.index("tower_count")],
-            "nominal_power": antenna[am_declaration.index("power")],
-            "status": antenna[am_declaration.index("am_dom_status")],
-            "last_update": antenna[am_declaration.index("last_update_date")].split(" ")[0],
-            "hours_operation": am_hours[antenna[am_declaration.index("hours_operation")]],
-        })
-
-    return antennas_out
 
 # Scheme for the Authorization header
 token_auth_scheme = HTTPBearer()
@@ -394,34 +39,25 @@ logging.basicConfig(filename='access.log', level=logging.INFO, format='%(asctime
 # Startup
 logging.info("Starting API")
 
-categories = ["Bridges", "Drains", "Everything_else", "Larger_abandonments", "Mines_and_Tunnels", "Places_of_interest", "Possibly_active", "Small_abandonments", "Towers"]
-
-colors = ["#558B2F", "#E65100", "#0288D1", "#673AB7", "#880E4F", "#A52714", "#FFD600", "#000000"]
-
 
 class PointPost(BaseModel):
     name: str
     description: str
     color: str
-    special: bool
+    icon: str
     category: str
     lat: float
     lng: float
 
 
-class PointPut(BaseModel):
-    delete: bool
+class MapPost(BaseModel):
     name: str
     description: str
-    color: str
-    special: bool
-    category: str
-    lat: float
-    lng: float
+    legend: str
+    colors: Dict
+    categories: List[str]
+    icons: List[str]
 
-# class SetHome(BaseModel):
-#     lat: float
-#     lng: float
 
 @app.get("/api/messages/public")
 def public():
@@ -435,115 +71,27 @@ def public():
     return Response(content=result, status_code=status.HTTP_200_OK, media_type="text/plain")
 
 
+@app.get("/api/messages/private-scoped")
+async def private_scoped(response: Response, token: str = Depends(token_auth_scheme)):
+    """A valid access token with 'read:messages' scope required to access this route"""
+
+    result = VerifyToken(token.credentials, scopes="read").verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    return {"status": "success", "msg": ("Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.")}
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/points")
-async def get_points(response: Response, token: str = Depends(token_auth_scheme)):
-    """A valid access token is required to access this route"""
-
-    result = VerifyToken(token.credentials).verify()
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-
-    return {"status": "success", "msg": "points retrieved", "points": get_pte_points_json()}
-
-
-@app.get("/points/{point_id}")
-async def get_point(response: Response, point_id: str, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
-
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-
-    point = get_pte_point(point_id)
-
-    if point is None:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"status": "error", "msg": "point not found"}
-
-    point["creation"] = from_datetime_to_str(point["creation"])
-    point["last_update"] = from_datetime_to_str(point["last_update"])
-
-    return {"status": "success", "msg": "point retrieved", "point": get_pte_point(point_id)}
-
-
-@app.post("/points")
-async def post_point(response: Response, point: PointPost, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="add").verify()
-
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-
-    new_point = Point(owner=result["sub"],
-                      name=point.name,
-                      description=point.description,
-                      color=point.color,
-                      special=point.special,
-                      category=point.category,
-                      lat=point.lat,
-                      lng=point.lng)
-
-    add_pte_point(new_point)
-
-    return {"status": "success", "message": "Point added", "point": new_point}
-
-
-@app.put("/points/{point_id}")
-async def put_point(response: Response, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="edit").verify()
-
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-
-    old_point = get_pte_point(point_id)
-
-    if old_point is None:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"status": "error", "message": "Point not found"}
-
-    # if old_point.get_owner() != result.get("user_id"):
-    #     response.status_code = status.HTTP_401_UNAUTHORIZED
-    #     return {"status": "error", "message": "You are not the owner of this point"}
-
-    if point.delete:
-        # check roles
-        result = VerifyToken(token.credentials, scopes="delete").verify()
-        if result.get("status"):
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return result
-
-        delete_pte_point(point_id)
-        return {"status": "success", "message": "Point deleted"}
-
-    new_point = Point(owner=old_point.get_owner(),
-                      name=point.name if point.name != "" else old_point.get_name(),
-                      description=point.description if point.description != "" else old_point.get_description(),
-                      color=point.color if point.color != "" else old_point.get_color(),
-                      special=point.special if point.special != "" else old_point.get_special(),
-                      category=point.category if point.category != "" else old_point.get_category(),
-                      lat=point.lat if point.lat != "" else old_point.get_lat(),
-                      lng=point.lng if point.lng != "" else old_point.get_lng())
-
-    new_point.set_id(old_point.get_id())
-    new_point.set_edit_date(datetime.now())
-    new_point.set_editor(result["sub"])
-
-    update_pte_point(point_id, new_point)
-
-    return {"status": "success", "message": "Point updated", "point": new_point}
-
-
 @app.post("/set_home")
 async def sethome(response: Response, home: dict, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="edit").verify()
+    result = VerifyToken(token.credentials).verify()
 
+    print("Result from VerifyToken:", result)
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
@@ -557,7 +105,7 @@ async def sethome(response: Response, home: dict, token: str = Depends(token_aut
 
 @app.get("/home")
 async def retrieve_home(response: Response, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
+    result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -577,9 +125,193 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
     return {"status": "success", "message": "Home retrieved", "home": home[0]}
 
 
+@app.get("/maps/user")
+async def get_my_maps(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    maps = get_maps_by_user(result["sub"])
+
+
+    return {"status": "success", "message": "Maps retrieved", "maps": maps}
+
+@app.get("/maps/contributor")
+async def get_contributor_maps(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    maps = get_maps_for_user(result["sub"])
+
+    return {"status": "success", "message": "Maps retrieved", "maps": maps}
+
+
+@app.get("/maps/{map_id}")
+async def get_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    map = get_map_by_id(map_id)
+
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    return {"status": "success", "message": "Map retrieved", "map": map}
+
+
+@app.post("/maps")
+async def post_map(response: Response, map: MapPost, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    print("Result from VerifyToken:", result)
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    # owner: str, name: str, description: str, legend: str, colors: list, categories: list, icons: list
+    print(map)
+
+    new_map = Map(owner=result["sub"],
+                    name=map.name,
+                    description=map.description,
+                    legend=map.legend,
+                    colors=map.colors,
+                    categories=map.categories,
+                    icons=map.icons)
+    
+
+    add_map(new_map.to_dict())
+
+    return {"status": "success", "message": "Map created", "map": new_map}
+
+
+@app.put("/maps/{map_id}/info")
+async def put_map_info(response: Response, map_id: str, info: dict, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+    
+    # update map info
+    update_map_info(map_id, info, result["sub"])
+
+    return {"status": "success", "message": "Map updated"}
+
+# edit map point - covers edit and delete
+@app.put("/maps/{map_id}/points/{point_id}")
+async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get map
+    map = get_map_by_id(map_id)
+
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+    
+    # get point
+    old_point = get_map_point_by_id(map_id, point_id)
+
+    if old_point is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Point not found"}
+    
+    # edit point
+
+    # update point in map and push
+
+    # return
+
+# add new point to the map
+@app.post("/maps/{map_id}/points")
+async def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get map
+    map = get_map_by_id(map_id)
+
+    if map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # create Point object
+    new_point = Point(owner=result["sub"],
+                        name=point.name,
+                        description=point.description,
+                        color=point.color,
+                        icon=point.icon,
+                        category=point.category,
+                        lat=point.lat,
+                        lng=point.lng)
+
+    # verify Point data makes sense for the map
+    if new_point.get_category() not in map["categories"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Category not allowed for this map"}
+    
+    if new_point.get_color() not in map["colors"].values():
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Color not allowed for this map"}
+    
+    if new_point.get_icon() not in map["icons"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Icon not allowed for this map"}
+  
+    
+    # add point to map in db
+    add_point_to_map(map_id, new_point.to_dict())
+
+    return {"status": "success", "message": "Point added to map", "point": new_point}
+
+@app.delete("/maps/{map_id}/points/{point_id}")
+async def delete_map_point(response: Response, map_id: str, point_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get map
+    
+    # delete point
+
+    # delete point from map and push
+
+    # return
+
+
+
+
+
 @app.get("/fcc/towers/nearby/{lat}/{lng}/{radius}")
 async def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
+    result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -593,78 +325,13 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
 
 @app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
 async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials, scopes="read").verify()
+    result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
 
-    # geojson
-    antennas = {"type": "FeatureCollection",
-                        "features": []
-                        }
-
-    # find antennas
-    tv_antennas = retrieve_fcc_tv_antennas(lat, lng, radius) #feet
-    fm_antennas = retrieve_fcc_fm_antennas(lat, lng, radius) #feet
-    print("FM Antennas:", fm_antennas)
-    am_antennas = retrieve_fcc_am_antennas(lat, lng, radius) #feet
-
-    # loop through antennas and add to geojson
-    for antenna in tv_antennas:
-        antennas["features"].append({"type": "Feature", "properties": {
-            "name": antenna["facility_id"],
-            "description": "",
-            "transmitter_type": "TV",
-            "height_agl": antenna["height_agl"],
-            "RabbitEars": antenna["RabbitEars"],
-            "status": antenna["status"],
-            "last_update": antenna["last_update"],
-            "erp": antenna["effective_erp"],
-            "polarization": antenna["polarization"],
-            "facility_id": antenna["facility_id"],
-            "channel": antenna["channel"],
-            "safe_distance_controlled_feet": antenna["safe_distance_controlled_feet"],
-            "safe_distance_uncontrolled_feet": antenna["safe_distance_uncontrolled_feet"],
-            "color": "#d66400"},
-            "geometry": {"type": "Point", "coordinates":
-                                    [antenna["lng"], antenna["lat"]]
-                    }})
-
-    for antenna in fm_antennas:
-        antennas["features"].append({"type": "Feature", "properties": {
-            "name": antenna["facility_id"],
-            "description": "",
-            "transmitter_type": "FM",
-            "height_agl": antenna["height_agl"],
-            "status": antenna["status"],
-            "last_update": antenna["last_update"],
-            "erp": antenna["effective_erp"],
-            "polarization": antenna["polarization"],
-            "facility_id": antenna["facility_id"],
-            "channel": antenna["channel"],
-            "safe_distance_controlled_feet": antenna["safe_distance_controlled_feet"],
-            "safe_distance_uncontrolled_feet": antenna["safe_distance_uncontrolled_feet"],
-            "color": "#d60000"},
-            "geometry": {"type": "Point", "coordinates":
-                                    [antenna["lng"], antenna["lat"]]
-                    }})
-        
-    for antenna in am_antennas:
-        antennas["features"].append({"type": "Feature", "properties": {
-            "name": "AM " + antenna["appid"],
-            "description": "",
-            "transmitter_type": "AM",
-            "status": antenna["status"],
-            "last_update": antenna["last_update"],
-            "erp": antenna["nominal_power"],
-            "facility_id": antenna["appid"],
-            "hours_operation": antenna["hours_operation"],
-            "towers_in_array": antenna["towers_in_array"],
-            "color": "#000000"},
-            "geometry": {"type": "Point", "coordinates":
-                                    [antenna["lng"], antenna["lat"]]
-                    }})
+    antennas = retrieve_fcc_antenna_objects(lat, lng, radius) #feet
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
