@@ -17,6 +17,9 @@ const Sidebar = ({ expanded, setDisplaySidebar }) => {
                     <button class="sidebar-link-button clock" onClick={e => setSelectedPart('time')}></button>
                 </div>
                 <div class="sidebar-link">
+                    <button class="sidebar-link-button settings" onClick={e => setSelectedPart('settings')}></button>
+                </div>
+                <div class="sidebar-link">
                     <button class="sidebar-link-button expand" onClick={e => setDisplaySidebar(false)}></button>
                 </div>
             </div>
@@ -30,6 +33,8 @@ const Sidebar = ({ expanded, setDisplaySidebar }) => {
                             return <h1>LAYERS</h1>
                         case 'time':
                             return <h1>TIME</h1>
+                        case 'settings':
+                            return <h1>SETTINGS</h1>
                         default:
                             return ""
                     } 
