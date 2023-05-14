@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
-from api.tower_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
+from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
 from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
