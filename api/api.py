@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map
+from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -84,7 +84,30 @@ async def private_scoped(response: Response, token: str = Depends(token_auth_sch
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Atlas V2 API is running"}
+
+@app.get("/eula")
+async def eula(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    # returns false if not accepted or older than a week
+    return {"status": "success", "message": "EULA status", "accepted": get_eula_acceptance(result["sub"])}
+
+@app.post("/eula")
+async def eula(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    set_eula_acceptance(usersub=result["sub"], acceptance=True)
+
+    return {"status": "success", "message": "EULA accepted"}
 
 
 @app.post("/set_home")

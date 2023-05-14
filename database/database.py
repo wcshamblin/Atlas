@@ -15,12 +15,37 @@ def init(path="database/atlas-50a45-firebase-adminsdk-wvx8v-06724e2f8c.json"):
 db = init()
 
 
+def get_eula_acceptance(usersub):
+    eula_object = db.collection(u'eula_acceptance').where(u'user', u'==', usersub).get()[0].to_dict()
+
+    # if the acceptance is older than a week
+    if (datetime.now() - eula_object['acceptance_date']).days > 7:
+        return False
+
+    if eula_object['accepted']:
+        return True
+
+    return False
+
+
+def set_eula_acceptance(usersub, acceptance):
+    # if the user has already accepted the eula, update the acceptance
+    user_eula = db.collection(u'eula_acceptance').where(u'user', u'==', usersub).get()
+    if user_eula:
+        return user_eula[0].reference.update({u'accepted': acceptance, u'acceptance_date': datetime.now(), u'user': usersub})
+
+    # if the user has not accepted the eula, create a new acceptance
+    return db.collection(u'eula_acceptance').add({u'accepted': acceptance, u'acceptance_date': datetime.now(), u'user': usersub})
+
+
 def get_map_by_id(id) -> dict:
     # the id is within the document
     return db.collection(u'maps').where(u'id', u'==', id).get()[0].to_dict()
 
+
 def get_maps_by_user(usersub) -> List[dict]:
     return [doc.to_dict() for doc in db.collection(u'maps').where(u'owner', u'==', usersub).get()]
+
 
 def get_maps_for_user(usersub) -> List[dict]:
     return [doc.to_dict() for doc in db.collection(u'maps').where(u'users', u'array_contains', usersub).get()]
@@ -28,6 +53,7 @@ def get_maps_for_user(usersub) -> List[dict]:
 
 def add_map(map) -> str:
     return db.collection(u'maps').add(map)
+
 
 def update_map_info(id, info, editor) -> str:
     # find map
@@ -57,12 +83,15 @@ def delete_map(id) -> str:
 # def get_points_for_map(map_id) -> List[dict]:
 #     return [doc.to_dict() for doc in db.collection(u'maps').document(map_id).collection(u'points').get()]
 
+
 def add_point_to_map(map_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
 
+
 def remove_point_from_map(map_id, point_id) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([get_point_from_map(map_id, point_id)])})
-    
+
+
 def get_point_from_map(map_id, point_id) -> dict:
     points = db.collection(u'maps').where(u'id', u'==', map_id).get()[0].to_dict()['points']
 
@@ -73,11 +102,14 @@ def get_point_from_map(map_id, point_id) -> dict:
 
     return None
 
+
 def update_point_in_map(map_id, point_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).update(point)
 
+
 def delete_point_from_map(map_id, point_id) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).delete()
+
 
 def get_users_for_map(map_id) -> List[dict]:
     return [doc.to_dict() for doc in db.collection(u'maps').where(u'id', u'==', map_id).collection(u'users').get()]
