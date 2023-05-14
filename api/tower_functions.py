@@ -142,7 +142,7 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
                         "features": []
                         }
 
-    # loop through towers and make geojson triangles
+    # loop through towers and make geojson objects
     for tower in results:
         # circular shapes
         # PIPE, POLE, SILO, STACK, TANK, TREE, UPOLE, MTOWER, []NMTANN
