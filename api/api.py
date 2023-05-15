@@ -371,6 +371,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
         return result
 
     antennas = retrieve_fcc_antenna_objects(lat, lng, radius) #feet
+    print("Antennas:", antennas)
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
