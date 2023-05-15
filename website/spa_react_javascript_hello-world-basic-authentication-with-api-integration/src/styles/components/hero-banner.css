@@ -62,6 +62,8 @@
 
 .hero-banner__headline {
   letter-spacing: -1.5px;
+  color: var(--white);
+
 
   /* responsive */
 
@@ -105,10 +107,18 @@
 
   .hero-banner__headline {
     font-size: 3.2rem;
+    display: flex;
   }
 
   .hero-banner__description {
     font-size: 1.6rem;
     line-height: 2.4rem;
   }
+}
+
+.hero-banner__buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }

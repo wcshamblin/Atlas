@@ -155,6 +155,42 @@ export const retrieveHome = async (accessToken) => {
     };
 }
 
+export const retrieveEulaAcceptance = async (accessToken) => {
+    const config = {
+        url: `${apiServerUrl}/eula`,
+        method: "GET",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const acceptEula = async (accessToken) => {
+    const config = {
+        url: `${apiServerUrl}/eula`,
+        method: "POST",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
 export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     const config = {
         url: `${apiServerUrl}/fcc/towers/nearby/${lat}/${lng}/${radius}`,

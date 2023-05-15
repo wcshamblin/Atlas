@@ -46,6 +46,25 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
+.button--discord {
+  background-color: #7289da;
+  margin-right: 1.6rem;
+}
+
+.button--discord:hover {
+  background: rgba(76, 98, 176, 0.85);
+}
+
+.button--donate {
+    text-align: center;
+    align-items: center;
+    background-color: #169bd7;
+}
+
+.button--donate:hover {
+    background: rgba(19, 138, 192, 0.85);
+}
+
 @media only screen and (max-width: 480px) {
   .button {
     /* responsive */
