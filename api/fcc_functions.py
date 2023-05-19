@@ -425,3 +425,5 @@ def retrieve_fcc_antenna_objects(lat, lng, radius):
                                     [antenna["lng"], antenna["lat"]]
                     }})
 
+
+    return antennas
