@@ -3,7 +3,7 @@ from typing import List
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from datetime import datetime
+from datetime import datetime, timezone
 
 from json import dumps, load
 
@@ -16,10 +16,14 @@ db = init()
 
 
 def get_eula_acceptance(usersub):
-    eula_object = db.collection(u'eula_acceptance').where(u'user', u'==', usersub).get()[0].to_dict()
+    eula_object = db.collection(u'eula_acceptance').where(u'user', u'==', usersub).get()
+    if not eula_object:
+        return False
+    
+    eula_object = eula_object[0].to_dict()
 
     # if the acceptance is older than a week
-    if (datetime.now() - eula_object['acceptance_date']).days > 7:
+    if (datetime.now(timezone.utc) - eula_object['acceptance_date']).days > 7:
         return False
 
     if eula_object['accepted']:

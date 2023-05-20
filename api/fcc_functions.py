@@ -207,7 +207,9 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
                                     [tower[tower_declaration.index("st_x")], tower[tower_declaration.index("st_y")]]
                     }})
         
-        
+    
+    print("Tower polygons:", towers_polygons)
+    print("Tower points:", towers_points)
     return towers_polygons, towers_points
 
 
@@ -425,3 +427,5 @@ def retrieve_fcc_antenna_objects(lat, lng, radius):
                                     [antenna["lng"], antenna["lat"]]
                     }})
 
+
+    return antennas
