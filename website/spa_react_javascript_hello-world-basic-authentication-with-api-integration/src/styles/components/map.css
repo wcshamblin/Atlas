@@ -27,16 +27,6 @@ div#map {
   display: block;
 }
 
-#popupcoords {
-  bottom: 0;
-  padding-top: 10px;
-  font-size: smaller;
-  color: rgba(0, 0, 0, 0.7);
-  z-index: 999;
-  text-align: center;
-  display: block;
-}
-
 #streetview {
   width: 80%;
   height: 80%;
@@ -65,8 +55,4 @@ div#map {
     z-index: 999;
     right: 0;
     top: 0;
-}
-
-.mapboxgl-popup-content {
-  padding-bottom: 0;
 }

@@ -1,0 +1,57 @@
+div#rightclickpopup {
+    padding: 0;
+    margin: 0;
+}
+
+div#right-click-popup-content {
+    z-index: 999;
+}
+
+text#rightclickpopup-state {
+    z-index: 999;
+    font-weight: bold;
+    font-size: 18px;
+    color: black;
+    position: absolute;
+    top: 4px;
+    width: 100%;
+    height: 100%;
+}
+
+text#routing-information {
+    z-index: 999;
+    color: black;
+    position: absolute;
+    font-size: 15px;
+}
+
+text#popupcoords {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    font-size: smaller;
+    color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    text-align: center;
+    display: block;
+}
+
+.rightclick-popup .mapboxgl-popup-content {
+    background-color: #e6e6e6;
+    padding-bottom: 0;
+    padding-top: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+    border-bottom-color: #e6e6e6 !important;
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+    border-top-color: #e6e6e6 !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+    border-right-color: #e6e6e6 !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+    border-left-color: #e6e6e6 !important;
+}
