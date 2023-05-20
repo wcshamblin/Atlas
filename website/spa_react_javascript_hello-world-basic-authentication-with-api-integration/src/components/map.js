@@ -31,6 +31,27 @@ import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@r
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
 
+const shadeMap = new ShadeMap({
+    date: new Date(),    // display shadows for current date
+    color: '#0f1624',    // shade color
+    opacity: 0.7,        // opacity of shade colors
+    apiKey: process.env.REACT_APP_SHADE_MAP_API_KEY,
+    terrainSource: {
+        tileSize: 256,       // DEM tile size
+        maxZoom: 15,         // Maximum zoom of DEM tile set
+        getSourceUrl: ({ x, y, z }) => {
+            // return DEM tile url for given x,y,z coordinates
+            return `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`
+        },
+        getElevation: ({ r, g, b, a }) => {
+            // return elevation in meters for a given DEM tile pixel
+            return (r * 256 + g + b / 256) - 32768
+        }
+    },
+    debug: (msg) => { console.log(new Date().toISOString(), msg) },
+})
+
+
 function Map() {
     const { getAccessTokenSilently } = useAuth0();
 
@@ -43,7 +64,7 @@ function Map() {
     const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
     const [selectedLayers, setSelectedLayers] = useState([]);
 
-    const [streetViewActive, setStreetViewActive] = useState(false);
+    const [streetViewPresent, setStreetViewPresent] = useState(false);
     const [displayStreetView, setDisplayStreetView] = useState(false);
     const [streetViewPosition, setStreetViewPosition] = useState([]);
 
@@ -55,6 +76,16 @@ function Map() {
     const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
 
+    const [routingLine, setRoutingLine] = useState(null);
+    const [routingLineEnd, setRoutingLineEnd] = useState([]);
+    const [routingDuration, setRoutingDuration] = useState(null);
+    const [routingDistance, setRoutingDistance] = useState(null);
+
+    const [rightClickPopup, setRightClickPopup] = useState(new mapboxgl.Popup({closeButton: true, closeOnClick: true}).setHTML("Test!"));
+    const [rightClickPopupPosition, setRightClickPopupPosition] = useState([]);
+    const [showRightClickPopup, setShowRightClickPopup] = useState(false);
+    const [rightClickPopupState, setRightClickPopupState] = useState(null);
+
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
@@ -65,36 +96,10 @@ function Map() {
 
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
-    const shadeMap = new ShadeMap({
-        date: new Date(),    // display shadows for current date
-        color: '#0f1624',    // shade color
-        opacity: 0.7,        // opacity of shade color
-        apiKey: process.env.REACT_APP_SHADE_MAP_API_KEY,
-        terrainSource: {
-            tileSize: 256,       // DEM tile size
-            maxZoom: 15,         // Maximum zoom of DEM tile set
-            getSourceUrl: ({ x, y, z }) => {
-                // return DEM tile url for given x,y,z coordinates
-                return `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`
-            },
-            getElevation: ({ r, g, b, a }) => {
-                // return elevation in meters for a given DEM tile pixel
-                return (r * 256 + g + b / 256) - 32768
-            }
-        },
-        debug: (msg) => { console.log(new Date().toISOString(), msg) },
-    })
-
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
-
-
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
-    // this will be used to adjust fog color later.
-    console.log("isNight");
-    console.log(isNight, new Date().getHours());
-
 
     const baseLayers = {
         "Google Hybrid": {"visible": true},
@@ -110,7 +115,6 @@ function Map() {
         "3D Buildings": {"visible": false},
         "Shade Map": {"visible": false},
         "All Towers": {"visible": false},
-        "All Tower Extrusions": {"visible": false},
         "Antennas": {"visible": false},
     }
 
@@ -206,7 +210,6 @@ function Map() {
             mapbox.current.addImage('transmitter-icon', image, { sdf: true });
         });
 
-
         // antennas layer
         mapbox.current.addLayer({
             'id': 'Antennas',
@@ -219,6 +222,28 @@ function Map() {
             'minzoom': 14,
             'paint': {
                 'icon-color': ['get', 'color'],
+            }
+        });
+
+        // routing source
+        mapbox.current.addSource('Routing', {
+            'type': 'geojson',
+            'data': routingLine
+        });
+
+        // routing layer
+        mapbox.current.addLayer({
+            id: 'Routing',
+            type: 'line',
+            source: 'Routing',
+            layout: {
+                'line-join': 'round',
+                    'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#33ac3d',
+                    'line-width': 10,
+                    'line-opacity': 0.75
             }
         });
 
@@ -437,9 +462,20 @@ function Map() {
         // layer hierarchies... streetview and isochrone should be on top.
         mapbox.current.moveLayer('Isochrone');
         mapbox.current.moveLayer('Google StreetView');
-        mapbox.current.moveLayer('PlacesToExplore');
         mapbox.current.moveLayer('All Towers');
         mapbox.current.moveLayer('Antennas');
+        mapbox.current.moveLayer('Routing');
+
+        // enable all tower layers by default
+        // mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
+        // mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
+        // mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
+
+        mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'visible');
+        mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
+        mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
+        mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
+
     }
 
     // api query
@@ -521,185 +557,170 @@ function Map() {
             addSources();
         });
 
-
-            mapbox.current.on('click', 'Safe Towers', (e) => {
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const name = e.features[0].properties.name;
-                const description = e.features[0].properties.description;
-                console.log("description: ", description);
-
-
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
-                    .addTo(mapbox.current);
-            });
-
-            // mapbox.current.on('mouseenter', 'Safe Towers', () => {
-            //     mapbox.current.getCanvas().style.cursor = 'pointer';
-            // });
-            //
-            // mapbox.current.on('mouseleave', 'Safe Tower', () => {
-            //     mapbox.current.getCanvas().style.cursor = '';
-            // });
-
-            mapbox.current.on('click', 'Decommissioned Towers', (e) => {
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const name = e.features[0].properties.name;
-                const description = e.features[0].properties.description;
-                // convert to feet with 2 decimal places
-                const height = (e.features[0].properties.height * 3.28084).toFixed(2);
-                console.log("description: ", description);
-
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(
-                        "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
-                        // "<text id='towerpopupstat'>height:</text>" +
-                        "<text id='towerpopuptext'>" + description + "</text>" +
-                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
-                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                    .addTo(mapbox.current);
-            });
-
-            mapbox.current.on('click', 'All Towers', (e) => {
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const name = e.features[0].properties.name;
-                // convert to feet with 2 decimal places
-                const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
-                const support_height = (e.features[0].properties.height_support * 3.28084).toFixed(2);
-                const structure_type = e.features[0].properties.structure_type;
-                const description = "Overall height: " + overall_height + " ft" + "<br>" + "Support height: " + support_height + " ft";
+        // on click on hovers
+        mapbox.current.on('click', 'Safe Towers', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            const description = e.features[0].properties.description;
+            console.log("description: ", description);
 
 
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(
-                        "<text id='towerpopuptitle'>Tower: " + name + "</text>" +
-                        // "<text id='towerpopupstat'>height:</text>" +
-                        "<text id='towerpopuptext'>" + description + "<br>" +
-                        "Structure type: " + structure_type + "</text>" +
-                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                    .addTo(mapbox.current);
-            });
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
+                .addTo(mapbox.current);
+        });
 
-            mapbox.current.on('click', 'Antennas', (e) => {
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const name = e.features[0].properties.name;
-                const transmitter_type = e.features[0].properties.transmitter_type;
-                const facility_id = e.features[0].properties.facility_id;
-                const erp = e.features[0].properties.erp;
-                const status = e.features[0].properties.status;
-                const last_update = e.features[0].properties.last_update;
-                let description = "";
+        // if the right click popup is closed, set our popup usestate to reflect that
+        rightClickPopup.on('close', () => {
+            setShowRightClickPopup(false);
+            setRightClickPopupState(null);
+        });
 
-                if (transmitter_type === "TV") {
-                    // display safe zone
-                    description = "Transmitter type: " + transmitter_type + "<br>" +
-                        "Facility ID: " + facility_id + "<br>" +
-                        "Status: " + status + "<br>" +
-                        "Channel: " + e.features[0].properties.channel + "<br>" +
-                        "ERP: " + erp + " kW" + "<br>" +
-                        "Polarization: " + e.features[0].properties.polarization + "<br>" +
-                        "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
-                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
-                        "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
-                        "RabbitEars: " + "<a href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
-                        "Last updated: " + last_update;
-                } else if (transmitter_type === "FM") {
-                    description = "Transmitter type: " + transmitter_type + "<br>" +
-                        "Facility ID: " + facility_id + "<br>" +
-                        "Status: " + status + "<br>" +
-                        "Channel: " + e.features[0].properties.channel + "<br>" +
-                        "ERP: " + erp + " kW" + "<br>" +
-                        "Polarization: " + e.features[0].properties.polarization + "<br>" +
-                        "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
-                        "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
-                        "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
-                        "Last updated: " + last_update;
-                } else if (transmitter_type === "AM") {
-                    description = "Transmitter type: " + transmitter_type + "<br>" +
-                        "Application ID: " + facility_id + "<br>" +
-                        "Status: " + status + "<br>" +
-                        "Nominal power: " + erp + " kW" + "<br>" +
-                        "Hours of operation: " + e.features[0].properties.hours_operation + "<br>" +
-                        "Towers in array: " + e.features[0].properties.towers_in_array + "<br>" +
-                        "Safe zone controlled: 🕱" + "<br>" +
-                        "Safe zone uncontrolled: 🕱" + "<br>" +
-                        "Last updated: " + last_update;
-                }
+        // make the route thicker on hover
+        mapbox.current.on('mouseenter', 'Routing', (e) => {
+            mapbox.current.setPaintProperty('Routing', 'line-width', 20);
+
+        });
+        mapbox.current.on('mouseleave', 'Routing', () => {
+            mapbox.current.setPaintProperty('Routing', 'line-width', 10);
+        });
+
+        mapbox.current.on('click', 'Decommissioned Towers', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            const description = e.features[0].properties.description;
+            // convert to feet with 2 decimal places
+            const height = (e.features[0].properties.height * 3.28084).toFixed(2);
+            console.log("description: ", description);
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
+                    // "<text id='towerpopupstat'>height:</text>" +
+                    "<text id='towerpopuptext'>" + description + "</text>" +
+                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+
+        mapbox.current.on('click', 'All Towers', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            // convert to feet with 2 decimal places
+            const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
+            const support_height = (e.features[0].properties.height_support * 3.28084).toFixed(2);
+            const structure_type = e.features[0].properties.structure_type;
+            const description = "Overall height: " + overall_height + " ft" + "<br>" + "Support height: " + support_height + " ft";
 
 
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(
-                        "<text id='towerpopuptitle'>Antenna: " + name + "</text>" +
-                        // "<text id='towerpopupstat'>height:</text>" +
-                        "<text id='towerpopuptext'>" + description + "</text>" +
-                        // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
-                        "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                    .addTo(mapbox.current);
-            });
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>Tower: " + name + "</text>" +
+                    // "<text id='towerpopupstat'>height:</text>" +
+                    "<text id='towerpopuptext'>" + description + "<br>" +
+                    "Structure type: " + structure_type + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+
+        mapbox.current.on('click', 'Antennas', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            const transmitter_type = e.features[0].properties.transmitter_type;
+            const facility_id = e.features[0].properties.facility_id;
+            const erp = e.features[0].properties.erp;
+            const status = e.features[0].properties.status;
+            const last_update = e.features[0].properties.last_update;
+            let description = "";
+
+            if (transmitter_type === "TV") {
+                // display safe zone
+                description = "Transmitter type: " + transmitter_type + "<br>" +
+                    "Facility ID: " + facility_id + "<br>" +
+                    "Status: " + status + "<br>" +
+                    "Channel: " + e.features[0].properties.channel + "<br>" +
+                    "ERP: " + erp + " kW" + "<br>" +
+                    "Polarization: " + e.features[0].properties.polarization + "<br>" +
+                    "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
+                    "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
+                    "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
+                    "RabbitEars: " + "<a href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
+                    "Last updated: " + last_update;
+            } else if (transmitter_type === "FM") {
+                description = "Transmitter type: " + transmitter_type + "<br>" +
+                    "Facility ID: " + facility_id + "<br>" +
+                    "Status: " + status + "<br>" +
+                    "Channel: " + e.features[0].properties.channel + "<br>" +
+                    "ERP: " + erp + " kW" + "<br>" +
+                    "Polarization: " + e.features[0].properties.polarization + "<br>" +
+                    "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
+                    "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
+                    "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
+                    "Last updated: " + last_update;
+            } else if (transmitter_type === "AM") {
+                description = "Transmitter type: " + transmitter_type + "<br>" +
+                    "Application ID: " + facility_id + "<br>" +
+                    "Status: " + status + "<br>" +
+                    "Nominal power: " + erp + " kW" + "<br>" +
+                    "Hours of operation: " + e.features[0].properties.hours_operation + "<br>" +
+                    "Towers in array: " + e.features[0].properties.towers_in_array + "<br>" +
+                    "Safe zone controlled: 🕱" + "<br>" +
+                    "Safe zone uncontrolled: 🕱" + "<br>" +
+                    "Last updated: " + last_update;
+            }
 
 
-            // on left click
-            mapbox.current.on('click', (e) => {
-                let lat = e.lngLat.lat;
-                let lng = e.lngLat.lng;
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>Antenna: " + name + "</text>" +
+                    // "<text id='towerpopupstat'>height:</text>" +
+                    "<text id='towerpopuptext'>" + description + "</text>" +
+                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
 
-                if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') !== 'visible') {
-                    console.log("street view not visible");
-                    return;
-                }
 
-                // zoom level must be above 12 to get a streetview image
-                if (mapbox.current.getZoom() < 12) {
-                    console.log("zoom level too low");
-                    return;
-                }
+        // on left click
+        mapbox.current.on('click', (e) => {
+            let lat = e.lngLat.lat;
+            let lng = e.lngLat.lng;
 
-                setDisplayStreetView(true);
+
+            if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') === 'visible' && mapbox.current.getZoom() >= 12) {
                 setStreetViewPosition([lat, lng]);
+                setDisplayStreetView(true);
+            }
+        });
 
-            });
+        // on right click
+        mapbox.current.on('contextmenu', (e) => {
+            // make new popup with coordinates of right click
+            setRightClickPopupPosition([e.lngLat.lng, e.lngLat.lat])
+            setShowRightClickPopup(true);
+            setRightClickPopupState("default");
+        });
 
-            // on right click
-            mapbox.current.on('contextmenu', (e) => {
-                // make new popup with coordinates of right click
-                let lat = e.lngLat.lat;
-                let lng = e.lngLat.lng;
-
-                console.log("right click at: ", lat, lng);
-                // make popup
-                const placeholder = document.createElement('div');
-                ReactDOM.createRoot(placeholder).render(<button onClick={() => {
-                    setHomePosition(lat, lng);
-                    // close popup
-                    popup.remove();
-                }}>Set Home</button>);
-
-                const popup = new mapboxgl.Popup({closeButton: true, closeOnClick: true})
-                    .setLngLat([lng, lat])
-                    .setDOMContent(placeholder)
-                    .addTo(mapbox.current);
-            });
-
-            // on move, if zoom is above 14, try to update towers and / or antennas
-            mapbox.current.on('moveend', () => {
-                if (mapbox.current.getZoom() >= 14) {
-                    if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
-                        // update all towers from the center of the map
-                        updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
-                    }
-
-                    if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
-                        // update decommissioned towers from the center of the map
-                        updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
-                    }
+        // on move, if zoom is above 14, try to update towers and / or antennas
+        mapbox.current.on('moveend', () => {
+            if (mapbox.current.getZoom() >= 14) {
+                if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
+                    // update all towers from the center of the map
+                    updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
-            });
 
-            mapbox.current.on('zoomout')
+                if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
+                    // update decommissioned towers from the center of the map
+                    updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                }
+            }
+        });
+
+        mapbox.current.on('zoomout')
 
         // controls
         // geocoder
@@ -745,6 +766,17 @@ function Map() {
 
     }, [mapRef]);
 
+
+    // <text id='popupcoords'> + {rightClickPopupPosition[1]} + ", " + {rightClickPopupPosition[0]} + </text>
+    const renderRightClickPopup = (content) => {
+        const placeholder = document.createElement('div');
+        ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                {content}
+                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+            </div>);
+
+        rightClickPopup.setDOMContent(placeholder);
+    }
 
     const coordinatesGeocoder = function (query) {
         // Match anything which looks like
@@ -793,20 +825,48 @@ function Map() {
         return geocodes;
     };
 
+    // create a function to make a directions request
+    async function setRoute(end) {
+        const query = await fetch(
+            `https://api.mapbox.com/directions/v5/mapbox/${isoProfile}/${homeMarkerPosition[0]},${homeMarkerPosition[1]};${end[0]},${end[1]}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`,
+            {method: 'GET'}
+        );
+        const json = await query.json();
+        const data = json.routes[0];
+        const route = data.geometry.coordinates;
+        let duration = data.duration;
+        const geojson = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: route
+            }
+        };
+
+        setRoutingDuration(Math.round(duration / 60));
+        // one decimal place, in miles (input is in meters)
+        setRoutingDistance((data.distance / 1609.344).toFixed(1));
+
+        mapbox.current.getSource('Routing').setData(geojson);
+    }
+
+
+
     const getStreetView = () => {
+        console.log("getting streetview");
+
         let lat = streetViewPosition[0];
         let lng = streetViewPosition[1];
 
-        if (!mapbox.current) {
-            setDisplayStreetView(false);
-            return;
-        }
         if (!streetViewPosition.length) {
             setDisplayStreetView(false);
+            setStreetViewPresent(false);
             return;
         }
         if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') !== 'visible') {
             setDisplayStreetView(false);
+            setStreetViewPresent(false);
             return;
         }
 
@@ -818,25 +878,33 @@ function Map() {
             } , (data, status) => {
                 if (status === "OK") {
                     console.log("streetview available");
-                    setDisplayStreetView(true);
-                    setStreetViewActive(true);
+                    setStreetViewPresent(true);
                 } else {
                     console.log("streetview not available");
+                    setStreetViewPresent(false);
                     setDisplayStreetView(false);
-                    setStreetViewActive(false);
                 }
             });
         }
 
-            return (
-            <div id="streetview" style={{ display: streetViewActive ? "block" : "none" }}>
+        return (
                 <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                    <StreetViewService onLoad={onLoad} />
+                </LoadScript>
+        )
+    }
+
+    const displayStreetViewDiv = () => {
+        let lat = streetViewPosition[0];
+        let lng = streetViewPosition[1];
+
+        return (
+            <div id="streetview" style={{ display: "block"}}>
                     <GoogleMap
                         mapContainerStyle={{ height: "100%", width: "100%" }}
                         center={{ lat: lat, lng: lng }}
                         zoom={14}
                     >
-                        <StreetViewService onLoad={onLoad} />
                         <StreetViewPanorama
                             position={{ lat: lat, lng: lng }}
                             visible={displayStreetView}
@@ -858,10 +926,9 @@ function Map() {
                             }}
                         />
                     </GoogleMap>
-                </LoadScript>
                 <button id="closestreetview" onClick={() => { setDisplayStreetView(false)
-                    setStreetViewActive(false);
-                    setStreetViewPosition([]) }}>X</button>
+                    setStreetViewPosition([])
+                    setStreetViewPresent(false)}}>X</button>
             </div>
         )
     }
@@ -1001,6 +1068,63 @@ function Map() {
         }
     }
 
+    // show right click popup useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showRightClickPopup) { // remove the popup if we don't want to show it
+            rightClickPopup.remove(); // maybe need .current?
+        }
+        else {
+            // add the popup to the map
+            console.log("adding right click popup");
+            rightClickPopup.addTo(mapbox.current);
+        }
+    }, [showRightClickPopup]);
+
+    // right click popup position useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
+
+        // set the position of the popup
+        console.log("changing right click popup position to ", rightClickPopupPosition);
+        rightClickPopup.setLngLat(rightClickPopupPosition);
+    }, [rightClickPopupPosition]);
+
+    // right click state useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
+
+        // state can be null, "new-point", or "routing"
+        // if null then popup has coords and set home button
+        if (rightClickPopupState === "default") {
+            renderRightClickPopup(<div id="right-click-popup-content">
+                <button onClick={() => {
+                console.log("setting home position to ", rightClickPopupPosition);
+                setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                setShowRightClickPopup(false);
+            }}>Set Home</button>
+            <button onClick={() => {
+                setRoutingLineEnd(rightClickPopupPosition);
+                setRightClickPopupState("routing");
+            }}>Set Routing End</button>
+            </div>
+            );
+
+        }
+        else if (rightClickPopupState === "new-point") {
+            renderRightClickPopup("New Point State");
+        }
+        else if (rightClickPopupState === "routing") {
+            renderRightClickPopup(
+                <div id="right-click-popup-content">
+                    {routingDuration} minutes
+                </div>
+            );
+        }
+    }, [rightClickPopupState]);
+
     // isochrone API fetch
     useEffect(() => {
         console.log("useEffect for isochrone");
@@ -1068,6 +1192,26 @@ function Map() {
         }
         return data;
     }
+
+    // routing API useeffect
+    useEffect(() => {
+        // if homemarker position is not set (length is less than 2), then don't do anything
+        if (homeMarkerPosition.length < 2) {
+            console.log("homeMarkerPosition not set");
+            return;
+        }
+
+        // if routingLineEnd is not set (length is less than 2), then don't do anything
+        if (routingLineEnd.length < 2) {
+            console.log("routingLineEnd not set");
+            return;
+        }
+
+        // call the routing function and set data
+        setRoute(routingLineEnd).then(r => {
+            console.log("setting route data");
+        });
+    }, [homeMarkerPosition, routingLine, routingLineEnd]);
 
     // shade map useEffect for adding and removing the shade map
     useEffect(() => {
@@ -1218,8 +1362,8 @@ function Map() {
             if (e.key === 'Escape') {
                 // first try to close streetview, if we can then return
                 if (displayStreetView) {
+                    setStreetViewPresent(false);
                     setDisplayStreetView(false);
-                    setStreetViewActive(false);
                     setStreetViewPosition([]);
                     return;
                 }
@@ -1335,8 +1479,9 @@ function Map() {
                 {/* <button id="layerswitcherbutton">LayerSwitcher</button> */}
             </div>
             {<Sidebar expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar}/>}
-            {displayLayers ? getLayers() : ""}
+
             {displayStreetView ? getStreetView() : ""}
+            {streetViewPresent ? displayStreetViewDiv() : ""}
         </>
     );
 }
