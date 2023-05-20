@@ -15,6 +15,7 @@ import DateTimePicker from 'react-datetime-picker'
 import '../styles/components/map.css';
 import '../styles/components/sidebar.css';
 import '../styles/components/layerswitcher.css'
+import '../styles/components/rightclickpopup.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -81,7 +82,7 @@ function Map() {
     const [routingDuration, setRoutingDuration] = useState(null);
     const [routingDistance, setRoutingDistance] = useState(null);
 
-    const [rightClickPopup, setRightClickPopup] = useState(new mapboxgl.Popup({closeButton: true, closeOnClick: true}).setHTML("Test!"));
+    const [rightClickPopup, setRightClickPopup] = useState(new mapboxgl.Popup({className: "rightclick-popup", closeButton: true, closeOnClick: true}).setHTML("Test!"));
     const [rightClickPopupPosition, setRightClickPopupPosition] = useState([]);
     const [showRightClickPopup, setShowRightClickPopup] = useState(false);
     const [rightClickPopupState, setRightClickPopupState] = useState(null);
@@ -335,7 +336,7 @@ function Map() {
                 'https://mts2.google.com/mapslt?lyrs=svv&x={x}&y={y}&z={z}&w=256&h=256&hl=en&style=40,18'
             ],
             'tileSize': 256,
-            'minzoom': 12
+            'minzoom': 13
         });
 
         // 3d buildings layer
@@ -819,8 +820,8 @@ function Map() {
 
         if (geocodes.length === 0) {
         // else could be either lng, lat or lat, lng
-            geocodes.push(coordinateFeature(coord1, coord2));
             geocodes.push(coordinateFeature(coord2, coord1));
+            geocodes.push(coordinateFeature(coord1, coord2));
         }
 
         return geocodes;
@@ -907,7 +908,7 @@ function Map() {
                                 linksControl: false,
                                 motionTrackingControl: false,
                                 motionTrackingControlOptions: false,
-                                panControl: false,
+                                panControl: true,
                                 zoomControl: false,
                                 enableCloseButton: false
                             }}
@@ -1111,7 +1112,7 @@ function Map() {
         else if (rightClickPopupState === "routing") {
             renderRightClickPopup(
                 <div id="right-click-popup-content">
-                    Loading routing info...
+                    <text id="rightclickpopup-state">Routing info being retrieved...</text><br/>
                 </div>
             );
         }
@@ -1126,8 +1127,9 @@ function Map() {
         if (rightClickPopupState === "routing") {
             renderRightClickPopup(
                 <div id="right-click-popup-content">
-                    {routingDuration} minutes<br/>
-                    {routingDistance} miles
+                    <text id="rightclickpopup-state">Routing Info:</text><br/>
+                    <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
+                    <text id="routing-information">{routingDistance} miles</text><br/>
                 </div>
             );
         }
