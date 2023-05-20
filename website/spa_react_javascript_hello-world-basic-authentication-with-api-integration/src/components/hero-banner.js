@@ -25,7 +25,7 @@ export const HeroBanner = () => {
         <a
             id="discord-button"
             rel="noopener noreferrer"
-            href="https://discord.gg/8vD2xQX"
+            href="https://discord.gg/zvvRuDebSK"
             className="button button--discord"
         >
             Join our Discord
