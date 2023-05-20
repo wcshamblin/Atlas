@@ -575,6 +575,8 @@ function Map() {
         rightClickPopup.on('close', () => {
             setShowRightClickPopup(false);
             setRightClickPopupState(null);
+            // on close we also want to clear any routing lines that may have been generated while it was open
+            setRoutingLine(null);
         });
 
         // make the route thicker on hover
@@ -767,7 +769,6 @@ function Map() {
     }, [mapRef]);
 
 
-    // <text id='popupcoords'> + {rightClickPopupPosition[1]} + ", " + {rightClickPopupPosition[0]} + </text>
     const renderRightClickPopup = (content) => {
         const placeholder = document.createElement('div');
         ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
@@ -835,20 +836,11 @@ function Map() {
         const data = json.routes[0];
         const route = data.geometry.coordinates;
         let duration = data.duration;
-        const geojson = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: route
-            }
-        };
 
         setRoutingDuration(Math.round(duration / 60));
         // one decimal place, in miles (input is in meters)
         setRoutingDistance((data.distance / 1609.344).toFixed(1));
-
-        mapbox.current.getSource('Routing').setData(geojson);
+        setRoutingLine(route);
     }
 
 
@@ -1072,7 +1064,7 @@ function Map() {
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showRightClickPopup) { // remove the popup if we don't want to show it
-            rightClickPopup.remove(); // maybe need .current?
+            rightClickPopup.remove();
         }
         else {
             // add the popup to the map
@@ -1119,11 +1111,27 @@ function Map() {
         else if (rightClickPopupState === "routing") {
             renderRightClickPopup(
                 <div id="right-click-popup-content">
-                    {routingDuration} minutes
+                    Loading routing info...
                 </div>
             );
         }
     }, [rightClickPopupState]);
+
+    // routing duration and distance useeffect for right click popup
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
+
+        // if we are in routing state, then show the duration and distance
+        if (rightClickPopupState === "routing") {
+            renderRightClickPopup(
+                <div id="right-click-popup-content">
+                    {routingDuration} minutes<br/>
+                    {routingDistance} miles
+                </div>
+            );
+        }
+    }, [routingDuration, routingDistance]);
 
     // isochrone API fetch
     useEffect(() => {
@@ -1211,7 +1219,37 @@ function Map() {
         setRoute(routingLineEnd).then(r => {
             console.log("setting route data");
         });
-    }, [homeMarkerPosition, routingLine, routingLineEnd]);
+    }, [homeMarkerPosition, routingLineEnd]);
+
+    // routing line useEffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        // if routing line end is not set (length is less than 2), then don't do anything
+        if (routingLineEnd.length < 2) {
+            console.log("routingLineEnd not set");
+            return;
+        }
+        const geojson = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: routingLine
+            }
+        };
+
+        // if routing line is null
+        if (routingLine === null) {
+            geojson.geometry.coordinates = [];
+        }
+
+        console.log("updating routing line with", geojson);
+
+
+        // set the routing layer data
+        mapbox.current.getSource("Routing").setData(geojson);
+    }, [routingLine]);
+
 
     // shade map useEffect for adding and removing the shade map
     useEffect(() => {
