@@ -997,12 +997,15 @@ function Map() {
                 "type": "FeatureCollection",
                 "features": []
             });
-
+            // set the layer not be visible
+            mapbox.current.setLayoutProperty('Isochrone', 'visibility', 'none');
             return;
         }
 
         getIso().then((data) => {
             console.log(data)
+            // set the layer to be visible
+            mapbox.current.setLayoutProperty('Isochrone', 'visibility', 'visible');
             mapbox.current.getSource('Isochrone').setData(data);
         });
     }, [homeMarkerPosition, isoMinutes, isoProfile, showIso]);
@@ -1369,7 +1372,7 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} />}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso}/>}
 
             {displayStreetView ? getStreetView() : ""}
             {streetViewPresent ? displayStreetViewDiv() : ""}

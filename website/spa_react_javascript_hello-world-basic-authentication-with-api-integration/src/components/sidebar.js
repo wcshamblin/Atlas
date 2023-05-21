@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../styles/components/sidebar.css';
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap }) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone}) => {
     const [selectedPart, setSelectedPart] = useState("weather");
 
     const [baseLayers, setBaseLayers] = useState({
@@ -75,6 +75,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     const updateLayers = (name, visible) => {
         if (name == "Shade Map") {
             setShowShadeMap(visible);
+            layers[name].visible = visible;
+        } else if (name == "Isochrone") {
+            setShowIsochrone(visible);
             layers[name].visible = visible;
         } else {
             setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
