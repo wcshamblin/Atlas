@@ -773,9 +773,20 @@ function Map() {
     const renderRightClickPopup = (content) => {
         const placeholder = document.createElement('div');
         ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                {content}
-                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
-            </div>);
+            {content}
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        console.log("setting home position to ", rightClickPopupPosition);
+                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                        setShowRightClickPopup(false);
+                    }}>H</button>
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRoutingLineEnd(rightClickPopupPosition);
+                        setRightClickPopupState("routing");
+                    }}>R</button>
+                </div>
+            <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+        </div>);
 
         rightClickPopup.setDOMContent(placeholder);
     }
@@ -1093,15 +1104,7 @@ function Map() {
         // if null then popup has coords and set home button
         if (rightClickPopupState === "default") {
             renderRightClickPopup(<div id="right-click-popup-content">
-                <button onClick={() => {
-                console.log("setting home position to ", rightClickPopupPosition);
-                setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                setShowRightClickPopup(false);
-            }}>Set Home</button>
-            <button onClick={() => {
-                setRoutingLineEnd(rightClickPopupPosition);
-                setRightClickPopupState("routing");
-            }}>Set Routing End</button>
+                Information about this location:<br/>
             </div>
             );
 
@@ -1221,7 +1224,7 @@ function Map() {
         setRoute(routingLineEnd).then(r => {
             console.log("setting route data");
         });
-    }, [homeMarkerPosition, routingLineEnd]);
+    }, [routingLineEnd]);
 
     // routing line useEffect
     useEffect(() => {
