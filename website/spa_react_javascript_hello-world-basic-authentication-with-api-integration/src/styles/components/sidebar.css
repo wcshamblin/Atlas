@@ -69,3 +69,17 @@
 .expand {
     background-image: url('../images/expand.png')
 }
+
+.black {
+    color: black;
+    font-size: 15px;
+}
+
+.black2 {
+    color: black;
+    font-size: 10px;
+}
+
+.selected {
+    background-color: lightblue;
+}
