@@ -37,13 +37,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     })
 
     useEffect(() => {
-        if(mapStatus) {
+        if (mapStatus) {
             console.log("base layer " + localStorage.getItem('base-layer'))
             if (!localStorage.getItem('base-layer'))
                 localStorage.setItem('base-layer', Object.entries(baseLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)[0]);
-            if(!localStorage.getItem('selected-layers'))
+            if (!localStorage.getItem('selected-layers'))
                 localStorage.setItem('selected-layers', JSON.stringify(Object.entries(layers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
-    
+
             updateBaseLayers(localStorage.getItem('base-layer'));
 
             resetLayers();
@@ -61,13 +61,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         });
 
         localStorage.setItem('base-layer', name);
-        
+
         setBaseLayers({ ...baseLayers });
     }
 
     const resetLayers = () => {
         Object.keys(layers).forEach(layer => {
-            if(layer != 'Shade Map')
+            if (layer != 'Shade Map')
                 setLayoutProperty(layer, 'visibility', 'none');
         });
     }
@@ -95,6 +95,24 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         })
     }
 
+    const renderBaseLayers = () => {
+        return (
+            <div id="base-layer-container">
+                {
+                    Object.entries(baseLayers).map(([layerName, val]) => (
+                        <div className={!val.visible ? "base-layer-item" : "base-layer-selected base-layer-item"} onClick={() => updateBaseLayers(layerName)}>
+                            <div className={"base-layer-" + layerName.toLowerCase().replaceAll(" ", "") + " base-layer-img"}></div>
+                            <span>{layerName}</span>
+                        </div>
+                    ))
+                }
+                {/*
+                    Object.entries(baseLayers).map(([layerName, val]) => <p className={!val.visible ? "black" : "selected black"} onClick={() => updateBaseLayers(layerName)}>{layerName}</p>)
+                */}
+            </div>
+        )
+    }
+
     return expanded ? (
         <div id="sidebar">
             <div id="sidebar-header">
@@ -117,30 +135,27 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
             <div id="sidebar-content">
                 {(() => {
-                    switch(selectedPart) {
+                    switch (selectedPart) {
                         case 'weather':
                             return <h1>WEATHER</h1>
                         case 'layers':
                             return (
-                                <div style={{marginLeft: "10px"}}>
+                                <div>
                                     <h1>LAYERS</h1>
-                                    <h3>Base Layers</h3>
-                                    {
-                                        Object.entries(baseLayers).map(([layerName, val]) => <p className={!val.visible ? "black" : "selected black"} onClick={() => updateBaseLayers(layerName)}>{layerName}</p>)
-                                    }
+                                    {renderBaseLayers()}
                                     <h3>Regular Layers</h3>
                                     {
                                         Object.entries(layerCategories).map(([catName, subLayers]) => {
-                                            if(subLayers.length > 1)
+                                            if (subLayers.length > 1)
                                                 return (
                                                     <div>
                                                         <p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
-                                                        {subLayers.map(layerName => 
+                                                        {subLayers.map(layerName =>
                                                             <p className={!layers[layerName].visible ? "black2" : "selected black2"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>{layerName} </p>
                                                         )}
                                                     </div>
                                                 )
-                                            else 
+                                            else
                                                 return <p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>
                                         })
                                     }
@@ -152,7 +167,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                             return <h1>SETTINGS</h1>
                         default:
                             return ""
-                    } 
+                    }
                 })()}
 
                 {/* {homeIsSet ? getHomeMetrics() : ""}
