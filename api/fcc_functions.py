@@ -1,6 +1,7 @@
 import psycopg2
 from math import sin, cos, sqrt
 import re
+import random
 
 
 # db initialization
@@ -370,6 +371,7 @@ def retrieve_fcc_antenna_objects(lat, lng, radius):
     tv_antennas = retrieve_fcc_tv_antennas(lat, lng, radius) #feet
     fm_antennas = retrieve_fcc_fm_antennas(lat, lng, radius) #feet
     am_antennas = retrieve_fcc_am_antennas(lat, lng, radius) #feet
+    # cell_antennas = retrieve_fcc_cell_antennas(lat, lng, radius) #feet
 
     # loop through antennas and add to geojson
     for antenna in tv_antennas:
@@ -426,6 +428,27 @@ def retrieve_fcc_antenna_objects(lat, lng, radius):
             "geometry": {"type": "Point", "coordinates":
                                     [antenna["lng"], antenna["lat"]]
                     }})
+
+
+    # if we have any antennas that are within 5 feet of eachother, we should displace them to 10 feet apart
+    # this is to prevent overlapping antennas from being on top of eachother
+    # 47.4622422504934, -120.35777773708105
+    # change-^^-polling
+    
+    # for antenna in antennas, if two antennas have the same coords (round to 5 decimal places), move one of them
+    changer = 1
+    for i in range(len(antennas["features"])):
+        for j in range(i+1, len(antennas["features"])):
+            if round(antennas["features"][i]["geometry"]["coordinates"][0], 5) == round(antennas["features"][j]["geometry"]["coordinates"][0], 5) and round(antennas["features"][i]["geometry"]["coordinates"][1], 5) == round(antennas["features"][j]["geometry"]["coordinates"][1], 5):
+                changer += 1
+
+                # if we have an odd number, move the antenna to the right
+                if changer%2 == 1:
+                    antennas["features"][j]["geometry"]["coordinates"][0] += changer * 0.00003
+
+                # if we have an even number, move the antenna to the left
+                else:
+                    antennas["features"][j]["geometry"]["coordinates"][0] -= changer * 0.00003
 
 
     return antennas
