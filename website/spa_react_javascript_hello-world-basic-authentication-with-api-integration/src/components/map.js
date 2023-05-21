@@ -1,4 +1,4 @@
-import React, {useState, useEffect, createRef, useRef} from 'react';
+import React, { useState, useEffect, createRef, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import Sidebar from '../components/sidebar';
@@ -23,9 +23,9 @@ import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
 // api imports
-import {fetchPoints, setHome, retrieveHome, retrieveTowers, retrieveAntennas} from "../services/message.service";
+import { fetchPoints, setHome, retrieveHome, retrieveTowers, retrieveAntennas } from "../services/message.service";
 
-import {useAuth0} from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@react-google-maps/api';
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
@@ -60,10 +60,7 @@ function Map() {
     const mapbox = useRef(null);
 
     const [displaySidebar, setDisplaySidebar] = useState(false);
-
-    const [displayLayers, setDisplayLayers] = useState(false);
-    const [selectedBaseLayer, setSelectedBaseLayer] = useState("Google Hybrid");
-    const [selectedLayers, setSelectedLayers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [streetViewPresent, setStreetViewPresent] = useState(false);
     const [displayStreetView, setDisplayStreetView] = useState(false);
@@ -102,35 +99,18 @@ function Map() {
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
 
-    const baseLayers = {
-        "Google Hybrid": {"visible": true},
-        "Bing Hybrid": {"visible": false},
-        "ESRI": {"visible": false},
-        "OpenStreetMap": {"visible": false},
-    }
-
-    const layers = {
-        "Decommissioned Towers": {"visible": false},
-        "Safe Towers": {"visible": false},
-        "Google StreetView": {"visible": false},
-        "3D Buildings": {"visible": false},
-        "Shade Map": {"visible": false},
-        "All Towers": {"visible": false},
-        "Antennas": {"visible": false},
-    }
-
     const [points, setPoints] = useState([]);
 
     const addSources = () => {
         mapbox.current.addSource('00', {
-                'type': 'raster',
-                'tiles': [
-                    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-                    'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-                    'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
-                ],
-                'tileSize': 256
-            });
+            'type': 'raster',
+            'tiles': [
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+            ],
+            'tileSize': 256
+        });
         mapbox.current.addSource('01', {
             'type': 'raster',
             'tiles': [
@@ -176,7 +156,7 @@ function Map() {
             'minzoom': 14,
             'paint': {
                 'circle-radius': 6,
-                'circle-color': ['get' , 'color'],
+                'circle-color': ['get', 'color'],
             }
         });
 
@@ -239,12 +219,12 @@ function Map() {
             source: 'Routing',
             layout: {
                 'line-join': 'round',
-                    'line-cap': 'round'
+                'line-cap': 'round'
             },
             paint: {
                 'line-color': '#33ac3d',
-                    'line-width': 10,
-                    'line-opacity': 0.75
+                'line-width': 10,
+                'line-opacity': 0.75
             }
         });
 
@@ -261,7 +241,7 @@ function Map() {
             'source': 'Decommissioned Towers',
             'paint': {
                 'circle-radius': 6,
-                'circle-color': ['get' , 'color'],
+                'circle-color': ['get', 'color'],
             }
         });
 
@@ -375,13 +355,6 @@ function Map() {
         });
 
 
-        // set not visible based on layers dict
-        for (const [key, value] of Object.entries(layers)) {
-            if (!value.visible) {
-                mapbox.current.setLayoutProperty(key, 'visibility', 'none');
-            }
-        }
-
         // load points from api and add to the map
         // console.log("points");
         // console.log(points);
@@ -453,30 +426,12 @@ function Map() {
             },
         );
 
-
-        // set the default layer to google hybrid
-        mapbox.current.setLayoutProperty('Google Hybrid', 'visibility', 'visible');
-        mapbox.current.setLayoutProperty('Bing Hybrid', 'visibility', 'none');
-        mapbox.current.setLayoutProperty('ESRI', 'visibility', 'none');
-        mapbox.current.setLayoutProperty('OpenStreetMap', 'visibility', 'none');
-
         // layer hierarchies... streetview and isochrone should be on top.
         mapbox.current.moveLayer('Isochrone');
         mapbox.current.moveLayer('Google StreetView');
         mapbox.current.moveLayer('All Towers');
         mapbox.current.moveLayer('Antennas');
         mapbox.current.moveLayer('Routing');
-
-        // enable all tower layers by default
-        // mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
-        // mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
-        // mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
-
-        mapbox.current.setLayoutProperty('Google StreetView', 'visibility', 'visible');
-        mapbox.current.setLayoutProperty('All Towers', 'visibility', 'visible');
-        mapbox.current.setLayoutProperty('All Tower Extrusions', 'visibility', 'visible');
-        mapbox.current.setLayoutProperty('Antennas', 'visibility', 'visible');
-
     }
 
     // api query
@@ -511,12 +466,12 @@ function Map() {
             style = 'mapbox://styles/mapbox/dark-v10';
         }
         mapbox.current = new mapboxgl.Map({
-                container: mapRef.current,
-                style: style,
-                projection: 'globe',
-                center: [-74.5, 40],
-                zoom: 4
-            });
+            container: mapRef.current,
+            style: style,
+            projection: 'globe',
+            center: [-74.5, 40],
+            zoom: 4
+        });
 
         mapbox.current.on('style.load', () => {
             if (isNight) {
@@ -542,13 +497,13 @@ function Map() {
                     }
                 )
             }
-            mapbox.current.addSource('mapbox-dem' , {
+            mapbox.current.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
                 'tileSize': 512,
                 'maxzoom': 14
             });
-            mapbox.current.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5});
+            mapbox.current.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
         });
 
         mapbox.current.on('load', () => {
@@ -556,6 +511,7 @@ function Map() {
                 homeMarker.addTo(mapbox.current);
             }
             addSources();
+            setLoading(false);
         });
 
         // on click on hovers
@@ -774,17 +730,17 @@ function Map() {
         const placeholder = document.createElement('div');
         ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
             {content}
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        console.log("setting home position to ", rightClickPopupPosition);
-                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                        setShowRightClickPopup(false);
-                    }}>H</button>
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRoutingLineEnd(rightClickPopupPosition);
-                        setRightClickPopupState("routing");
-                    }}>R</button>
-                </div>
+            <div id="rightclickpopupbuttons">
+                <button id="rightclickpopupbutton" onClick={() => {
+                    console.log("setting home position to ", rightClickPopupPosition);
+                    setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                    setShowRightClickPopup(false);
+                }}>H</button>
+                <button id="rightclickpopupbutton" onClick={() => {
+                    setRoutingLineEnd(rightClickPopupPosition);
+                    setRightClickPopupState("routing");
+                }}>R</button>
+            </div>
             <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
         </div>);
 
@@ -820,17 +776,17 @@ function Map() {
         const geocodes = [];
 
         if (coord1 < -90 || coord1 > 90) {
-        // must be lng, lat
+            // must be lng, lat
             geocodes.push(coordinateFeature(coord1, coord2));
         }
 
         if (coord2 < -90 || coord2 > 90) {
-        // must be lat, lng
+            // must be lat, lng
             geocodes.push(coordinateFeature(coord2, coord1));
         }
 
         if (geocodes.length === 0) {
-        // else could be either lng, lat or lat, lng
+            // else could be either lng, lat or lat, lng
             geocodes.push(coordinateFeature(coord2, coord1));
             geocodes.push(coordinateFeature(coord1, coord2));
         }
@@ -842,7 +798,7 @@ function Map() {
     async function setRoute(end) {
         const query = await fetch(
             `https://api.mapbox.com/directions/v5/mapbox/${isoProfile}/${homeMarkerPosition[0]},${homeMarkerPosition[1]};${end[0]},${end[1]}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`,
-            {method: 'GET'}
+            { method: 'GET' }
         );
         const json = await query.json();
         const data = json.routes[0];
@@ -879,7 +835,7 @@ function Map() {
             streetViewService.getPanorama({
                 location: { lat: lat, lng: lng },
                 radius: 20,
-            } , (data, status) => {
+            }, (data, status) => {
                 if (status === "OK") {
                     console.log("streetview available");
                     setStreetViewPresent(true);
@@ -892,9 +848,9 @@ function Map() {
         }
 
         return (
-                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
-                    <StreetViewService onLoad={onLoad} />
-                </LoadScript>
+            <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                <StreetViewService onLoad={onLoad} />
+            </LoadScript>
         )
     }
 
@@ -903,64 +859,38 @@ function Map() {
         let lng = streetViewPosition[1];
 
         return (
-            <div id="streetview" style={{ display: "block"}}>
-                    <GoogleMap
-                        mapContainerStyle={{ height: "100%", width: "100%" }}
-                        center={{ lat: lat, lng: lng }}
-                        zoom={14}
-                    >
-                        <StreetViewPanorama
-                            position={{ lat: lat, lng: lng }}
-                            visible={displayStreetView}
-                            // turn off all controls
-                            options={{
-                                addressControl: false,
-                                fullscreenControl: false,
-                                linksControl: false,
-                                motionTrackingControl: false,
-                                motionTrackingControlOptions: false,
+            <div id="streetview" style={{ display: "block" }}>
+                <GoogleMap
+                    mapContainerStyle={{ height: "100%", width: "100%" }}
+                    center={{ lat: lat, lng: lng }}
+                    zoom={14}
+                >
+                    <StreetViewPanorama
+                        position={{ lat: lat, lng: lng }}
+                        visible={displayStreetView}
+                        // turn off all controls
+                        options={{
+                            addressControl: false,
+                            fullscreenControl: false,
+                            linksControl: false,
+                            motionTrackingControl: false,
+                            motionTrackingControlOptions: false,
                                 panControl: true,
-                                zoomControl: false,
-                                enableCloseButton: false
-                            }}
-                            // heading and pitch
-                            pov={{
-                                heading: 0,
-                                pitch: 0
-                            }}
-                        />
-                    </GoogleMap>
+                            zoomControl: false,
+                            enableCloseButton: false
+                        }}
+                        // heading and pitch
+                        pov={{
+                            heading: 0,
+                            pitch: 0
+                        }}
+                    />
+                </GoogleMap>
                 <button id="closestreetview" onClick={() => { setDisplayStreetView(false)
                     setStreetViewPosition([])
                     setStreetViewPresent(false)}}>X</button>
             </div>
         )
-    }
-
-
-    const getLayers = () => {
-        if (!mapbox.current) return; // wait for map to initialize
-
-        return (
-            <div id="layerswitchermenu">
-                <h4 id="layerstitle">Baselayers</h4>
-                <div id="baselayers">
-                    {Object.keys(baseLayers).map(layerId => (
-                        <>
-                            <a href="#" id={layerId} className={selectedBaseLayer == layerId ? "active" : ""} onClick={e => handleBaseLayerClick(e, layerId)}>{layerId}</a>
-                        </>
-                    ))}
-                </div>
-                <h4 id="layerstitle">Layers</h4>
-                <div id="layers">
-                    {Object.keys(layers).map(layerId => (
-                        <>
-                            <a href="#" id={layerId} className={selectedLayers.includes(layerId) ? "active" : ""} onClick={e => handleLayerClick(e, layerId)}>{layerId}</a>
-                        </>
-                    ))}
-                </div>
-            </div>
-        );
     }
 
     const updateAllTowers = async (lat, lng) => {
@@ -974,7 +904,7 @@ function Map() {
         )
     }
 
-    const updateAntennas = async(lat, lng) => {
+    const updateAntennas = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
         await retrieveAntennas(accessToken, lat, lng, 5000).then(
             (response) => {
@@ -983,94 +913,6 @@ function Map() {
         )
     }
 
-    const handleBaseLayerClick = (e, clickedLayerId) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
-
-        if (visibility === 'visible') {
-            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
-            setSelectedBaseLayer("");
-        } else {
-            // turn off all other layers
-            setSelectedBaseLayer(clickedLayerId);
-            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
-            Object.keys(baseLayers).forEach(layerId => {
-                if (layerId == clickedLayerId) return;
-                mapbox.current.setLayoutProperty(layerId, 'visibility', 'none');
-            })
-        }
-    }
-
-    const handleLayerClick = (e, clickedLayerId) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        var visibility = mapbox.current.getLayoutProperty(clickedLayerId, 'visibility');
-
-        if (visibility === 'visible') {
-            // if All Towers then turn off
-            if (clickedLayerId === "All Towers") {
-                // turn off all tower extrusions
-                mapbox.current.setLayoutProperty("All Tower Extrusions", 'visibility', 'none');
-            }
-
-            // if click on Decom towers, then turn on Decom tower extrusions as well
-            if (clickedLayerId === "Decommissioned Towers") {
-                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
-
-                // also turn off All Towers
-                mapbox.current.setLayoutProperty("All Towers", 'visibility', 'none');
-            }
-
-            // same thing for safe towers
-            if (clickedLayerId === "Safe Towers") {
-                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'none');
-            }
-
-            if (clickedLayerId === "Shade Map") {
-                setShowShadeMap(false);
-                return;
-            }
-
-            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'none');
-            setSelectedLayers(selectedLayers.filter(layerId => layerId !== clickedLayerId));
-        }
-        else {
-            // if click on All Towers, then turn on All tower extrusions as well as disabling all other towers so we don't have overlapping extrusions
-            if (clickedLayerId === "All Towers") {
-                // turn on all tower extrusions
-                mapbox.current.setLayoutProperty("All Tower Extrusions", 'visibility', 'visible');
-
-                // turn off all other towers
-                mapbox.current.setLayoutProperty("Decommissioned Towers", 'visibility', 'none');
-                mapbox.current.setLayoutProperty("Safe Towers", 'visibility', 'none');
-
-                // along with their extrusions
-                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'none');
-                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'none');
-            }
-
-            // if click on Decom towers, then turn on Decom tower extrusions as well
-            if (clickedLayerId === "Decommissioned Towers") {
-                mapbox.current.setLayoutProperty("Decommissioned Tower Extrusions", 'visibility', 'visible');
-            }
-
-            // same thing for safe towers
-            if (clickedLayerId === "Safe Towers") {
-                mapbox.current.setLayoutProperty("Safe Tower Extrusions", 'visibility', 'visible');
-            }
-
-            if (clickedLayerId === "Shade Map") {
-                setShowShadeMap(true);
-                return;
-            }
-
-            mapbox.current.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
-            setSelectedLayers([...selectedLayers, clickedLayerId]);
-        }
-    }
 
     // show right click popup useeffect
     useEffect(() => {
@@ -1104,7 +946,7 @@ function Map() {
         // if null then popup has coords and set home button
         if (rightClickPopupState === "default") {
             renderRightClickPopup(<div id="right-click-popup-content">
-                Information about this location:<br/>
+                Hi, this is the default state
             </div>
             );
 
@@ -1329,7 +1171,7 @@ function Map() {
                 homeMarker.setLngLat(homeMarkerPosition);
             }
         }
-    , [homeMarkerPosition]);
+        , [homeMarkerPosition]);
 
     const setHomePosition = async (lat, lng) => {
         console.log("Trying to set home at ", lat, lng, "...");
@@ -1351,7 +1193,7 @@ function Map() {
                 <text id="sidebar-content-header">Home:</text>
                 <input id="iso-show" type="checkbox" checked={showIso} onChange={(e) => {
                     setShowIso(e.target.checked);
-                }}/>
+                }} />
                 <select id="iso-profile" onChange={(e) => {
                     setIsoProfile(e.target.value);
                 }}>
@@ -1363,7 +1205,7 @@ function Map() {
 
                 <input id="iso-minutes" type="number" min="1" max="240" value={isoMinutes} onChange={(e) => {
                     setIsoMinutes(e.target.value);
-                }}/>
+                }} />
 
                 {sunburstHomeInfo ? getSunburstSegment() : ""}
             </div>
@@ -1496,7 +1338,7 @@ function Map() {
                     </text>
                 </div>
             </div>
-    )
+        )
     }
 
 
@@ -1516,12 +1358,18 @@ function Map() {
         return data;
     }
 
+    const setLayoutProperty = (layer, name, value) => {
+        mapbox.current.setLayoutProperty(layer, name, value)
+    }
+
+    const getLayoutProperty = (layer, name) => {
+        return mapbox.current.getLayoutProperty(layer, name);
+    }
+
     return (
         <>
-            <div id="map" ref={mapRef}>
-                {/* <button id="layerswitcherbutton">LayerSwitcher</button> */}
-            </div>
-            {<Sidebar expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar}/>}
+            <div id="map" ref={mapRef}></div>
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} />}
 
             {displayStreetView ? getStreetView() : ""}
             {streetViewPresent ? displayStreetViewDiv() : ""}
