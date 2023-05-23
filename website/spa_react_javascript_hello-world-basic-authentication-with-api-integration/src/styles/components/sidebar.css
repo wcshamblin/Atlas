@@ -83,3 +83,51 @@
 .selected {
     background-color: lightblue;
 }
+
+#base-layer-container {
+    margin-left: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2%;
+    width: 300px;
+}
+
+.base-layer-item {
+    aspect-ratio: 1/1;
+    color: black;
+    width: 120px;
+    height: 90px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    font-size: 15px;
+    border: 2px solid black;
+}
+
+.base-layer-selected {
+    border: 2px solid rgb(0, 110, 200);
+}
+
+.base-layer-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+}
+
+.base-layer-esri {
+    background-image: url('../images/esri.png');    
+}
+
+.base-layer-googlehybrid {
+    background-image: url('../images/googlehybrid.png');
+}
+
+.base-layer-binghybrid {
+    background-image: url('../images/binghybrid.png');
+}
+
+.base-layer-openstreetmap {
+    background-image: url('../images/openstreetmap.png');
+}
