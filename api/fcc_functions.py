@@ -26,6 +26,11 @@ am_declaration = "st_x | st_y | am_dom_status | ant_dir_ind | ant_mode | any_sys
 am_declaration = am_declaration.replace(" ", "").split("|")
 am_hours = {"U": "Unlimited", "N": "Nighttime", "D": "Daytime", "C": "Critical Hours", "R": "Canadian Restricted", "P": "Pre-sunrise"}
 
+cell_declaration = "st_x        |        st_y        | record_type | unique_system_identifier | uls_file_number | ebf_number | call_sign  | location_action_performed | location_type_code | location_class_code | location_number | site_status | corresponding_fixed_location |                           location_address                           |  location_city  | location_county | location_state | radius_of_operation | area_of_operation_code | clearance_indicator | ground_elevation | lat_degrees | lat_minutes | lat_seconds | lat_direction | long_degrees | long_minutes | long_seconds | long_direction | max_lat_degrees | max_lat_minutes | max_lat_seconds | max_lat_direction | max_long_degrees | max_long_minutes | max_long_seconds | max_long_direction | nepa | quiet_zone_notification_date | tower_registration_number | height_of_support_structure | overall_height_of_structure | structure_type | airport_id |    location_name     | units_hand_held | units_mobile | units_temp_fixed | units_aircraft | units_itinerant | status_code | status_date | earth_agree |                   location_point"
+cell_declaration = cell_declaration.replace(" ", "").split("|")
+
+
+
 def get_tower_description(tower_type: str):
     if tower_type in tower_types.keys():
         return tower_types[tower_type]
@@ -357,6 +362,21 @@ def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
             "status": antenna[am_declaration.index("am_dom_status")],
             "last_update": antenna[am_declaration.index("last_update_date")].split(" ")[0],
             "hours_operation": am_hours[antenna[am_declaration.index("hours_operation")]],
+        })
+
+    return antennas_out
+
+# This doesn't work with the current DB, there's no way to see their true status
+def retrieve_fcc_cell_antennas(lat: float, lng: float, radius: float):
+    antennas = retrieve_fcc_antennas(lat, lng, radius, "uls_locations")
+    antennas_out = []
+
+    for antenna in antennas:
+        antennas_out.append({
+            "lat": antenna[cell_declaration.index("st_y")],
+            "lng": antenna[cell_declaration.index("st_x")],
+            "facility_id": antenna[cell_declaration.index("call_sign")],
+            "class_code": antenna[cell_declaration.index("location_class_code")],
         })
 
     return antennas_out
