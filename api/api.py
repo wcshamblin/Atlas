@@ -148,6 +148,18 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
     return {"status": "success", "message": "Home retrieved", "home": home[0]}
 
 
+@app.get("/maps")
+async def get_maps(response: Response, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    maps = get_maps_by_user(result["sub"])
+
+    return {"status": "success", "message": "Maps retrieved", "maps": maps}
+
 @app.get("/maps/user")
 async def get_my_maps(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
