@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
+from database.database import get_home, get_points_geojson_for_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -156,7 +156,7 @@ async def get_maps(response: Response, token: str = Depends(token_auth_scheme)):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
 
-    maps = get_maps_by_user(result["sub"])
+    maps = get_maps_for_user(result["sub"])
 
     return {"status": "success", "message": "Maps retrieved", "maps": maps}
 
@@ -253,6 +253,17 @@ async def put_map_info(response: Response, map_id: str, info: dict, token: str =
 
     return {"status": "success", "message": "Map updated"}
 
+# get points geojson
+@app.get("/maps/{map_id}/points")
+async def get_map_points(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get points
+    return {"status": "success", "message": "Points retrieved", "points": get_points_geojson_for_map(map_id)}
+
 # add new point to the map
 @app.post("/maps/{map_id}/points")
 async def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
@@ -312,6 +323,8 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
         return {"status": "error", "message": "Map not found"}
     
     remove_point_from_map(map_id, point_id)
+
+    return {"status": "success", "message": "Point removed from map"}
 
 
 # edit map point

@@ -15,6 +15,50 @@ def init(path="database/atlas-50a45-firebase-adminsdk-wvx8v-06724e2f8c.json"):
 db = init()
 
 
+def convert_point_to_geojson(point):
+    # example point:
+    # {
+    #     "description": "test",
+    #     "creator": "google-oauth2|112057537397008960552",
+    #     "id": "40bcf170-0a11-45ff-b68f-079fba34428d",
+    #     "editor": "google-oauth2|112057537397008960552",
+    #     "color": "#558B2F",
+    #     "name": "test",
+    #     "category": "Everything else",
+    #     "creation_date": "2023-05-24T16:53:52.903949+00:00",
+    #     "lat": 0.0,
+    #     "icon": "https://i.imgur.com/f6WpXTw.png",
+    #     "lng": 0.0,
+    #     "owner": "google-oauth2|112057537397008960552",
+    #     "edit_date": "2023-05-24T16:53:52.903954+00:00",
+    #     "deleted": false
+    # }
+
+    # convert point to geojson using all the fields listed above 
+    output = {
+        "type": "Feature",
+        "properties": {
+            "description": point["description"],
+            "creator": point["creator"],
+            "id": point["id"],
+            "editor": point["editor"],
+            "color": point["color"],
+            "name": point["name"],
+            "category": point["category"],
+            "creation_date": point["creation_date"],
+            "icon": point["icon"],
+            "owner": point["owner"],
+            "edit_date": point["edit_date"],
+            "deleted": point["deleted"]
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [point["lng"], point["lat"]]
+        }
+    }
+
+    return output
+
 def get_eula_acceptance(usersub):
     eula_object = db.collection(u'eula_acceptance').where(u'user', u'==', usersub).get()
     if not eula_object:
@@ -52,7 +96,18 @@ def get_maps_by_user(usersub) -> List[dict]:
 
 
 def get_maps_for_user(usersub) -> List[dict]:
-    return [doc.to_dict() for doc in db.collection(u'maps').where(u'users', u'array_contains', usersub).get()]
+    # return maps that the user owns and maps that the user has access to
+    my_maps = get_maps_by_user(usersub)
+    shared_maps = [doc.to_dict() for doc in db.collection(u'maps').where(u'users', u'array_contains', usersub).get()]
+
+    # remove points from maps, we don't need them here
+    for map in my_maps:
+        map.pop("points", None)
+    for map in shared_maps:
+        map.pop("points", None)
+
+    return my_maps + shared_maps
+    
 
 
 def add_map(map) -> str:
@@ -84,8 +139,44 @@ def update_map_info(id, info, editor) -> str:
 def delete_map(id) -> str:
     return db.collection(u'maps').where(u'id', u'==', id).delete()
 
-# def get_points_for_map(map_id) -> List[dict]:
-#     return [doc.to_dict() for doc in db.collection(u'maps').document(map_id).collection(u'points').get()]
+# def get_geojson_for_map(map_id) -> List[dict]:
+#     geojson = {"type": "FeatureCollection", "features": []}
+
+#     # get points
+#     points = [doc.to_dict() for doc in db.collection(u'maps').document(map_id).collection(u'points').get()]
+
+#     # add points to geojson
+#     for point in points:
+#         geojson["features"].append({
+#             "type": "Feature",
+#             "properties": {
+#                 "name": point["name"],
+#                 "description": point["description"],
+#                 "id": point["id"],
+#                 "type": point["type"],
+#                 "icon": point["icon"],
+#                 "color": point["color"]
+#             },
+#             "geometry": {
+#                 "type": "Point",
+#                 "coordinates": [point["longitude"], point["latitude"]]
+#             }
+#         })
+
+#     return geojson
+    
+
+def get_points_geojson_for_map(map_id) -> List[dict]:
+    geojson = {"type": "FeatureCollection", "features": []}
+
+    # get points
+    points = db.collection(u'maps').where(u'id', u'==', map_id).get()[0].to_dict()['points']
+
+    # add points to geojson
+    for point in points:
+        geojson["features"].append(convert_point_to_geojson(point))
+
+    return geojson
 
 
 def add_point_to_map(map_id, point) -> str:
