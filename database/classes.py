@@ -134,7 +134,7 @@ class Map:
         self.icons = icons
         self.points = []
         self.users = []
-        self.user_permissions = []
+        self.user_permissions = {}
         self.creation_date = datetime.now()
         self.editor = owner
         self.edit_date = datetime.now()
@@ -187,12 +187,14 @@ class Map:
         self.users.remove(user)
 
     def add_user_permission(self, user, permission):
-        if {"user": user, "permission": permission} not in self.user_permissions:
-            self.user_permissions.append({"user": user, "permission": permission})
+        if user not in self.user_permissions.keys():
+            self.user_permissions[user] = [permission]
+        else:
+            self.user_permissions[user].append(permission)
 
     def remove_user_permission(self, user, permission):
-        if {"user": user, "permission": permission} in self.user_permissions:
-            self.user_permissions.remove({"user": user, "permission": permission})
+        if user in self.user_permissions.keys():
+            self.user_permissions[user].remove(permission)
 
     def get_owner(self):
         return self.owner
