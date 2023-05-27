@@ -14,8 +14,6 @@ text#rightclickpopup-state {
     color: black;
     position: absolute;
     top: 4px;
-    width: 100%;
-    height: 100%;
 }
 
 text#routing-information {
@@ -23,6 +21,21 @@ text#routing-information {
     color: black;
     position: absolute;
     font-size: 15px;
+}
+
+div#rightclickpopupbuttons {
+    /*z-index: 999;*/
+    /*width: 20px;*/
+    /*right: 0;*/
+    /*float:right;*/
+    /*!*position: absolute;*!*/
+    /*!*display: inline-block;*!*/
+    /*margin-right: 2px;*/
+    /*margin-bottom: 2px;*/
+}
+
+button#rightclickpopupbutton {
+    z-index: 999;
 }
 
 text#popupcoords {
@@ -33,6 +46,7 @@ text#popupcoords {
     z-index: 999;
     text-align: center;
     display: block;
+    width: 100%;
 }
 
 .rightclick-popup .mapboxgl-popup-content {

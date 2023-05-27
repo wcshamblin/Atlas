@@ -23,7 +23,14 @@ import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
 // api imports
-import { fetchPoints, setHome, retrieveHome, retrieveTowers, retrieveAntennas } from "../services/message.service";
+import {
+    fetchPoints,
+    setHome,
+    retrieveHome,
+    retrieveTowers,
+    retrieveAntennas,
+    fetchMaps, retrieveCustomMapPoints
+} from "../services/message.service";
 
 import { useAuth0 } from "@auth0/auth0-react";
 
@@ -95,6 +102,8 @@ function Map() {
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
+
+    const [customMaps, setCustomMaps] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -434,28 +443,40 @@ function Map() {
         mapbox.current.moveLayer('Routing');
     }
 
-    // api query
-    useEffect(() => {
-        const getPoints = async () => {
-            const accessToken = await getAccessTokenSilently();
-            const { data, error } = await fetchPoints(accessToken);
-            if (data) {
-                // need to extract the points array from the http Object
-                setPoints(JSON.parse(data.points));
-                console.log("data.points: ", data.points);
-            }
-            if (error) {
-                console.log(error);
-            }
-        };
-        // getPoints();
-    }, []);
-
-    useEffect(() => {
-        if (points.length > 0) {
-            addSources()
+    // get maps from api
+    const getMaps = async () => {
+        const accessToken = await getAccessTokenSilently();
+        const { data, error } = await fetchMaps(accessToken);
+        if (data) {
+            setCustomMaps(data);
         }
-    }, [points]);
+        if (error) {
+            console.log(error);
+        }
+    };
+
+    // api query
+    // useEffect(() => {
+    //     const getPoints = async () => {
+    //         const accessToken = await getAccessTokenSilently();
+    //         const { data, error } = await fetchPoints(accessToken);
+    //         if (data) {
+    //             // need to extract the points array from the http Object
+    //             setPoints(JSON.parse(data.points));
+    //             console.log("data.points: ", data.points);
+    //         }
+    //         if (error) {
+    //             console.log(error);
+    //         }
+    //     };
+    //     // getPoints();
+    // }, []);
+
+    // useEffect(() => {
+    //     if (points.length > 0) {
+    //         addSources()
+    //     }
+    // }, [points]);
 
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
@@ -506,11 +527,15 @@ function Map() {
             mapbox.current.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
         });
 
+
+        // on map load, add sources
         mapbox.current.on('load', () => {
             if (homeIsSet) {
                 homeMarker.addTo(mapbox.current);
             }
             addSources();
+            getMaps();
+
             setLoading(false);
         });
 
@@ -1244,6 +1269,88 @@ function Map() {
 
     }, [antennaPoints]);
 
+    // custom maps useeffect, update when custom maps change
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!customMaps) return; // wait for custom maps to be set
+
+        // iterate through the custom maps, add the source and layer, and if the layer is enabled (localstorage), get the data and set it
+        console.log("Setting custom maps: ", customMaps);
+        customMaps.maps.forEach((customMap) => {
+            console.log("Setting custom map: ", customMap);
+            // add the source
+            mapbox.current.addSource(customMap.name, {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: []
+                }
+            });
+
+            // get the data and set it
+            // if (localStorage.getItem(customMap.name) === "true") {
+                console.log("Getting data for ", customMap.name);
+
+                getCustomMapPoints(customMap.id).then((data) => {
+                    console.log("Setting data for ", customMap.name, ": ", data);
+                    mapbox.current.getSource(customMap.name).setData(data.data.points);
+                });
+            // }
+
+            // before we set the layer we must load all the icons for the layer
+            // loop through map['icons'] and load each icon
+            customMap.icons.forEach((icon) => {
+                console.log("Loading icon: ", icon);
+                // load the icon
+                mapbox.current.loadImage(icon, (error, image) => {
+                    if (error) throw error;
+                    mapbox.current.addImage(icon, image, { sdf: true });
+                });
+            });
+
+            // add the layer (geojson)
+            mapbox.current.addLayer({
+                'id': customMap.name,
+                'type': 'symbol',
+                'layout': {
+                    'icon-image': ['get', 'icon'],
+                    'icon-size': 1,
+                    'icon-allow-overlap': true,
+                },
+                'source': customMap.name,
+                'paint': {
+                    'icon-opacity': 1,
+                    'icon-color': ['get', 'color'],
+                    'icon-halo-color': '#fff',
+                    'icon-halo-width': 5,
+                }
+            });
+
+            // layer click handling
+            mapbox.current.on('click', customMap.name, (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const name = e.features[0].properties.name;
+                const description = e.features[0].properties.description;
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML("<text id='towerpopuptitle'>" + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
+                    .addTo(mapbox.current);
+            });
+
+            // set visibility
+            // if (localStorage.getItem(customMap.name) === "true") {
+                mapbox.current.setLayoutProperty(customMap.name, 'visibility', 'visible');
+            // }
+
+            // let's also move the custom map to the top of the layers
+            mapbox.current.moveLayer(customMap.name);
+
+            // done
+            console.log("Custom map set: ", customMap.name);
+        });
+    }, [customMaps]);
+
     // escape key handling
     useEffect(() => {
         const handleKeydown = (e) => {
@@ -1342,6 +1449,13 @@ function Map() {
                 </div>
             </div>
         )
+    }
+
+    const getCustomMapPoints = async (mapID) => {
+        // get access token
+        const accessToken = await getAccessTokenSilently();
+
+        return await retrieveCustomMapPoints(accessToken, mapID);
     }
 
 

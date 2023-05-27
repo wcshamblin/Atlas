@@ -226,3 +226,39 @@ export const retrieveAntennas = async (accessToken, lat, lng, radius) => {
         error,
     }
 }
+
+export const fetchMaps = async (accessToken) => {
+    const config = {
+        url: `${apiServerUrl}/maps`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const retrieveCustomMapPoints = async (accessToken, mapId) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${mapId}/points`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
