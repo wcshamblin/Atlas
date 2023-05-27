@@ -121,11 +121,6 @@ def update_map_info(id, info, editor) -> str:
 
     # update map
     for key, value in info.items():
-            # if key is not in map_dict, skip it
-            if key not in map_dict.keys():
-                continue
-            if key in ["id", "points", "view_count", "edit_date", "creation_date"]:
-                continue
             map_dict[key] = value
 
     # set editor and edit_date

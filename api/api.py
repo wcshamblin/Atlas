@@ -11,6 +11,8 @@ from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
 from math import sqrt, sin, cos
+from typing import Optional
+
 
 from api.utils import VerifyToken
 
@@ -57,6 +59,14 @@ class MapPost(BaseModel):
     colors: Dict
     categories: List[str]
     icons: List[str]
+
+class MapPut(BaseModel):
+    name: Optional[str]
+    description: Optional[str]
+    legend: Optional[str]
+    colors: Optional[Dict]
+    categories: Optional[List[str]]
+    icons: Optional[List[str]]
 
 
 @app.get("/api/messages/public")
@@ -186,23 +196,23 @@ async def get_contributor_maps(response: Response, token: str = Depends(token_au
     return {"status": "success", "message": "Maps retrieved", "maps": maps}
 
 
-@app.get("/maps/{map_id}")
-async def get_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
-    result = VerifyToken(token.credentials).verify()
+# @app.get("/maps/{map_id}")
+# async def get_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+#     result = VerifyToken(token.credentials).verify()
 
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
+#     if result.get("status"):
+#         response.status_code = status.HTTP_400_BAD_REQUEST
+#         return result
 
-    map = get_map_by_id(map_id)
+#     map = get_map_by_id(map_id)
 
-    if map is None:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"status": "error", "message": "Map not found"}
+#     if map is None:
+#         response.status_code = status.HTTP_404_NOT_FOUND
+#         return {"status": "error", "message": "Map not found"}
 
-    return {"status": "success", "message": "Map retrieved", "map": map}
+#     return {"status": "success", "message": "Map retrieved", "map": map}
 
-
+# create a new map
 @app.post("/maps")
 async def post_map(response: Response, map: MapPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
@@ -228,8 +238,9 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
     return {"status": "success", "message": "Map created", "map": new_map}
 
 
+# edit map info
 @app.put("/maps/{map_id}/info")
-async def put_map_info(response: Response, map_id: str, info: dict, token: str = Depends(token_auth_scheme)):
+async def put_map_info(response: Response, map_id: str, info: MapPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -248,8 +259,23 @@ async def put_map_info(response: Response, map_id: str, info: dict, token: str =
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
     
+    infodict = {}
+
+    if info.name is not None:
+        infodict["name"] = info.name
+    if info.description is not None:
+        infodict["description"] = info.description
+    if info.legend is not None:
+        infodict["legend"] = info.legend
+    if info.colors is not None:
+        infodict["colors"] = info.colors
+    if info.categories is not None:
+        infodict["categories"] = info.categories
+    if info.icons is not None:
+        infodict["icons"] = info.icons
+
     # update map info
-    update_map_info(map_id, info, result["sub"])
+    update_map_info(map_id, infodict, result["sub"])
 
     return {"status": "success", "message": "Map updated"}
 
@@ -278,6 +304,18 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
     if map is None:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
+
+
+    # check if we have permissions to add a point to this map
+    # if we're not the owner and we don't have add permissions, return 403
+    try:
+        if map["owner"] != result["sub"] and "add" not in map["user_permissions"][result["sub"]]:
+            response.status_code = status.HTTP_403_FORBIDDEN
+            return {"status": "error", "message": "You do not have permission to add points to this map"}
+    except KeyError:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to add points to this map"}
+    
 
     # create Point object
     new_point = Point(owner=result["sub"],
@@ -322,6 +360,17 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
     
+    # check if we have permissions to delete a point from this map
+    # if we're not the owner and we don't have delete permissions, return 403
+    try:
+        if map["owner"] != result["sub"] and "delete" not in map["user_permissions"][result["sub"]]:
+            response.status_code = status.HTTP_403_FORBIDDEN
+            return {"status": "error", "message": "You do not have permission to delete points from this map"}
+    except KeyError:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to delete points from this map"}
+
+    
     remove_point_from_map(map_id, point_id)
 
     return {"status": "success", "message": "Point removed from map"}
@@ -341,6 +390,18 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
     if map is None:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
+    
+    # check if we have permissions to edit a point on this map
+    # if we're not the owner and we don't have edit permissions, return 403
+    
+    try:
+        if map["owner"] != result["sub"] and "edit" not in map["user_permissions"][result["sub"]]:
+            response.status_code = status.HTTP_403_FORBIDDEN
+            return {"status": "error", "message": "You do not have permission to edit points on this map"}
+    except KeyError:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit points on this map"}
+
 
     # create Point object
     new_point = Point(owner=result["sub"],
@@ -369,7 +430,6 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
     update_point_in_map(map_id, point_id, new_point.to_dict())
 
     return {"status": "success", "message": "Point updated", "point": new_point}
-
 
 
 
