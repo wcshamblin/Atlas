@@ -16,6 +16,21 @@ text#rightclickpopup-state {
     top: 4px;
 }
 
+text#custompopupname {
+    z-index: 999;
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+    top: 4px;
+}
+
+text#custompopupdescription {
+    z-index: 999;
+    font-size: 13px;
+    color: black;
+    top: 24px;
+}
+
 text#routing-information {
     z-index: 999;
     color: black;
@@ -48,6 +63,23 @@ text#popupcoords {
     display: block;
     width: 100%;
 }
+
+table#custompopupinfotable {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    text-align: left;
+    padding: 3px;
+    color: black;
+}
+
+tr:nth-child(even) {
+    background-color: #cecece;
+}
+
 
 .rightclick-popup .mapboxgl-popup-content {
     background-color: #e6e6e6;

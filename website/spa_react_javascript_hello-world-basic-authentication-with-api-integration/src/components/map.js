@@ -91,6 +91,12 @@ function Map() {
     const [showRightClickPopup, setShowRightClickPopup] = useState(false);
     const [rightClickPopupState, setRightClickPopupState] = useState(null);
 
+    const [customMapPopup, setCustomMapPopup] = useState(new mapboxgl.Popup({className: "rightclick-popup", closeButton: true, closeOnClick: true}).setHTML("Test!"));
+    const [customMapPopupPosition, setCustomMapPopupPosition] = useState([]);
+    const [showCustomMapPopup, setShowCustomMapPopup] = useState(false);
+    const [customMapPopupState, setCustomMapPopupState] = useState(null);
+    const [customMapPopupProperties, setCustomMapPopupProperties] = useState(null);
+
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
@@ -325,7 +331,7 @@ function Map() {
                 'https://mts2.google.com/mapslt?lyrs=svv&x={x}&y={y}&z={z}&w=256&h=256&hl=en&style=40,18'
             ],
             'tileSize': 256,
-            'minzoom': 13
+            'minzoom': 15
         });
 
         // 3d buildings layer
@@ -561,6 +567,13 @@ function Map() {
             setRoutingLine(null);
         });
 
+        // custom map popup on close
+        customMapPopup.on('close', () => {
+            console.log("custom map popup closed");
+            // setShowCustomMapPopup(false);
+            setCustomMapPopupState(null);
+        });
+
         // make the route thicker on hover
         mapbox.current.on('mouseenter', 'Routing', (e) => {
             mapbox.current.setPaintProperty('Routing', 'line-width', 20);
@@ -673,9 +686,9 @@ function Map() {
         mapbox.current.on('click', (e) => {
             let lat = e.lngLat.lat;
             let lng = e.lngLat.lng;
+            console.log("Left click at: " + lat + ", " + lng);
 
-
-            if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') === 'visible' && mapbox.current.getZoom() >= 12) {
+            if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') === 'visible' && mapbox.current.getZoom() >= 14) {
                 setStreetViewPosition([lat, lng]);
                 setDisplayStreetView(true);
             }
@@ -771,6 +784,91 @@ function Map() {
 
         rightClickPopup.setDOMContent(placeholder);
     }
+
+    const renderCustomMapPopup = (state, customMapName, properties, coordinates) => {
+        const placeholder = document.createElement('div');
+        if (state === "default") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id='custompopupname'>{properties.name}</text><br/>
+                <text id='custompopupdescription'>{properties.description}</text>
+
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("info");
+                    }}>I
+                    </button>
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("edit");
+                    }}>E
+                    </button>
+                </div>
+                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+            </div>);
+
+            customMapPopup.setDOMContent(placeholder);
+        }
+
+        if (state === "edit") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id='custompopupname'>{properties.name}</text><br/>
+                <text id='custompopupdescription'>{properties.description}</text>
+
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("default");
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+            </div>);
+
+            customMapPopup.setDOMContent(placeholder);
+        }
+
+        if (state === "info") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <table id="custompopupinfotable">
+                    <tr>
+                        <td>Creator</td>
+                        <td>{properties.creator}</td>
+                    </tr>
+                    <tr>
+                        <td>Creation Date</td>
+                        <td>{properties.creation_date}</td>
+                    </tr>
+                    <tr>
+                        <td>Editor</td>
+                        <td>{properties.editor}</td>
+                    </tr>
+                    <tr>
+                        <td>Edit Date</td>
+                        <td>{properties.edit_date}</td>
+                    </tr>
+                    <tr>
+                        <td>ID</td>
+                        <td>{properties.id}</td>
+                    </tr>
+                </table>
+
+                {/*<text id='custompopupdescription'>{properties.creation_date}</text><br/>*/}
+                {/*<text id='custompopupdescription'>{properties.edit_date}</text><br/>*/}
+                {/*<text id='custompopupdescription'>{properties.creator}</text><br/>*/}
+                {/*<text id='custompopupdescription'>{properties.editor}</text><br/>*/}
+                {/*<text id='custompopupdescription'>{properties.id}</text>*/}
+
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("default");
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+            </div>);
+
+            customMapPopup.setDOMContent(placeholder);
+        }
+    }
+
 
     const coordinatesGeocoder = function (query) {
         // Match anything which looks like
@@ -982,7 +1080,7 @@ function Map() {
         else if (rightClickPopupState === "routing") {
             renderRightClickPopup(
                 <div id="right-click-popup-content">
-                    <text id="rightclickpopup-state">Routing info being retrieved...</text><br/>
+                    <text id="rightclickpopup-state">Calculating...</text><br/>
                 </div>
             );
         }
@@ -1004,6 +1102,59 @@ function Map() {
             );
         }
     }, [routingDuration, routingDistance]);
+
+    // show custom map popup useeffect
+    // show right click popup useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showCustomMapPopup) { // remove the popup if we don't want to show it
+            customMapPopup.remove();
+        }
+        else {
+            // add the popup to the map
+            console.log("adding custom map popup");
+            customMapPopup.addTo(mapbox.current);
+        }
+    }, [showCustomMapPopup]);
+
+    // custom map popup position useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showCustomMapPopup) return; // if we don't want to show the popup, then don't do anything
+
+        console.log("changing custom map popup position to ", customMapPopupPosition);
+        customMapPopup.setLngLat(customMapPopupPosition);
+
+        customMapPopup.addTo(mapbox.current);
+
+    }, [customMapPopupPosition]);
+
+    // custom map popup state useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showCustomMapPopup) return; // if we don't want to show the popup, then don't do anything
+
+        console.log("custom map popup state is ", customMapPopupState);
+
+        renderCustomMapPopup(customMapPopupState, "test", customMapPopupProperties, customMapPopupPosition);
+
+        // state can be null, "new-point", or "routing"
+        // if null then popup has coords and set home button
+        // if (customMapPopupState === "default") {
+        //     renderCustomMapPopup(<div id="custom-map-popup-content">
+        //         Hi, this is the default state
+        //     </div>
+        //     );
+        // }
+        // else if (customMapPopupState === "edit") {
+        //     renderCustomMapPopup(
+        // } else {
+        //     renderCustomMapPopup(<div id="custom-map-popup-content">
+        //         <text id="custommappopup-state">Unknown state...</text><br/>
+        //     </div>
+        //     );
+        // }
+    }, [customMapPopupState]);
 
     // isochrone API fetch
     useEffect(() => {
@@ -1326,17 +1477,40 @@ function Map() {
                 }
             });
 
-            // layer click handling
+            // custom map layer on click
             mapbox.current.on('click', customMap.name, (e) => {
                 const coordinates = e.features[0].geometry.coordinates.slice();
                 const name = e.features[0].properties.name;
                 const description = e.features[0].properties.description;
 
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML("<text id='towerpopuptitle'>" + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
-                    .addTo(mapbox.current);
+                console.log("Clicked on custom map: ", name, description, coordinates);
+
+                // if the popup is already open, close it
+                // if (!showCustomMapPopup) {
+                //     customMapPopup.addTo(mapbox.current);
+                // }
+
+                setCustomMapPopupPosition(coordinates);
+                setCustomMapPopupState("default");
+                setCustomMapPopupProperties(e.features[0].properties);
+                renderCustomMapPopup("default", customMap.name, e.features[0].properties, coordinates);
+                console.log("Custom map point properties: ", e.features[0].properties);
+                setShowCustomMapPopup(true);
             });
+
+            // on hover
+            // mapbox.current.on('mouseenter', customMap.name, () => {
+            //     mapbox.current.getCanvas().style.cursor = 'pointer';
+            //
+            //     // also make the border thicker
+            //     mapbox.current.setPaintProperty(customMap.name, 'icon-halo-width', 6);
+            // });
+
+            // on leave
+            // mapbox.current.on('mouseleave', customMap.name, () => {
+            //     mapbox.current.getCanvas().style.cursor = '';
+            //     mapbox.current.setPaintProperty(customMap.name, 'icon-halo-width', 5);
+            // });
 
             // set visibility
             // if (localStorage.getItem(customMap.name) === "true") {
