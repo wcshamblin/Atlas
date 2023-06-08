@@ -64,6 +64,14 @@ text#popupcoords {
     width: 100%;
 }
 
+text#custompopupcategory {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    font-size: smaller;
+    color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+}
+
 table#custompopupinfotable {
     font-family: arial, sans-serif;
     border-collapse: collapse;

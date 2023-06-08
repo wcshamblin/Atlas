@@ -785,22 +785,24 @@ function Map() {
         rightClickPopup.setDOMContent(placeholder);
     }
 
-    const renderCustomMapPopup = (state, customMapName, properties, coordinates) => {
+    const renderCustomMapPopup = (state, properties, coordinates) => {
         const placeholder = document.createElement('div');
+
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id='custompopupname'>{properties.name}</text><br/>
-                <text id='custompopupdescription'>{properties.description}</text>
+                <text id='custompopupdescription'>{properties.description}</text><br/>
+                <text id='custompopupcategory'>Category: {properties.category}</text><br/>
 
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("info");
                     }}>I
                     </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
+                    {properties.editable && <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("edit");
                     }}>E
-                    </button>
+                    </button>}
                 </div>
                 <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
             </div>);
@@ -1136,7 +1138,7 @@ function Map() {
 
         console.log("custom map popup state is ", customMapPopupState);
 
-        renderCustomMapPopup(customMapPopupState, "test", customMapPopupProperties, customMapPopupPosition);
+        renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
 
         // state can be null, "new-point", or "routing"
         // if null then popup has coords and set home button
@@ -1490,10 +1492,20 @@ function Map() {
                 //     customMapPopup.addTo(mapbox.current);
                 // }
 
+                // see if we have edit permissions for this map
+                e.features[0].properties.editable = false;
+                for (let i = 0; i < customMaps.maps.length; i++) {
+                    if (customMaps.maps[i].id === customMap.id) {
+                        if (customMaps.maps[i].my_permissions.includes("edit")) {
+                            e.features[0].properties.editable = true;
+                        }
+                    }
+                }
+
                 setCustomMapPopupPosition(coordinates);
                 setCustomMapPopupState("default");
                 setCustomMapPopupProperties(e.features[0].properties);
-                renderCustomMapPopup("default", customMap.name, e.features[0].properties, coordinates);
+                renderCustomMapPopup("default", e.features[0].properties, coordinates);
                 console.log("Custom map point properties: ", e.features[0].properties);
                 setShowCustomMapPopup(true);
             });
