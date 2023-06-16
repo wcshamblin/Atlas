@@ -29,7 +29,7 @@ import {
     retrieveHome,
     retrieveTowers,
     retrieveAntennas,
-    fetchMaps, retrieveCustomMapPoints
+    fetchMaps, retrieveCustomMapPoints, putPoint
 } from "../services/message.service";
 
 import { useAuth0 } from "@auth0/auth0-react";
@@ -110,6 +110,7 @@ function Map() {
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
 
     const [customMaps, setCustomMaps] = useState(null);
+    const [newPointMap, setNewPointMap] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
@@ -550,7 +551,6 @@ function Map() {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const name = e.features[0].properties.name;
             const description = e.features[0].properties.description;
-            console.log("description: ", description);
 
 
             new mapboxgl.Popup()
@@ -564,6 +564,8 @@ function Map() {
             setShowRightClickPopup(false);
             setRightClickPopupState(null);
             // on close we also want to clear any routing lines that may have been generated while it was open
+            // but only if the popup is in the routing state
+            console.log("right click popup closed, state: ", rightClickPopupState);
             setRoutingLine(null);
         });
 
@@ -571,7 +573,8 @@ function Map() {
         customMapPopup.on('close', () => {
             console.log("custom map popup closed");
             // setShowCustomMapPopup(false);
-            setCustomMapPopupState(null);
+            setCustomMapPopupState("default");
+            setRoutingLine(null);
         });
 
         // make the route thicker on hover
@@ -589,7 +592,6 @@ function Map() {
             const description = e.features[0].properties.description;
             // convert to feet with 2 decimal places
             const height = (e.features[0].properties.height * 3.28084).toFixed(2);
-            console.log("description: ", description);
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
@@ -764,35 +766,97 @@ function Map() {
     }, [mapRef]);
 
 
-    const renderRightClickPopup = (content) => {
+    const renderRightClickPopup = (state) => {
         const placeholder = document.createElement('div');
-        ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-            {content}
-            <div id="rightclickpopupbuttons">
-                <button id="rightclickpopupbutton" onClick={() => {
-                    console.log("setting home position to ", rightClickPopupPosition);
-                    setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                    setShowRightClickPopup(false);
-                }}>H</button>
-                <button id="rightclickpopupbutton" onClick={() => {
-                    setRoutingLineEnd(rightClickPopupPosition);
-                    setRightClickPopupState("routing");
-                }}>R</button>
-            </div>
-            <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
-        </div>);
+
+        if (state === "default") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        console.log("setting home position to ", rightClickPopupPosition);
+                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                        setShowRightClickPopup(false);
+                    }}>H
+                    </button>
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRoutingLineEnd(rightClickPopupPosition);
+                        setRightClickPopupState("routing");
+                    }}>R
+                    </button>
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("new-point");
+                    }}>N
+                    </button>
+                </div>
+                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+            </div>);
+        } if (state === "new-point") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <select id='newpointmapselect' onChange={async (e) => {
+                    console.log("changing map to ", e.target.value);
+                    // set the popup to have inputs for the selected map
+                    setRightClickPopupState("new-point");
+                    setNewPointMap(e.target.value);
+                }}>
+                    <option value={""}>Select a map</option>
+                    {customMaps.maps.map((map) => {
+                        return <option value={map.id}>{map.name}</option>
+                    })}
+                </select><br/>
+
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("default");
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+            </div>);
+        } if (state === "routing") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id="rightclickpopup-routing-state">Calculating...</text>
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("default");
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+            </div>);
+        } if (state === "routing-complete") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                    <text id="rightclickpopup-routing-state">Routing Info:</text><br/>
+                    <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
+                    <text id="routing-information">{routingDistance} miles</text><br/>
+                    <div id="rightclickpopupbuttons">
+                        <button id="rightclickpopupbutton" onClick={() => {
+                            setRightClickPopupState("default");
+                            setRoutingLine(null);
+                        }}>D
+                        </button>
+                    </div>
+                    <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                </div>
+            );
+        }
+
+
 
         rightClickPopup.setDOMContent(placeholder);
     }
 
     const renderCustomMapPopup = (state, properties, coordinates) => {
+        console.log("rendering custom map popup with state ", state, " and properties ", properties, " and coordinates ", coordinates);
         const placeholder = document.createElement('div');
 
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id='custompopupname'>{properties.name}</text><br/>
                 <text id='custompopupdescription'>{properties.description}</text><br/>
-                <text id='custompopupcategory'>Category: {properties.category}</text><br/>
+                <div id='custompopupdetail'>
+                    Category: <b>{properties.category}</b><br/>
+                    Icon: {properties.iconName}<br/>
+                    Map: {properties.mapName}</div>
 
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
@@ -803,28 +867,71 @@ function Map() {
                         setCustomMapPopupState("edit");
                     }}>E
                     </button>}
+
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRoutingLineEnd(coordinates);
+                        setCustomMapPopupState("routing");
+                    }}>R
+                    </button>
                 </div>
                 <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
             </div>);
-
-            customMapPopup.setDOMContent(placeholder);
         }
 
         if (state === "edit") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id='custompopupname'>{properties.name}</text><br/>
-                <text id='custompopupdescription'>{properties.description}</text>
+                <input type="text" id='custompopupname' defaultValue={properties.name}/><br/>
+                <textarea id='custompopupdescription' defaultValue={properties.description}></textarea><br/>
+
+                <div id='custompopupselects'>
+
+                    <select id='custompopupcategory' defaultValue={properties.category} onChange={async (e) => {
+                        console.log("changing category to ", e.target.value);
+                        const accessToken = await getAccessTokenSilently();
+                        await putPoint(accessToken, properties.mapId, properties.id, {
+                            category: e.target.value
+                        });
+                    }}>
+                        {properties.categories.map((category) => {
+                            return <option value={category}>{category}</option>
+                        })}
+                    </select><br/>
+
+                    <select id='custompopupcolor' defaultValue={properties.color}>
+                        {Object.keys(properties.colors).map((color) => {
+                            return <option value={properties.colors[color]}>{color}</option>
+                            })
+                        }
+                    </select><br/>
+
+                    <select id='custompopupicon' defaultValue={properties.icon}>
+                        {Object.keys(properties.icons).map((icon) => {
+                            return <option value={properties.icons[icon]}>{icon}</option>
+                            })
+                        }
+                    </select><br/>
+                </div>
 
                 <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
+                    <button id="rightclickpopupbutton" onClick={async () => {
                         setCustomMapPopupState("default");
+                        // save changes
+                        // accesstoken, mapid, pointid, point
+                        // get access token
+                        const accessToken = await getAccessTokenSilently();
+                        await putPoint(accessToken, properties.mapId, properties.id, {
+                            name: document.getElementById('custompopupname').value,
+                            description: document.getElementById('custompopupdescription').value,
+                            category: document.getElementById('custompopupcategory').value,
+                            color: document.getElementById('custompopupcolor').value,
+                            icon: document.getElementById('custompopupicon').value,
+                        });
+
                     }}>D
                     </button>
                 </div>
                 <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
             </div>);
-
-            customMapPopup.setDOMContent(placeholder);
         }
 
         if (state === "info") {
@@ -850,13 +957,16 @@ function Map() {
                         <td>ID</td>
                         <td>{properties.id}</td>
                     </tr>
-                </table>
+                    <tr>
 
-                {/*<text id='custompopupdescription'>{properties.creation_date}</text><br/>*/}
-                {/*<text id='custompopupdescription'>{properties.edit_date}</text><br/>*/}
-                {/*<text id='custompopupdescription'>{properties.creator}</text><br/>*/}
-                {/*<text id='custompopupdescription'>{properties.editor}</text><br/>*/}
-                {/*<text id='custompopupdescription'>{properties.id}</text>*/}
+                        <td>Map</td>
+                        <td>{properties.mapName}</td>
+                    </tr>
+                    <tr>
+                        <td>Map ID</td>
+                        <td>{properties.mapId}</td>
+                    </tr>
+                </table>
 
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
@@ -866,9 +976,38 @@ function Map() {
                 </div>
                 <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
             </div>);
-
-            customMapPopup.setDOMContent(placeholder);
         }
+
+        if (state === "routing") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id="rightclickpopup-routing-state">Calculating...</text>
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("default");
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+            </div>);
+        }
+
+        if (state === "routing-complete") {
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id="rightclickpopup-routing-state">Routing Info:</text><br/>
+                <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
+                <text id="routing-information">{routingDistance} miles</text><br/>
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("default");
+                        setRoutingLine(null);
+                    }}>D
+                    </button>
+                </div>
+                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+            </div>);
+        }
+
+        customMapPopup.setDOMContent(placeholder);
     }
 
 
@@ -1038,7 +1177,6 @@ function Map() {
         )
     }
 
-
     // show right click popup useeffect
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
@@ -1067,41 +1205,19 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
 
-        // state can be null, "new-point", or "routing"
-        // if null then popup has coords and set home button
-        if (rightClickPopupState === "default") {
-            renderRightClickPopup(<div id="right-click-popup-content">
-                Hi, this is the default state
-            </div>
-            );
-
-        }
-        else if (rightClickPopupState === "new-point") {
-            renderRightClickPopup("New Point State");
-        }
-        else if (rightClickPopupState === "routing") {
-            renderRightClickPopup(
-                <div id="right-click-popup-content">
-                    <text id="rightclickpopup-state">Calculating...</text><br/>
-                </div>
-            );
-        }
+        renderRightClickPopup(rightClickPopupState);
     }, [rightClickPopupState]);
 
     // routing duration and distance useeffect for right click popup
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
-        if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
 
         // if we are in routing state, then show the duration and distance
         if (rightClickPopupState === "routing") {
-            renderRightClickPopup(
-                <div id="right-click-popup-content">
-                    <text id="rightclickpopup-state">Routing Info:</text><br/>
-                    <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
-                    <text id="routing-information">{routingDistance} miles</text><br/>
-                </div>
-            );
+            setRightClickPopupState("routing-complete");
+        }
+        if (customMapPopupState === "routing") {
+            setCustomMapPopupState("routing-complete");
         }
     }, [routingDuration, routingDistance]);
 
@@ -1136,26 +1252,10 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showCustomMapPopup) return; // if we don't want to show the popup, then don't do anything
 
-        console.log("custom map popup state is ", customMapPopupState);
+        console.log("custom map popup state is", customMapPopupState);
 
         renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
 
-        // state can be null, "new-point", or "routing"
-        // if null then popup has coords and set home button
-        // if (customMapPopupState === "default") {
-        //     renderCustomMapPopup(<div id="custom-map-popup-content">
-        //         Hi, this is the default state
-        //     </div>
-        //     );
-        // }
-        // else if (customMapPopupState === "edit") {
-        //     renderCustomMapPopup(
-        // } else {
-        //     renderCustomMapPopup(<div id="custom-map-popup-content">
-        //         <text id="custommappopup-state">Unknown state...</text><br/>
-        //     </div>
-        //     );
-        // }
     }, [customMapPopupState]);
 
     // isochrone API fetch
@@ -1450,14 +1550,12 @@ function Map() {
                 });
             // }
 
-            // before we set the layer we must load all the icons for the layer
-            // loop through map['icons'] and load each icon
-            customMap.icons.forEach((icon) => {
-                console.log("Loading icon: ", icon);
-                // load the icon
-                mapbox.current.loadImage(icon, (error, image) => {
+            Object.keys(customMap.icons).forEach((iconName) => {
+                console.log("Loading icon: ", iconName, customMap.icons[iconName]);
+                const iconUrl = customMap.icons[iconName];
+                mapbox.current.loadImage(iconUrl, (error, image) => {
                     if (error) throw error;
-                    mapbox.current.addImage(icon, image, { sdf: true });
+                    mapbox.current.addImage(customMap.icons[iconName], image, { sdf: true });
                 });
             });
 
@@ -1496,6 +1594,12 @@ function Map() {
                 e.features[0].properties.editable = false;
                 for (let i = 0; i < customMaps.maps.length; i++) {
                     if (customMaps.maps[i].id === customMap.id) {
+                        e.features[0].properties.categories = customMaps.maps[i].categories;
+                        e.features[0].properties.colors = customMaps.maps[i].colors;
+                        e.features[0].properties.icons = customMaps.maps[i].icons;
+                        e.features[0].properties.iconName = Object.keys(customMaps.maps[i].icons).find(key => customMaps.maps[i].icons[key] === e.features[0].properties.icon);
+                        e.features[0].properties.mapName = customMaps.maps[i].name;
+                        e.features[0].properties.mapId = customMaps.maps[i].id;
                         if (customMaps.maps[i].my_permissions.includes("edit")) {
                             e.features[0].properties.editable = true;
                         }
@@ -1554,6 +1658,17 @@ function Map() {
                     setDisplaySidebar(false);
                     return;
                 }
+
+                if (rightClickPopup.isOpen()) {
+                    rightClickPopup.remove();
+                    return;
+                }
+
+                 // then try to close custom map popup, if we can then return
+                if (customMapPopup.isOpen()) {
+                    customMapPopup.remove();
+                }
+
             }
         }
         window.addEventListener('keydown', handleKeydown);

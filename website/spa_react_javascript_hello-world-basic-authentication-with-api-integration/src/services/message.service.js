@@ -73,7 +73,7 @@ export const fetchPoints = async (accessToken) => {
     };
 }
 
-export const postPoint = async (accessToken, point) => {
+export const postPoint = async (accessToken, map_id, point_id, point) => {
     const config = {
         url: `${apiServerUrl}/points`,
         method: "POST",
@@ -92,9 +92,9 @@ export const postPoint = async (accessToken, point) => {
     };
 }
 
-export const putPoint = async (accessToken, point) => {
+export const putPoint = async (accessToken, map_id, point_id, point) => {
     const config = {
-        url: `${apiServerUrl}/points/${point.id}`,
+        url: `${apiServerUrl}/maps/${map_id}/points/${point_id}`,
         method: "PUT",
         headers: {
         "content-type": "application/json",

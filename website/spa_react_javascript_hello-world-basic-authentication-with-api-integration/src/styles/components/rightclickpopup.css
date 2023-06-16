@@ -7,12 +7,11 @@ div#right-click-popup-content {
     z-index: 999;
 }
 
-text#rightclickpopup-state {
+text#rightclickpopup-routing-state {
     z-index: 999;
     font-weight: bold;
     font-size: 18px;
     color: black;
-    position: absolute;
     top: 4px;
 }
 
@@ -64,10 +63,11 @@ text#popupcoords {
     width: 100%;
 }
 
-text#custompopupcategory {
-    padding-bottom: 0;
-    margin-bottom: 0;
-    font-size: smaller;
+
+div#custompopupdetail {
+    padding-top: 4px;
+    padding-bottom: 3px;
+    line-height: 1.2em;
     color: rgba(0, 0, 0, 0.6);
     z-index: 999;
 }
@@ -75,6 +75,41 @@ text#custompopupcategory {
 table#custompopupinfotable {
     font-family: arial, sans-serif;
     border-collapse: collapse;
+    width: 100%;
+}
+
+input#custompopupname {
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+    width: 95%;
+}
+
+textarea#custompopupdescription {
+    font-size: 13px;
+    color: black;
+    width: 95%;
+    resize: none;
+}
+
+div#custompopupselects {
+    padding-bottom: 3px;
+    padding-top: 3px;
+    color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    width: 95%;
+}
+
+select#custompopupcategory {
+    font-size: 13px;
+    color: black;
+    width: 100%;
+}
+
+select#custompopupcolor {
+    padding-left: 2px;
+    font-size: 13px;
+    color: black;
     width: 100%;
 }
 
