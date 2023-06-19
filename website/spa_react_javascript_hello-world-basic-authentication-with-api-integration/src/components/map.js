@@ -462,29 +462,6 @@ function Map() {
         }
     };
 
-    // api query
-    // useEffect(() => {
-    //     const getPoints = async () => {
-    //         const accessToken = await getAccessTokenSilently();
-    //         const { data, error } = await fetchPoints(accessToken);
-    //         if (data) {
-    //             // need to extract the points array from the http Object
-    //             setPoints(JSON.parse(data.points));
-    //             console.log("data.points: ", data.points);
-    //         }
-    //         if (error) {
-    //             console.log(error);
-    //         }
-    //     };
-    //     // getPoints();
-    // }, []);
-
-    // useEffect(() => {
-    //     if (points.length > 0) {
-    //         addSources()
-    //     }
-    // }, [points]);
-
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
 
@@ -797,13 +774,56 @@ function Map() {
                     // set the popup to have inputs for the selected map
                     setRightClickPopupState("new-point");
                     setNewPointMap(e.target.value);
-                }}>
+                }}
+                // if newPointMap is not empty, set the default value to the map that was selected
+                        defaultValue={newPointMap}>
+                >
                     <option value={""}>Select a map</option>
                     {customMaps.maps.map((map) => {
                         return <option value={map.id}>{map.name}</option>
                     })}
                 </select><br/>
 
+                {newPointMap !== "" && customMaps.maps.map((map) => {
+                    if (map.id === newPointMap) {
+                        console.log("map is ", map);
+                        console.log("categories are ", map.categories);
+                        console.log("colors are ", map.colors);
+                        console.log("icons are ", map.icons);
+
+
+                        return <div>
+                            <input type="text" id='custompopupname' placeholder="Name"/><br/>
+                            <textarea id='custompopupdescription' placeholder="Description"/><br/>
+
+                            <div id='custompopupselects'>
+                                <select id='custompopupcategory'>
+                                    <option value={""}>Select a category</option>
+                                    {map.categories.map((category) => {
+                                        return <option value={category}>{category}</option>
+                                    })}
+                                </select><br/>
+
+                                <select id='custompopupcolor'>
+                                    <option value={""}>Select a color</option>
+                                    {Object.keys(map.colors).map((color) => {
+                                        return <option value={map.colors[color]}>{color}</option>
+                                    })
+                                    }
+                                </select><br/>
+
+                                <select id='custompopupicon'>
+                                    <option value={""}>Select an icon</option>
+                                    {Object.keys(map.icons).map((icon) => {
+                                        return <option value={map.icons[icon]}>{icon}</option>
+                                    })
+                                    }
+                                </select><br/>
+                            </div>
+                        </div>
+                    }
+                })
+            }
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("default");
@@ -840,10 +860,14 @@ function Map() {
             );
         }
 
-
-
         rightClickPopup.setDOMContent(placeholder);
     }
+
+    useEffect(() => {
+        if (rightClickPopupState === "new-point") {
+            renderRightClickPopup("new-point");
+        }
+    }, [newPointMap]);
 
     const renderCustomMapPopup = (state, properties, coordinates) => {
         console.log("rendering custom map popup with state ", state, " and properties ", properties, " and coordinates ", coordinates);
@@ -1009,7 +1033,6 @@ function Map() {
 
         customMapPopup.setDOMContent(placeholder);
     }
-
 
     const coordinatesGeocoder = function (query) {
         // Match anything which looks like
@@ -1207,6 +1230,7 @@ function Map() {
 
         renderRightClickPopup(rightClickPopupState);
     }, [rightClickPopupState]);
+
 
     // routing duration and distance useeffect for right click popup
     useEffect(() => {
@@ -1600,7 +1624,7 @@ function Map() {
                         e.features[0].properties.iconName = Object.keys(customMaps.maps[i].icons).find(key => customMaps.maps[i].icons[key] === e.features[0].properties.icon);
                         e.features[0].properties.mapName = customMaps.maps[i].name;
                         e.features[0].properties.mapId = customMaps.maps[i].id;
-                        if (customMaps.maps[i].my_permissions.includes("edit")) {
+                        if (customMaps.maps[i].my_permissions.includes("edit") || customMaps.maps[i].my_permissions.includes("owner")) {
                             e.features[0].properties.editable = true;
                         }
                     }
