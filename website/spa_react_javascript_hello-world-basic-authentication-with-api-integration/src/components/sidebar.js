@@ -113,6 +113,43 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         )
     }
 
+    const renderRegularLayers = () => {
+        return (
+            <div id="regular-layer-container">
+                {Object.entries(layerCategories).map(([catName, subLayers]) => {
+                    if (subLayers.length > 1)
+                        return (
+                            <>
+                            <div className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
+                                <input type="radio" checked={subLayers.some(layerName => layers[layerName].visible)}></input>
+                                <span>{catName}</span>
+                                
+                                {/*<p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
+                                {subLayers.map(layerName =>
+                                    <p className={!layers[layerName].visible ? "black2" : "selected black2"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>{layerName} </p>
+                                )}*/}
+                            </div>
+                            {subLayers.some(layerName => layers[layerName].visible) ? subLayers.map(layerName =>
+                                <div className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
+                                        <input type="radio" checked={layers[layerName].visible}></input>
+                                        <span>{layerName}</span>
+                                    </div>
+                                ) : ""}
+                            </>
+                        )
+                    else
+                        return (
+                            <div className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}  onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
+                                <input type="radio" checked={layers[subLayers[0]].visible}></input>
+                                <span>{catName}</span>
+                            {/*<p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>*/}
+                            </div>
+                        )
+                })}
+            </div>
+        )
+    }
+
     return expanded ? (
         <div id="sidebar">
             <div id="sidebar-header">
@@ -141,24 +178,11 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         case 'layers':
                             return (
                                 <div>
-                                    <h1>LAYERS</h1>
+                                    <h1 style={{"margin": "5px 0px"}}>LAYERS</h1>
+                                    <h3 style={{"marginTop": "15px"}}>Base Layers</h3>
                                     {renderBaseLayers()}
                                     <h3>Regular Layers</h3>
-                                    {
-                                        Object.entries(layerCategories).map(([catName, subLayers]) => {
-                                            if (subLayers.length > 1)
-                                                return (
-                                                    <div>
-                                                        <p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
-                                                        {subLayers.map(layerName =>
-                                                            <p className={!layers[layerName].visible ? "black2" : "selected black2"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>{layerName} </p>
-                                                        )}
-                                                    </div>
-                                                )
-                                            else
-                                                return <p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>
-                                        })
-                                    }
+                                    {renderRegularLayers()}
                                 </div>
                             )
                         case 'time':
