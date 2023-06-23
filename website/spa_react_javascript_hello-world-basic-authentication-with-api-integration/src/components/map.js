@@ -937,22 +937,20 @@ function Map() {
                 </div>
 
                 <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={async () => {
+                    // set the state to default
+                    <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
-                        // save changes
-                        // accesstoken, mapid, pointid, point
-                        // get access token
-                        const accessToken = await getAccessTokenSilently();
-                        await putPoint(accessToken, properties.mapId, properties.id, {
-                            name: document.getElementById('custompopupname').value,
-                            description: document.getElementById('custompopupdescription').value,
-                            category: document.getElementById('custompopupcategory').value,
-                            color: document.getElementById('custompopupcolor').value,
-                            icon: document.getElementById('custompopupicon').value,
-                        });
-
                     }}>D
                     </button>
+
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        // save
+
+                        // close the popup
+                        setCustomMapPopupState("default");
+                    }}>S
+                    </button>
+
                 </div>
                 <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
             </div>);
