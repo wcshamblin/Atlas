@@ -775,7 +775,7 @@ function Map() {
                     setRightClickPopupState("new-point");
                     setNewPointMap(e.target.value);
                 }}
-                // if newPointMap is not empty, set the default value to the map that was selected
+                    // if newPointMap is not empty, set the default value to the map that was selected
                         defaultValue={newPointMap}>
                 >
                     <option value={""}>Select a map</option>
@@ -786,12 +786,6 @@ function Map() {
 
                 {newPointMap !== "" && customMaps.maps.map((map) => {
                     if (map.id === newPointMap) {
-                        console.log("map is ", map);
-                        console.log("categories are ", map.categories);
-                        console.log("colors are ", map.colors);
-                        console.log("icons are ", map.icons);
-
-
                         return <div>
                             <input type="text" id='custompopupname' placeholder="Name"/><br/>
                             <textarea id='custompopupdescription' placeholder="Description"/><br/>
@@ -826,6 +820,13 @@ function Map() {
             }
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
+                        // save
+                        console.log("saving new point");
+                        console.log("name: ", document.getElementById('custompopupname').value);
+                        console.log("description: ", document.getElementById('custompopupdescription').value);
+                    }}>S
+                    </button>
+                        <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("default");
                     }}>D
                     </button>
@@ -945,9 +946,15 @@ function Map() {
 
                     <button id="rightclickpopupbutton" onClick={() => {
                         // save
+                        console.log("saving");
+                        console.log("name: ", document.getElementById("custompopupname").value);
+                        console.log("description: ", document.getElementById("custompopupdescription").value);
+
+                        // call save function // should query API and then edit our local data if successful
+
 
                         // close the popup
-                        setCustomMapPopupState("default");
+                        setShowCustomMapPopup(false);
                     }}>S
                     </button>
 
@@ -1613,6 +1620,7 @@ function Map() {
                 // }
 
                 // see if we have edit permissions for this map
+                // this is a slow and inefficient way to do this! We should have a usestate for the permissions and update it when we get the custom maps
                 e.features[0].properties.editable = false;
                 for (let i = 0; i < customMaps.maps.length; i++) {
                     if (customMaps.maps[i].id === customMap.id) {
@@ -1635,20 +1643,6 @@ function Map() {
                 console.log("Custom map point properties: ", e.features[0].properties);
                 setShowCustomMapPopup(true);
             });
-
-            // on hover
-            // mapbox.current.on('mouseenter', customMap.name, () => {
-            //     mapbox.current.getCanvas().style.cursor = 'pointer';
-            //
-            //     // also make the border thicker
-            //     mapbox.current.setPaintProperty(customMap.name, 'icon-halo-width', 6);
-            // });
-
-            // on leave
-            // mapbox.current.on('mouseleave', customMap.name, () => {
-            //     mapbox.current.getCanvas().style.cursor = '';
-            //     mapbox.current.setPaintProperty(customMap.name, 'icon-halo-width', 5);
-            // });
 
             // set visibility
             // if (localStorage.getItem(customMap.name) === "true") {
