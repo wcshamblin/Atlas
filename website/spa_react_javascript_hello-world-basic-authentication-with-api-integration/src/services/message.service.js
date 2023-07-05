@@ -55,27 +55,10 @@ export const getAdminResource = async (accessToken) => {
   };
 };
 
-export const fetchPoints = async (accessToken) => {
+
+export const postPoint = async (accessToken, map_id, point) => {
     const config = {
-        url: `${apiServerUrl}/points`,
-        method: "GET",
-        headers: {
-            "content-type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
-
-    const { data, error } = await callExternalApi({ config });
-
-    return {
-        data: data || null,
-        error,
-    };
-}
-
-export const postPoint = async (accessToken, map_id, point_id, point) => {
-    const config = {
-        url: `${apiServerUrl}/points`,
+        url: `${apiServerUrl}/maps/${map_id}/points`,
         method: "POST",
         headers: {
         "content-type": "application/json",

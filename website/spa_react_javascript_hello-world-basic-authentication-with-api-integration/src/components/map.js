@@ -22,14 +22,15 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
 
 
+import { v4 as uuid } from 'uuid';
+
 // api imports
 import {
-    fetchPoints,
     setHome,
     retrieveHome,
     retrieveTowers,
     retrieveAntennas,
-    fetchMaps, retrieveCustomMapPoints, putPoint
+    fetchMaps, retrieveCustomMapPoints, putPoint, postPoint
 } from "../services/message.service";
 
 import { useAuth0 } from "@auth0/auth0-react";
@@ -110,12 +111,12 @@ function Map() {
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
 
     const [customMaps, setCustomMaps] = useState(null);
+    const [customMapPoints, setCustomMapPoints] = useState({});
+
     const [newPointMap, setNewPointMap] = useState(null);
 
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
-
-    const [points, setPoints] = useState([]);
 
     const addSources = () => {
         mapbox.current.addSource('00', {
@@ -370,29 +371,6 @@ function Map() {
             'paint': {}
         });
 
-
-        // load points from api and add to the map
-        // console.log("points");
-        // console.log(points);
-        // mapbox.current.addSource('PlacesToExplore', {
-        //     'type': 'geojson',
-        //     'data': {
-        //         'type': 'FeatureCollection',
-        //         'features': points
-        //     }
-        // });
-        //
-        // mapbox.current.addLayer({
-        //     'id': 'PlacesToExplore',
-        //     'type': 'circle',
-        //     'source': 'PlacesToExplore',
-        //     'paint': {
-        //         // if the icon is special, make it bigger
-        //         // I'll change this later to be prettier
-        //         'circle-radius': ['case', ['==', ['get', 'special'], true], 10, 6],
-        //         'circle-color': ['get', 'color'],
-        //     }
-        // });
 
         mapbox.current.addLayer(
             {
@@ -760,10 +738,10 @@ function Map() {
                         setRightClickPopupState("routing");
                     }}>R
                     </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
+                    {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("new-point");
                     }}>N
-                    </button>
+                    </button>}
                 </div>
                 <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
             </div>);
@@ -820,10 +798,21 @@ function Map() {
             }
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
-                        // save
-                        console.log("saving new point");
-                        console.log("name: ", document.getElementById('custompopupname').value);
-                        console.log("description: ", document.getElementById('custompopupdescription').value);
+                        // save new point
+                        saveNewPoint(document.getElementById("newpointmapselect").value, {
+                            name: document.getElementById("custompopupname").value,
+                            description: document.getElementById("custompopupdescription").value,
+                            category: document.getElementById("custompopupcategory").value,
+                            color: document.getElementById("custompopupcolor").value,
+                            icon: document.getElementById("custompopupicon").value,
+                            lat: rightClickPopupPosition[1],
+                            lng: rightClickPopupPosition[0]
+                        });
+
+                        // close popup
+                        setRightClickPopupState("default");
+                        setShowRightClickPopup(false);
+
                     }}>S
                     </button>
                         <button id="rightclickpopupbutton" onClick={() => {
@@ -910,13 +899,7 @@ function Map() {
 
                 <div id='custompopupselects'>
 
-                    <select id='custompopupcategory' defaultValue={properties.category} onChange={async (e) => {
-                        console.log("changing category to ", e.target.value);
-                        const accessToken = await getAccessTokenSilently();
-                        await putPoint(accessToken, properties.mapId, properties.id, {
-                            category: e.target.value
-                        });
-                    }}>
+                    <select id='custompopupcategory' defaultValue={properties.category}>
                         {properties.categories.map((category) => {
                             return <option value={category}>{category}</option>
                         })}
@@ -938,7 +921,6 @@ function Map() {
                 </div>
 
                 <div id="rightclickpopupbuttons">
-                    // set the state to default
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
                     }}>D
@@ -951,7 +933,13 @@ function Map() {
                         console.log("description: ", document.getElementById("custompopupdescription").value);
 
                         // call save function // should query API and then edit our local data if successful
-
+                        savePoint(properties.mapId, properties.id, {
+                            name: document.getElementById("custompopupname").value,
+                            description: document.getElementById("custompopupdescription").value,
+                            category: document.getElementById("custompopupcategory").value,
+                            color: document.getElementById("custompopupcolor").value,
+                            icon: document.getElementById("custompopupicon").value
+                        });
 
                         // close the popup
                         setShowCustomMapPopup(false);
@@ -1101,6 +1089,131 @@ function Map() {
         // one decimal place, in miles (input is in meters)
         setRoutingDistance((data.distance / 1609.344).toFixed(1));
         setRoutingLine(route);
+    }
+
+    async function savePoint(mapId, pointId, pointData) {
+        console.log("saving point");
+        console.log(pointData);
+
+        const accessToken = await getAccessTokenSilently();
+
+        // find map name
+        let mapName = "";
+        for (let i = 0; i < customMaps.maps.length; i++) {
+            if (customMaps.maps[i].id === mapId) {
+                mapName = customMaps.maps[i].name;
+            }
+        }
+
+        // modify our local data
+        // setCustomMapPoints
+        // custommappoints is {mapId: {name: mapName, data: points}}
+        setCustomMapPoints((prev) => {
+            let newPoints = prev[mapId].data;
+            for (let i = 0; i < newPoints.features.length; i++) {
+                if (newPoints.features[i].properties.id === pointId) {
+                    newPoints.features[i].properties = pointData;
+                    break;
+                }
+            }
+            return {
+                ...prev,
+                [mapId]: {
+                    name: mapName,
+                    data: newPoints
+                }
+            };
+        });
+
+
+        // accessToken, map_id, point_id, point
+        // Put point and if successful, update the map
+        // catch data and error from the api call
+        await putPoint(accessToken, mapId, pointId, pointData).then((data) => {
+            console.log("point saved");
+            console.log(data);
+            // if the point was saved, update the map
+        }).catch((error) => {
+            console.log("Error saving point... trying to revert");
+            // reset the map to the true state
+            getCustomMapPoints(mapId).then((data) => {
+                if (data) {
+                    // update the map
+                    mapbox.current.getSource(mapName).setData(data.data.points);
+                }
+            }).catch((error) => {
+                console.log(error);
+            });
+        });
+    }
+
+    async function saveNewPoint(mapId, pointData) {
+        console.log("saving new point");
+        console.log(pointData);
+
+        // if category or icon or color or mapId is null, return
+        if (!pointData.category || !pointData.icon || !pointData.color || !mapId) {
+            return;
+        }
+
+        // set an id for the point
+        pointData.id = uuid();
+
+        const accessToken = await getAccessTokenSilently();
+
+        // find map name
+        let mapName = "";
+        for (let i = 0; i < customMaps.maps.length; i++) {
+            if (customMaps.maps[i].id === mapId) {
+                mapName = customMaps.maps[i].name;
+            }
+        }
+
+        // modify our local data
+        // setCustomMapPoints
+        // custommappoints is {mapId: {name: mapName, data: points}}
+        setCustomMapPoints((prev) => {
+            let newPoints = prev[mapId].data;
+            newPoints.features.push({"type": "Feature", "properties": pointData, "geometry": {"type": "Point", "coordinates": [pointData.lng, pointData.lat]}});
+            console.log("After push", newPoints);
+            return {
+                ...prev,
+                [mapId]: {
+                    name: mapName,
+                    data: newPoints
+                }
+            };
+        });
+
+        // accessToken, map_id, point_id, point
+        // Put point and if successful, update the map
+        // catch data and error from the api call
+        await postPoint(accessToken, mapId, pointData).then((data) => {
+            console.log("point saved");
+            console.log(data);
+            // modify the point and set the ID that the backend gave us
+            console.log("Trying to set ID as", data.data.point.id);
+            setCustomMapPoints((prev) => {
+                let newPoints = prev[mapId].data;
+                for (let i = 0; i < newPoints.features.length; i++) {
+                    if (newPoints.features[i].properties.id === pointData.id) {
+                        console.log("Found point to update");
+                        newPoints.features[i].properties.id = data.data.point.id;
+                        break;
+                    }
+                }
+                return {
+                    ...prev,
+                    [mapId]: {
+                        name: mapName,
+                        data: newPoints
+                    }
+                };
+            });
+        }).catch((error) => {
+            console.log("Error saving point");
+            console.log(error);
+        });
     }
 
 
@@ -1571,13 +1684,17 @@ function Map() {
 
             // get the data and set it
             // if (localStorage.getItem(customMap.name) === "true") {
-                console.log("Getting data for ", customMap.name);
 
+                // get data
                 getCustomMapPoints(customMap.id).then((data) => {
                     console.log("Setting data for ", customMap.name, ": ", data);
-                    mapbox.current.getSource(customMap.name).setData(data.data.points);
+                    setCustomMapPoints((customMapPoints) => {
+                        return {
+                            ...customMapPoints,
+                            [customMap.id]: {"name": customMap.name, "data": data.data.points}
+                        }
+                    });
                 });
-            // }
 
             Object.keys(customMap.icons).forEach((iconName) => {
                 console.log("Loading icon: ", iconName, customMap.icons[iconName]);
@@ -1656,6 +1773,23 @@ function Map() {
             console.log("Custom map set: ", customMap.name);
         });
     }, [customMaps]);
+
+
+    // custom map points useEffect
+    useEffect(() => {
+        // if the custom map points data changes then update the custom map points
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!customMaps) return; // wait for custom maps to be set
+        if (!customMapPoints) return; // wait for custom map points data to be set
+
+        // set layer data
+        // loop through dict and set the data
+        // {mapname: [points]}
+        Object.keys(customMapPoints).forEach((mapId) => {
+            console.log("Setting custom map points for ", mapId, ": ", customMapPoints[mapId]);
+            mapbox.current.getSource(customMapPoints[mapId].name).setData(customMapPoints[mapId].data);
+        });
+    }, [customMapPoints]);
 
     // escape key handling
     useEffect(() => {
