@@ -1937,7 +1937,7 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso}/>}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps}/>}
 
             {displayStreetView ? getStreetView() : ""}
             {streetViewPresent ? displayStreetViewDiv() : ""}

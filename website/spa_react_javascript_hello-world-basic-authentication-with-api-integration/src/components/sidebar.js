@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../styles/components/sidebar.css';
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone}) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData}) => {
     const [selectedPart, setSelectedPart] = useState("weather");
 
     const [baseLayers, setBaseLayers] = useState({
@@ -35,6 +35,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Antennas": { "visible": false },
         "Isochrone": { "visible": false },
     })
+
+    const [customMaps, setCustomMaps] = useState(customMapsData);
 
     useEffect(() => {
         if (mapStatus) {
@@ -150,6 +152,36 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         )
     }
 
+    const renderCustomMaps = () => {
+        // if customMapsData.maps doesn't exist or is empty, then return nothing
+        // if it doesn't exist
+        if (!customMapsData) {
+            return null;
+        }
+
+        if (Object.keys(customMapsData.maps).length === 0) {
+            return (
+                <div id="custom-layer-container">
+                    <div className="no-custom-maps">
+                        <h5>You don't have any custom maps yet. Create one or ask a friend to share one with you!</h5>
+                    </div>
+                </div>
+            )
+        }
+
+        return (
+            <div id="custom-layer-container">
+
+                {Object.entries(customMapsData.maps).map(([mapName, mapData]) => (
+                    <div className={!mapData.visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(mapName, !mapData.visible)}>
+                        <input type="radio" checked={mapData.visible}></input>
+                        <span>{mapName}</span>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
     return expanded ? (
         <div id="sidebar">
             <div id="sidebar-header">
@@ -183,6 +215,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                     {renderBaseLayers()}
                                     <h3>Regular Layers</h3>
                                     {renderRegularLayers()}
+                                    <h3>Custom Maps</h3>
+                                    {renderCustomMaps()}
                                 </div>
                             )
                         case 'time':
