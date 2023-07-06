@@ -32,7 +32,7 @@ export const Eula = () => {
                 Subject to your compliance with the terms and conditions of this EULA, Atlas grants you a limited, non-exclusive, non-transferable, revocable license to access and use the Website.</p>
 
                 <p><strong>Disclaimer of Liability</strong><br/>
-                The Website is provided for informational purposes only, and Atlas makes no representations or warranties about the accuracy, completeness, or reliability of any information on the Website. The information on the Website is provided "as is" and "as available" without any warranties of any kind.</p>
+                The Website is provided for informational purposes only, and <strong style={{color: "red"}}>Atlas makes no representations or warranties about the accuracy, completeness, or reliability of any information on the Website.</strong> The information on the Website is provided "as is" and "as available" without any warranties of any kind.</p>
 
                 <p>You acknowledge and agree that participating in activities that involve urban exploration and climbing can be dangerous and may result in <strong style={{color: "red"}}>serious injury, death, or legal consequences</strong>. You assume all risks associated with such activities and release Atlas from any and all liability arising from or in connection with your participation in such activities.</p>
 

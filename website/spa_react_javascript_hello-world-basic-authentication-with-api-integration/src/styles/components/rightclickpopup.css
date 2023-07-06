@@ -7,15 +7,27 @@ div#right-click-popup-content {
     z-index: 999;
 }
 
-text#rightclickpopup-state {
+text#rightclickpopup-routing-state {
     z-index: 999;
     font-weight: bold;
     font-size: 18px;
     color: black;
-    position: absolute;
     top: 4px;
-    width: 100%;
-    height: 100%;
+}
+
+text#custompopupname {
+    z-index: 999;
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+    top: 4px;
+}
+
+text#custompopupdescription {
+    z-index: 999;
+    font-size: 13px;
+    color: black;
+    top: 24px;
 }
 
 text#routing-information {
@@ -23,6 +35,21 @@ text#routing-information {
     color: black;
     position: absolute;
     font-size: 15px;
+}
+
+div#rightclickpopupbuttons {
+    /*z-index: 999;*/
+    /*width: 20px;*/
+    /*right: 0;*/
+    /*float:right;*/
+    /*!*position: absolute;*!*/
+    /*!*display: inline-block;*!*/
+    /*margin-right: 2px;*/
+    /*margin-bottom: 2px;*/
+}
+
+button#rightclickpopupbutton {
+    z-index: 999;
 }
 
 text#popupcoords {
@@ -33,7 +60,69 @@ text#popupcoords {
     z-index: 999;
     text-align: center;
     display: block;
+    width: 100%;
 }
+
+
+div#custompopupdetail {
+    padding-top: 4px;
+    padding-bottom: 3px;
+    line-height: 1.2em;
+    color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+}
+
+table#custompopupinfotable {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+input#custompopupname {
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+    width: 95%;
+}
+
+textarea#custompopupdescription {
+    font-size: 13px;
+    color: black;
+    width: 95%;
+    resize: none;
+}
+
+div#custompopupselects {
+    padding-bottom: 3px;
+    padding-top: 3px;
+    color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    width: 95%;
+}
+
+select#custompopupcategory {
+    font-size: 13px;
+    color: black;
+    width: 100%;
+}
+
+select#custompopupcolor {
+    padding-left: 2px;
+    font-size: 13px;
+    color: black;
+    width: 100%;
+}
+
+td, th {
+    text-align: left;
+    padding: 3px;
+    color: black;
+}
+
+tr:nth-child(even) {
+    background-color: #cecece;
+}
+
 
 .rightclick-popup .mapboxgl-popup-content {
     background-color: #e6e6e6;

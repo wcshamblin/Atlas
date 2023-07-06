@@ -55,27 +55,10 @@ export const getAdminResource = async (accessToken) => {
   };
 };
 
-export const fetchPoints = async (accessToken) => {
+
+export const postPoint = async (accessToken, map_id, point) => {
     const config = {
-        url: `${apiServerUrl}/points`,
-        method: "GET",
-        headers: {
-            "content-type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
-
-    const { data, error } = await callExternalApi({ config });
-
-    return {
-        data: data || null,
-        error,
-    };
-}
-
-export const postPoint = async (accessToken, point) => {
-    const config = {
-        url: `${apiServerUrl}/points`,
+        url: `${apiServerUrl}/maps/${map_id}/points`,
         method: "POST",
         headers: {
         "content-type": "application/json",
@@ -92,9 +75,9 @@ export const postPoint = async (accessToken, point) => {
     };
 }
 
-export const putPoint = async (accessToken, point) => {
+export const putPoint = async (accessToken, map_id, point_id, point) => {
     const config = {
-        url: `${apiServerUrl}/points/${point.id}`,
+        url: `${apiServerUrl}/maps/${map_id}/points/${point_id}`,
         method: "PUT",
         headers: {
         "content-type": "application/json",
@@ -212,6 +195,42 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
 export const retrieveAntennas = async (accessToken, lat, lng, radius) => {
     const config = {
         url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const fetchMaps = async (accessToken) => {
+    const config = {
+        url: `${apiServerUrl}/maps`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const retrieveCustomMapPoints = async (accessToken, mapId) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${mapId}/points`,
         method: "GET",
         headers: {
             "content-type": "application/json",
