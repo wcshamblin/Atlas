@@ -40,10 +40,10 @@ def convert_point_to_geojson(point):
         "properties": {
             "description": point["description"],
             "creator": point["creator"],
-            "id": point["id"],
             "editor": point["editor"],
             "color": point["color"],
             "name": point["name"],
+            "id": point["id"],
             "category": point["category"],
             "creation_date": point["creation_date"],
             "icon": point["icon"],
@@ -102,13 +102,49 @@ def get_maps_for_user(usersub) -> List[dict]:
 
     # remove points from maps, we don't need them here
     for map in my_maps:
-        map.pop("points", None)
+        # append my permissions
+        map["my_permissions"] = ["owner"]
     for map in shared_maps:
-        map.pop("points", None)
+        # append my permissions
+        map["my_permissions"] = map["user_permissions"][usersub]
 
     return my_maps + shared_maps
-    
 
+def add_user_to_map(map_id, user) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # add user to map
+    map_dict["users"].append(user)
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+def remove_user_from_map(map_id, user) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # remove user from map
+    map_dict["users"].remove(user)
+
+    # also clear permissions
+    map_dict["user_permissions"].pop(user, None)
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+def edit_user_permissions(map_id, user, permissions) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # edit user permissions
+    map_dict["user_permissions"][user] = permissions
+
+    # update map
+    return map_obj.reference.update(map_dict)
 
 def add_map(map) -> str:
     return db.collection(u'maps').add(map)
@@ -173,6 +209,16 @@ def get_points_geojson_for_map(map_id) -> List[dict]:
 
     return geojson
 
+def get_point_by_id(map_id, point_id) -> dict:
+    # get point
+    points = db.collection(u'maps').where(u'id', u'==', map_id).get()[0].to_dict()['points']
+
+    for point in points:
+        if point['id'] == point_id:
+            return point
+
+    return None
+
 
 def add_point_to_map(map_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
@@ -194,7 +240,8 @@ def get_point_from_map(map_id, point_id) -> dict:
 
 
 def update_point_in_map(map_id, point_id, point) -> str:
-    return db.collection(u'maps').where(u'id', u'==', map_id).collection(u'points').where(u'id', u'==', point_id).update(point)
+    db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([get_point_from_map(map_id, point_id)])})
+    return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
 
 
 def delete_point_from_map(map_id, point_id) -> str:

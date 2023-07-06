@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, get_points_geojson_for_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
+from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -52,13 +52,23 @@ class PointPost(BaseModel):
     lng: float
 
 
+class PointPut(BaseModel):
+    name: Optional[str]
+    description: Optional[str]
+    color: Optional[str]
+    icon: Optional[str]
+    category: Optional[str]
+    lat: Optional[float]
+    lng: Optional[float]
+
+
 class MapPost(BaseModel):
     name: str
     description: str
     legend: str
     colors: Dict
     categories: List[str]
-    icons: List[str]
+    icons: Dict
 
 class MapPut(BaseModel):
     name: Optional[str]
@@ -66,7 +76,13 @@ class MapPut(BaseModel):
     legend: Optional[str]
     colors: Optional[Dict]
     categories: Optional[List[str]]
-    icons: Optional[List[str]]
+    icons: Optional[Dict]
+
+class UserPut(BaseModel):
+    usersub: str
+
+class UserPermissions(BaseModel):
+    permissions: List[str]
 
 
 @app.get("/api/messages/public")
@@ -221,7 +237,7 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
-    # owner: str, name: str, description: str, legend: str, colors: list, categories: list, icons: list
+    # owner: str, name: str, description: str, legend: str, colors: list, categories: list, icons: dict
     print(map)
 
     new_map = Map(owner=result["sub"],
@@ -279,6 +295,81 @@ async def put_map_info(response: Response, map_id: str, info: MapPut, token: str
 
     return {"status": "success", "message": "Map updated"}
 
+# add a user to the map
+@app.post("/maps/{map_id}/users")
+async def put_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # add user to map
+    add_user_to_map(map_id, user.user)
+
+    return {"status": "success", "message": "User added to map"}
+
+# remove a user from the map
+@app.delete("/maps/{map_id}/users")
+async def delete_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # remove user from map
+    remove_user_from_map(map_id, user.user)
+
+    return {"status": "success", "message": "User removed from map"}
+
+# edit user permissions
+@app.put("/maps/{map_id}/users/{user_id}")
+async def put_map_user_permissions(response: Response, map_id: str, user_id: str, permissions: UserPermissions, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # edit user permissions
+    edit_user_permissions(map_id, user_id, permissions.permissions)
+
+    return {"status": "success", "message": "User permissions updated"}
+
 # get points geojson
 @app.get("/maps/{map_id}/points")
 async def get_map_points(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
@@ -332,11 +423,12 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
+    # we're expecting a hex color code
     if new_point.get_color() not in map["colors"].values():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if new_point.get_icon() not in map["icons"]:
+    if new_point.get_icon() not in map["icons"].values():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
   
@@ -378,7 +470,7 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
 
 # edit map point
 @app.put("/maps/{map_id}/points/{point_id}")
-async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
+async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -402,34 +494,60 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit points on this map"}
 
+    # get point
+    currentPoint = get_point_by_id(map_id, point_id)
 
-    # create Point object
-    new_point = Point(owner=result["sub"],
-                        name=point.name,
-                        description=point.description,
-                        color=point.color,
-                        icon=point.icon,
-                        category=point.category,
-                        lat=point.lat,
-                        lng=point.lng)
+    if currentPoint is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Point not found"}
 
+
+    # name: Optional[str]
+    # description: Optional[str]
+    # color: Optional[str]
+    # icon: Optional[str]
+    # category: Optional[str]
+    # lat: Optional[float]
+    # lng: Optional[float]
+
+    if point.name is not None:
+        currentPoint["name"] = point.name
+    
+    if point.description is not None:
+        currentPoint["description"] = point.description
+
+    if point.color is not None:
+        currentPoint["color"] = point.color
+
+    if point.icon is not None:
+        currentPoint["icon"] = point.icon
+
+    if point.category is not None:
+        currentPoint["category"] = point.category
+
+    if point.lat is not None:
+        currentPoint["lat"] = point.lat
+
+    if point.lng is not None:
+        currentPoint["lng"] = point.lng
+        
     # verify Point data makes sense for the map
-    if new_point.get_category() not in map["categories"]:
+    if currentPoint["category"] not in map["categories"]:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
-    if new_point.get_color() not in map["colors"].values():
+    if currentPoint["color"] not in map["colors"].values():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if new_point.get_icon() not in map["icons"]:
+    if currentPoint["icon"] not in map["icons"].values():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
     
     # update point in map
-    update_point_in_map(map_id, point_id, new_point.to_dict())
+    update_point_in_map(map_id, point_id, currentPoint)
 
-    return {"status": "success", "message": "Point updated", "point": new_point}
+    return {"status": "success", "message": "Point updated", "point": currentPoint}
 
 
 
