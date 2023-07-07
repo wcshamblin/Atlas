@@ -36,11 +36,24 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Isochrone": { "visible": false },
     })
 
-    const [customMaps, setCustomMaps] = useState(customMapsData);
+    const [customMapsLayers, setCustomMapsLayers] = useState({});
+    const [customMapsLayersLoaded, setCustomMapsLayersLoaded] = useState(false);
+
+    useEffect(() => {
+        if (!customMapsData) return;
+        if (!customMapsData.maps) return;
+        console.log("custom maps data loaded: " + JSON.stringify(customMapsData));
+
+        {Object.entries(customMapsData.maps).map(([mapId, mapData]) => (
+            setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false } })
+        ))}
+
+        setCustomMapsLayersLoaded(true);
+    }, [customMapsData]);
 
     useEffect(() => {
         if (mapStatus) {
-            console.log("base layer " + localStorage.getItem('base-layer'))
+            console.log("Using base layer: " + localStorage.getItem('base-layer'))
             if (!localStorage.getItem('base-layer'))
                 localStorage.setItem('base-layer', Object.entries(baseLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)[0]);
             if (!localStorage.getItem('selected-layers'))
@@ -55,6 +68,18 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
             });
         }
     }, [mapStatus]);
+
+    // update custom map layers with local storage visibility when we know they're loaded
+    useEffect(() => {
+        if (mapStatus && customMapsLayersLoaded) {
+            if (!localStorage.getItem('selected-custom-maps-layers'))
+                localStorage.setItem('selected-custom-maps-layers', JSON.stringify(Object.entries(customMapsLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
+
+            JSON.parse(localStorage.getItem('selected-custom-maps-layers')).forEach(layer => {
+                updateCustomMapsLayers(layer, true);
+            });
+        }
+    }, [customMapsLayersLoaded]);
 
     const updateBaseLayers = name => {
         Object.keys(baseLayers).forEach(layer => {
@@ -89,6 +114,16 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         localStorage.setItem('selected-layers', JSON.stringify(Object.entries(layers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
 
         setLayers({ ...layers });
+    }
+
+    const updateCustomMapsLayers = (name, visible) => {
+        console.log("Trying to update custom maps layer: " + name + " to " + visible)
+        setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
+        customMapsLayers[name].visible = visible;
+
+        localStorage.setItem('selected-custom-maps-layers', JSON.stringify(Object.entries(customMapsLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
+
+        setCustomMapsLayers({ ...customMapsLayers });
     }
 
     const updateCategory = (name, visible) => {
@@ -155,11 +190,12 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     const renderCustomMaps = () => {
         // if customMapsData.maps doesn't exist or is empty, then return nothing
         // if it doesn't exist
-        if (!customMapsData) {
+        console.log("Trying to render custom map layers: ", customMapsLayers)
+
+        if (!customMapsLayers) {
             return null;
         }
-
-        if (Object.keys(customMapsData.maps).length === 0) {
+        if (Object.keys(customMapsLayers).length === 0) {
             return (
                 <div id="custom-layer-container">
                     <div className="no-custom-maps">
@@ -172,9 +208,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         return (
             <div id="custom-layer-container">
 
-                {Object.entries(customMapsData.maps).map(([mapName, mapData]) => (
-                    <div className={!mapData.visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(mapName, !mapData.visible)}>
-                        <input type="radio" checked={mapData.visible}></input>
+                {Object.entries(customMapsLayers).map(([mapName, val]) => (
+                    <div className={!val.visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
+                        <input type="radio" checked={val.visible}></input>
                         <span>{mapName}</span>
                     </div>
                 ))}

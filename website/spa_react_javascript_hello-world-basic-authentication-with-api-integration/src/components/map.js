@@ -1761,13 +1761,12 @@ function Map() {
                 setShowCustomMapPopup(true);
             });
 
-            // set visibility
-            // if (localStorage.getItem(customMap.name) === "true") {
-                mapbox.current.setLayoutProperty(customMap.name, 'visibility', 'visible');
-            // }
-
             // let's also move the custom map to the top of the layers
             mapbox.current.moveLayer(customMap.name);
+
+            // the sidebar will deal with visibility, so we don't need to do that here
+            // set the visibility
+            mapbox.current.setLayoutProperty(customMap.name, 'visibility', 'none');
 
             // done
             console.log("Custom map set: ", customMap.name);
