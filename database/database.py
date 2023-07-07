@@ -106,7 +106,10 @@ def get_maps_for_user(usersub) -> List[dict]:
         map["my_permissions"] = ["owner"]
     for map in shared_maps:
         # append my permissions
-        map["my_permissions"] = map["user_permissions"][usersub]
+        try:
+            map["my_permissions"] = map["user_permissions"][usersub]
+        except KeyError:
+            map["my_permissions"] = []
 
     return my_maps + shared_maps
 
