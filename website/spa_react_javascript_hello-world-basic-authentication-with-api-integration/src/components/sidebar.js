@@ -192,8 +192,14 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         // if it doesn't exist
         console.log("Trying to render custom map layers: ", customMapsLayers)
 
-        if (!customMapsLayers) {
-            return null;
+        if (!customMapsData) {
+            return (
+                <div id="custom-layer-container">
+                    <div className="no-custom-maps">
+                        <h5>Loading custom maps...</h5>
+                    </div>
+                </div>
+            )
         }
         if (Object.keys(customMapsLayers).length === 0) {
             return (
