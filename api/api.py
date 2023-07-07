@@ -82,7 +82,9 @@ class UserPut(BaseModel):
     usersub: str
 
 class UserPermissions(BaseModel):
-    permissions: List[str]
+    edit: bool
+    add: bool
+    admin: bool
 
 
 @app.get("/api/messages/public")
