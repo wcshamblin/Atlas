@@ -313,17 +313,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 if(data) {
                     console.log("map added");
                     console.log(data.data.map);
-                    let userSub = {
-                        "usersub": data.data.map.owner
-                    }
-                    putMapUser(token, data.data.map.id, userSub).then((data2) => {
-                        console.log("user added");
-                        console.log(data2);
-                        // need some sort of point resetting code here
-                    }).catch((error) => {
-                        console.log("Error saving point: " + error);
-                        // need some sort of point resetting code here
-                    });
                 }
                 // need some sort of point resetting code here
             }).catch((error) => {
