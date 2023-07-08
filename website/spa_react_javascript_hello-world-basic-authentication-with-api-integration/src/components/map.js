@@ -653,6 +653,7 @@ function Map() {
 
         // on right click
         mapbox.current.on('contextmenu', (e) => {
+            console.log("Right click at: " + e.lngLat.lng + ", " + e.lngLat.lat);
             // make new popup with coordinates of right click
             setRightClickPopupPosition([e.lngLat.lng, e.lngLat.lat])
             setShowRightClickPopup(true);
@@ -726,25 +727,37 @@ function Map() {
 
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        console.log("setting home position to ", rightClickPopupPosition);
-                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                        setShowRightClickPopup(false);
-                    }}>H
-                    </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRoutingLineEnd(rightClickPopupPosition);
-                        setRightClickPopupState("routing");
-                    }}>R
-                    </button>
-                    {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("new-point");
-                    }}>N
-                    </button>}
-                </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                <ul id="rightclickpopupbuttons">
+                    <li id="rightclickpopupbutton" aria-label="Set home position" data-tooltip="Set home position"
+                        onClick={() => {
+                            console.log("setting home position to ", rightClickPopupPosition);
+                            setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                            setShowRightClickPopup(false);
+                        }}>H
+                    </li>
+                </ul>
             </div>);
+
+            //         <button id="rightclickpopupbutton" onClick={() => {
+            //             console.log("setting home position to ", rightClickPopupPosition);
+            //             setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+            //             setShowRightClickPopup(false);
+            //         }}>H
+            //         </button>
+            //         <button id="rightclickpopupbutton" onClick={() => {
+            //             setRoutingLineEnd(rightClickPopupPosition);
+            //             setRightClickPopupState("routing");
+            //         }}>R
+            //         </button>
+            //         {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
+            //             setRightClickPopupState("new-point");
+            //         }}>N
+            //         </button>}
+            //     </ul>
+            //     <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+            // </div>);
+
+
         } if (state === "new-point") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <select id='newpointmapselect' onChange={async (e) => {
@@ -1339,6 +1352,7 @@ function Map() {
         // set the position of the popup
         console.log("changing right click popup position to ", rightClickPopupPosition);
         rightClickPopup.setLngLat(rightClickPopupPosition);
+        renderRightClickPopup(rightClickPopupState);
     }, [rightClickPopupPosition]);
 
     // right click state useeffect
