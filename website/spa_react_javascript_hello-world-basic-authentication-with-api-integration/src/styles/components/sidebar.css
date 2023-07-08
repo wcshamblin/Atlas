@@ -179,3 +179,50 @@
 .regular-layer-normal-selected {
     border: 1px solid blue;
 }
+
+.custom-map-container {
+    border: 1px solid black;
+    color: black;
+}
+
+.custom-map-container-header {
+    font-size: 20px;
+}
+
+.custom-map-container-main {
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-map-container-points {
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-map-point {
+    margin-top: 7px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-map-point-selected {
+    border: 2px solid black;
+}
+
+.custom-map-point-icon {
+    margin: 0 5px;
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
+}
+
+.custom-map-point-text {
+    font-size: 13px;
+}
+
+.custom-map-point-text-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
