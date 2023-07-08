@@ -3,6 +3,7 @@ import '../styles/components/sidebar.css';
 
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
+    const [pointsSearchValue, setPointsSearchValue] = useState("");
 
     const [baseLayers, setBaseLayers] = useState({
         "Google Hybrid": { "visible": true },
@@ -87,8 +88,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         console.log(currentSelectedCustomMapPoint);
 
         if (customMapsLayers[currentSelectedCustomMapPoint.layerId] && !customMapsLayers[currentSelectedCustomMapPoint.layerId].collapsed) {
-            let element = document.getElementById(currentSelectedCustomMapPoint.pointId)
-            element.scrollIntoView();
+            let element = document.getElementById(currentSelectedCustomMapPoint.pointId);
+            if(element) element.scrollIntoView();
         }
     }, [currentSelectedCustomMapPoint])
 
@@ -248,7 +249,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         <button onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
                         {val.collapsed ? "" :
                             <div className="custom-map-container-points">
-                                {val.points.map(point =>
+                                <label>Search</label>
+                                <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
+                                {val.points.filter(point => point.name.includes(pointsSearchValue)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} style={{ color: point.color }} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
                                         <img className="custom-map-point-icon" src={point.icon} />
                                         <div className="custom-map-point-text-container">
