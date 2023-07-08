@@ -318,7 +318,7 @@ async def put_map_user(response: Response, map_id: str, user: UserPut, token: st
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # add user to map
-    add_user_to_map(map_id, user.user)
+    add_user_to_map(map_id, user.usersub)
 
     return {"status": "success", "message": "User added to map"}
 

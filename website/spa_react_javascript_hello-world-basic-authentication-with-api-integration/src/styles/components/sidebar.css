@@ -204,6 +204,12 @@
     margin-top: 7px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+}
+
+.custom-map-point-container {
+    display: flex;
+    align-items: center;
 }
 
 .custom-map-point-selected {
@@ -225,4 +231,15 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+}
+
+.custom-map-point-edit-button {
+    color: black;
+    font-size: 15px;
+    margin-right: 20px;
+}
+
+.custom-map-point-edit-button:hover {
+    text-decoration: underline;
+    cursor: pointer;
 }

@@ -94,6 +94,25 @@ export const putPoint = async (accessToken, map_id, point_id, point) => {
     };
 }
 
+export const putMapInfo = async (accessToken, map_id, map) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${map_id}/info`,
+        method: "PUT",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+        data: map
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    };
+}
+
 export const setHome = async (accessToken, lat, lng) => {
     const config = {
         url: `${apiServerUrl}/set_home`,
@@ -218,6 +237,44 @@ export const fetchMaps = async (accessToken) => {
             "content-type": "application/json",
             Authorization: `Bearer ${accessToken}`,
         },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const postNewMap = async (accessToken, newMap) => {
+    const config = {
+        url: `${apiServerUrl}/maps`,
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        data: newMap
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const putMapUser = async (accessToken, map_id, userSub) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${map_id}/users`,
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        data: userSub
     };
 
     const { data, error } = await callExternalApi({ config });

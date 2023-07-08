@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import '../styles/components/sidebar.css';
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick }) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
+    const [currentModal, setCurrentModal] = useState("");
 
     const [baseLayers, setBaseLayers] = useState({
         "Google Hybrid": { "visible": true },
@@ -91,7 +92,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
             let element = document.getElementById(currentSelectedCustomMapPoint.pointId);
             if(element) element.scrollIntoView();
         }
-    }, [currentSelectedCustomMapPoint])
+    }, [currentSelectedCustomMapPoint]);
 
     const updateBaseLayers = name => {
         Object.keys(baseLayers).forEach(layer => {
@@ -233,12 +234,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
         return (
             <div id="custom-layer-container">
-
+                <span className="custom-map-point-edit-button" onClick={() => openMapAddModal()}>Add Map</span>
                 {Object.entries(customMapsLayers).map(([mapName, val]) => (
                     <div className="custom-map-container">
                         <div className="custom-map-container-header" onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
                             <input type="radio" checked={val.visible}></input>
                             <span>{mapName}</span>
+                            <span className="custom-map-point-edit-button" onClick={() => openMapEditModal(val.id)}>Edit Map</span>
                         </div>
                         <div className="custom-map-container-main">
                             <span>Description</span>
@@ -249,16 +251,20 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         <button onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
                         {val.collapsed ? "" :
                             <div className="custom-map-container-points">
+                                <span className="custom-map-point-edit-button" onClick={() => openPointAddModal(val.id)}>Add Point</span>
                                 <label>Search</label>
                                 <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
                                 {val.points.filter(point => point.name.includes(pointsSearchValue)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} style={{ color: point.color }} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
-                                        <img className="custom-map-point-icon" src={point.icon} />
-                                        <div className="custom-map-point-text-container">
-                                            <span className="custom-map-point-text">{point.name}</span>
-                                            <span className="custom-map-point-text-desc">{point.description}</span>
-                                            <span>{point.lat},{point.lng}</span>
+                                        <div className="custom-map-point-container">
+                                            <img className="custom-map-point-icon" src={point.icon} />
+                                            <div className="custom-map-point-text-container">
+                                                <span className="custom-map-point-text">{point.name}</span>
+                                                <span className="custom-map-point-text-desc">{point.description}</span>
+                                                <span>{point.lat},{point.lng}</span>
+                                            </div>
                                         </div>
+                                        <span className="custom-map-point-edit-button" onClick={() => openPointEditModal(val.id, point.id)}>Edit</span>
                                     </div>
                                 )}
                             </div>}
@@ -266,6 +272,34 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                 ))}
             </div>
         )
+    }
+
+    const openPointEditModal = (mapId, pointId) => {
+        setOpenModal(true);
+        setModalType("editPoint");
+        setModalSelectedCustomMapId(mapId);
+        setModalSelectedCustomMapPointId(pointId);
+    }
+
+    const openPointAddModal = (mapId) => {
+        setOpenModal(true);
+        setModalType("addPoint");
+        setModalSelectedCustomMapId(mapId);
+        setModalSelectedCustomMapPointId("");
+    }
+
+    const openMapEditModal = (mapId) => {
+        setOpenModal(true);
+        setModalType("editMap");
+        setModalSelectedCustomMapId(mapId);
+        setModalSelectedCustomMapPointId("");
+    }
+
+    const openMapAddModal = (mapId) => {
+        setOpenModal(true);
+        setModalType("addMap");
+        setModalSelectedCustomMapId("");
+        setModalSelectedCustomMapPointId("");
     }
 
     return expanded ? (

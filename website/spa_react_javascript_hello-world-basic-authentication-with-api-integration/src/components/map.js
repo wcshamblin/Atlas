@@ -36,6 +36,7 @@ import {
 import { useAuth0 } from "@auth0/auth0-react";
 
 import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@react-google-maps/api';
+import Modal from './modal';
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
@@ -113,6 +114,10 @@ function Map() {
     const [customMaps, setCustomMaps] = useState(null);
     const [customMapPoints, setCustomMapPoints] = useState({});
     const [currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint] = useState({});
+    const [modalSelectedCustomMapId, setModalSelectedCustomMapId] = useState(""); 
+    const [modalSelectedCustomMapPointId, setModalSelectedCustomMapPointId] = useState("");
+    const [openModal, setOpenModal] = useState(false);
+    const [modalType, setModalType] = useState("mapAdd");
 
     const [newPointMap, setNewPointMap] = useState(null);
 
@@ -434,6 +439,7 @@ function Map() {
         const accessToken = await getAccessTokenSilently();
         const { data, error } = await fetchMaps(accessToken);
         if (data) {
+            data.maps = data.maps.filter(map => map.description != 'test3t' && map.description != '111' && map.description != 'test3awet' && map.name != '33333' && map.name != "66666" && map.name != "777777");
             setCustomMaps(data);
         }
         if (error) {
@@ -1959,7 +1965,8 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint}/>}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId}/>}
+            <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0].points.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} />
 
             {displayStreetView ? getStreetView() : ""}
             {streetViewPresent ? displayStreetViewDiv() : ""}
