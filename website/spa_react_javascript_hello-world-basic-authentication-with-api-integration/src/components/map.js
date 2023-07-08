@@ -734,35 +734,25 @@ function Map() {
 
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <ul id="rightclickpopupbuttons">
-                    <li id="rightclickpopupbutton" aria-label="Set home position" data-tooltip="Set home position"
-                        onClick={() => {
-                            console.log("setting home position to ", rightClickPopupPosition);
-                            setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                            setShowRightClickPopup(false);
-                        }}>H
-                    </li>
-                </ul>
+                <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        console.log("setting home position to ", rightClickPopupPosition);
+                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
+                        setShowRightClickPopup(false);
+                    }}>H
+                    </button>
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRoutingLineEnd(rightClickPopupPosition);
+                        setRightClickPopupState("routing");
+                    }}>R
+                    </button>
+                    {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("new-point");
+                    }}>N
+                    </button>}
+                </div>
+                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
             </div>);
-
-            //         <button id="rightclickpopupbutton" onClick={() => {
-            //             console.log("setting home position to ", rightClickPopupPosition);
-            //             setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-            //             setShowRightClickPopup(false);
-            //         }}>H
-            //         </button>
-            //         <button id="rightclickpopupbutton" onClick={() => {
-            //             setRoutingLineEnd(rightClickPopupPosition);
-            //             setRightClickPopupState("routing");
-            //         }}>R
-            //         </button>
-            //         {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
-            //             setRightClickPopupState("new-point");
-            //         }}>N
-            //         </button>}
-            //     </ul>
-            //     <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
-            // </div>);
 
 
         } if (state === "new-point") {
