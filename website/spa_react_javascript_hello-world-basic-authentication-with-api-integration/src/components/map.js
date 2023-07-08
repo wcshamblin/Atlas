@@ -112,6 +112,7 @@ function Map() {
 
     const [customMaps, setCustomMaps] = useState(null);
     const [customMapPoints, setCustomMapPoints] = useState({});
+    const [currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint] = useState({});
 
     const [newPointMap, setNewPointMap] = useState(null);
 
@@ -1743,6 +1744,8 @@ function Map() {
                 const name = e.features[0].properties.name;
                 const description = e.features[0].properties.description;
 
+                setCurrentSelectedCustomMapPoint({"pointId": e.features[0].properties.id, "layerId": e.features[0].layer.id});
+
                 console.log("Clicked on custom map: ", name, description, coordinates);
 
                 // if the popup is already open, close it
@@ -1947,10 +1950,16 @@ function Map() {
         return mapbox.current.getLayoutProperty(layer, name);
     }
 
+    const flyTo = (lat, long) => {
+        mapbox.current.flyTo(
+            { center: [long, lat], essential: true, zoom: 16 }
+        )
+    }
+
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps}/>}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint}/>}
 
             {displayStreetView ? getStreetView() : ""}
             {streetViewPresent ? displayStreetViewDiv() : ""}

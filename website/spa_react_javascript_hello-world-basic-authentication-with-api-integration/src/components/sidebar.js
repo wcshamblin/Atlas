@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import '../styles/components/sidebar.css';
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData}) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
 
     const [baseLayers, setBaseLayers] = useState({
@@ -44,9 +44,11 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         if (!customMapsData.maps) return;
         console.log("custom maps data loaded: " + JSON.stringify(customMapsData));
 
-        {Object.entries(customMapsData.maps).map(([mapId, mapData]) => (
-            setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false } })
-        ))}
+        {
+            Object.entries(customMapsData.maps).map(([mapId, mapData]) => (
+                setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false, "collapsed": true, ...mapData } })
+            ))
+        }
 
         setCustomMapsLayersLoaded(true);
     }, [customMapsData]);
@@ -80,6 +82,15 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
             });
         }
     }, [customMapsLayersLoaded]);
+
+    useEffect(() => {
+        console.log(currentSelectedCustomMapPoint);
+
+        if (customMapsLayers[currentSelectedCustomMapPoint.layerId] && !customMapsLayers[currentSelectedCustomMapPoint.layerId].collapsed) {
+            let element = document.getElementById(currentSelectedCustomMapPoint.pointId)
+            element.scrollIntoView();
+        }
+    }, [currentSelectedCustomMapPoint])
 
     const updateBaseLayers = name => {
         Object.keys(baseLayers).forEach(layer => {
@@ -126,6 +137,14 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         setCustomMapsLayers({ ...customMapsLayers });
     }
 
+    const updateCustomMapsLayersPointsCollapsed = (name, collapsed) => {
+        customMapsLayers[name].collapsed = collapsed;
+
+        localStorage.setItem('selected-custom-maps-layers', JSON.stringify(Object.entries(customMapsLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
+
+        setCustomMapsLayers({ ...customMapsLayers });
+    }
+
     const updateCategory = (name, visible) => {
         layerCategories[name].forEach(layerName => {
             updateLayers(layerName, visible);
@@ -157,17 +176,17 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     if (subLayers.length > 1)
                         return (
                             <>
-                            <div className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
-                                <input type="radio" checked={subLayers.some(layerName => layers[layerName].visible)}></input>
-                                <span>{catName}</span>
-                                
-                                {/*<p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
+                                <div className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
+                                    <input type="radio" checked={subLayers.some(layerName => layers[layerName].visible)}></input>
+                                    <span>{catName}</span>
+
+                                    {/*<p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
                                 {subLayers.map(layerName =>
                                     <p className={!layers[layerName].visible ? "black2" : "selected black2"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>{layerName} </p>
                                 )}*/}
-                            </div>
-                            {subLayers.some(layerName => layers[layerName].visible) ? subLayers.map(layerName =>
-                                <div className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
+                                </div>
+                                {subLayers.some(layerName => layers[layerName].visible) ? subLayers.map(layerName =>
+                                    <div className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
                                         <input type="radio" checked={layers[layerName].visible}></input>
                                         <span>{layerName}</span>
                                     </div>
@@ -176,10 +195,10 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         )
                     else
                         return (
-                            <div className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}  onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
+                            <div className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
                                 <input type="radio" checked={layers[subLayers[0]].visible}></input>
                                 <span>{catName}</span>
-                            {/*<p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>*/}
+                                {/*<p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>*/}
                             </div>
                         )
                 })}
@@ -215,9 +234,31 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
             <div id="custom-layer-container">
 
                 {Object.entries(customMapsLayers).map(([mapName, val]) => (
-                    <div className={!val.visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
-                        <input type="radio" checked={val.visible}></input>
-                        <span>{mapName}</span>
+                    <div className="custom-map-container">
+                        <div className="custom-map-container-header" onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
+                            <input type="radio" checked={val.visible}></input>
+                            <span>{mapName}</span>
+                        </div>
+                        <div className="custom-map-container-main">
+                            <span>Description</span>
+                            <span>{val.description}</span>
+                            <span>Legend</span>
+                            <span>{val.legend}</span>
+                        </div>
+                        <button onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
+                        {val.collapsed ? "" :
+                            <div className="custom-map-container-points">
+                                {val.points.map(point =>
+                                    <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} style={{ color: point.color }} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
+                                        <img className="custom-map-point-icon" src={point.icon} />
+                                        <div className="custom-map-point-text-container">
+                                            <span className="custom-map-point-text">{point.name}</span>
+                                            <span className="custom-map-point-text-desc">{point.description}</span>
+                                            <span>{point.lat},{point.lng}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>}
                     </div>
                 ))}
             </div>
@@ -234,7 +275,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     <button class="sidebar-link-button maps" onClick={e => setSelectedPart('layers')}></button>
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button clock" onClick={e => setSelectedPart('time')}></button>
+                    <button class="sidebar-link-button clock" onClick={e => setSelectedPart('customMaps')}></button>
                 </div>
                 <div class="sidebar-link">
                     <button class="sidebar-link-button settings" onClick={e => setSelectedPart('settings')}></button>
@@ -252,17 +293,20 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         case 'layers':
                             return (
                                 <div>
-                                    <h1 style={{"margin": "5px 0px"}}>LAYERS</h1>
-                                    <h3 style={{"marginTop": "15px"}}>Base Layers</h3>
+                                    <h1 style={{ "margin": "5px 0px" }}>LAYERS</h1>
+                                    <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
                                     {renderBaseLayers()}
                                     <h3>Regular Layers</h3>
                                     {renderRegularLayers()}
-                                    <h3>Custom Maps</h3>
+                                </div>
+                            )
+                        case 'customMaps':
+                            return (
+                                <div>
+                                    <h1>CUSTOM MAPS</h1>
                                     {renderCustomMaps()}
                                 </div>
                             )
-                        case 'time':
-                            return <h1>TIME</h1>
                         case 'settings':
                             return <h1>SETTINGS</h1>
                         default:
