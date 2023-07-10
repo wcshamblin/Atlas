@@ -20,6 +20,16 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+    faArrowLeft,
+    faCoffee, faFloppyDisk,
+    faHome,
+    faInfo,
+    faMapMarkerAlt,
+    faPenToSquare,
+    faRoute
+} from '@fortawesome/free-solid-svg-icons'
 
 
 import { v4 as uuid } from 'uuid';
@@ -464,29 +474,29 @@ function Map() {
         });
 
         mapbox.current.on('style.load', () => {
-            if (isNight) {
-                mapbox.current.setFog(
-                    {
-                        'range': [3, 4],
-                        'horizon-blend': 0.3,
-                        'color': '#242B4B',
-                        'high-color': '#161B36',
-                        'space-color': '#0B1026',
-                        'star-intensity': .95
-                    }
-                )
-            } else {
-                mapbox.current.setFog(
-                    {
-                        'range': [3, 4],
-                        'horizon-blend': 0.3,
-                        'color': 'white',
-                        'high-color': '#add8e6',
-                        'space-color': '#d8f2ff',
-                        'star-intensity': 0.0
-                    }
-                )
-            }
+            // if (isNight) {
+            //     mapbox.current.setFog(
+            //         {
+            //             'range': [3, 4],
+            //             'horizon-blend': 0.3,
+            //             'color': '#242B4B',
+            //             'high-color': '#161B36',
+            //             'space-color': '#0B1026',
+            //             'star-intensity': .95
+            //         }
+            //     )
+            // } else {
+            //     mapbox.current.setFog(
+            //         {
+            //             'range': [3, 4],
+            //             'horizon-blend': 0.3,
+            //             'color': 'white',
+            //             'high-color': '#add8e6',
+            //             'space-color': '#d8f2ff',
+            //             'star-intensity': 0.0
+            //         }
+            //     )
+            // }
             mapbox.current.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
@@ -739,19 +749,20 @@ function Map() {
                         console.log("setting home position to ", rightClickPopupPosition);
                         setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
                         setShowRightClickPopup(false);
-                    }}>H
+                    }}><FontAwesomeIcon icon={faHome} />
                     </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
+                    {homeIsSet && <button id="rightclickpopupbutton" onClick={() => {
                         setRoutingLineEnd(rightClickPopupPosition);
                         setRightClickPopupState("routing");
-                    }}>R
+                    }}><FontAwesomeIcon icon={faRoute} />
                     </button>
+                    }
                     {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("new-point");
-                    }}>N
+                    }}><FontAwesomeIcon icon={faMapMarkerAlt} />
                     </button>}
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
             </div>);
 
 
@@ -823,14 +834,15 @@ function Map() {
                         setRightClickPopupState("default");
                         setShowRightClickPopup(false);
 
-                    }}>S
+                    }}><FontAwesomeIcon icon={faFloppyDisk}/>
                     </button>
-                        <button id="rightclickpopupbutton" onClick={() => {
+                    <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("default");
-                    }}>D
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
                     </button>
+
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
             </div>);
         } if (state === "routing") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
@@ -838,24 +850,24 @@ function Map() {
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setRightClickPopupState("default");
-                    }}>D
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
                     </button>
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
             </div>);
         } if (state === "routing-complete") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                     <text id="rightclickpopup-routing-state">Routing Info:</text><br/>
-                    <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
-                    <text id="routing-information">{routingDistance} miles</text><br/>
+                    <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes<br/>
+                    {routingDistance} miles</text><br/>
                     <div id="rightclickpopupbuttons">
                         <button id="rightclickpopupbutton" onClick={() => {
                             setRightClickPopupState("default");
                             setRoutingLine(null);
-                        }}>D
+                        }}><FontAwesomeIcon icon={faArrowLeft}/>
                         </button>
                     </div>
-                    <text id='popupcoords'> {rightClickPopupPosition[1]}, {rightClickPopupPosition[0]} </text>
+                    <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
                 </div>
             );
         }
@@ -874,6 +886,7 @@ function Map() {
         const placeholder = document.createElement('div');
 
         if (state === "default") {
+            console.log("rendering default custom map popup, home is set: ", homeIsSet);
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id='custompopupname'>{properties.name}</text><br/>
                 <text id='custompopupdescription'>{properties.description}</text><br/>
@@ -885,20 +898,20 @@ function Map() {
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("info");
-                    }}>I
+                    }}><FontAwesomeIcon icon={faInfo}/>
                     </button>
                     {properties.editable && <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("edit");
-                    }}>E
+                    }}><FontAwesomeIcon icon={faPenToSquare}/>
                     </button>}
-
-                    <button id="rightclickpopupbutton" onClick={() => {
+                    {homeIsSet && <button id="rightclickpopupbutton" onClick={() => {
                         setRoutingLineEnd(coordinates);
                         setCustomMapPopupState("routing");
-                    }}>R
+                    }}><FontAwesomeIcon icon={faRoute}/>
                     </button>
+                    }
                 </div>
-                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
             </div>);
         }
 
@@ -931,10 +944,6 @@ function Map() {
                 </div>
 
                 <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("default");
-                    }}>D
-                    </button>
 
                     <button id="rightclickpopupbutton" onClick={() => {
                         // save
@@ -953,11 +962,14 @@ function Map() {
 
                         // close the popup
                         setShowCustomMapPopup(false);
-                    }}>S
+                    }}><FontAwesomeIcon icon={faFloppyDisk}/>
                     </button>
-
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setCustomMapPopupState("default");
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
+                    </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
             </div>);
         }
 
@@ -998,10 +1010,10 @@ function Map() {
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
-                    }}>D
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
             </div>);
         }
 
@@ -1011,26 +1023,26 @@ function Map() {
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
-                    }}>D
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
             </div>);
         }
 
         if (state === "routing-complete") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id="rightclickpopup-routing-state">Routing Info:</text><br/>
-                <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes</text><br/>
-                <text id="routing-information">{routingDistance} miles</text><br/>
+                <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes<br/>
+                {routingDistance} miles</text><br/>
                 <div id="rightclickpopupbuttons">
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
                         setRoutingLine(null);
-                    }}>D
+                    }}><FontAwesomeIcon icon={faArrowLeft}/>
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1]}, {coordinates[0]} </text>
+                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
             </div>);
         }
 
@@ -1405,11 +1417,21 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showCustomMapPopup) return; // if we don't want to show the popup, then don't do anything
 
-        console.log("custom map popup state is", customMapPopupState);
+        console.log("Custom map popup state changed to ", customMapPopupState, " with properties ", customMapPopupProperties);
 
         renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
 
     }, [customMapPopupState]);
+
+    // custom map popup properties useeffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!showCustomMapPopup) return; // if we don't want to show the popup, then don't do anything
+
+        console.log("Custom map popup properties changed to ", customMapPopupProperties);
+
+        renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
+    }, [customMapPopupProperties]);
 
     // isochrone API fetch
     useEffect(() => {
@@ -1573,24 +1595,10 @@ function Map() {
                 console.log("No home retrieved");
                 return;
             }
+
             console.log("Home retrieved: lat: ", home["lat"], " lng: ", home["lng"]);
 
-            const el = document.createElement('div');
-            el.className = 'marker';
-
-            el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
-            el.style.width = '25px';
-            el.style.height = '25px';
-            el.style.backgroundSize = '100%';
-
-
-            setHomeMarker(new mapboxgl.Marker(el)
-                .setLngLat([home.lng, home.lat])
-                .addTo(mapbox.current));
-
             setHomeMarkerPosition([home["lng"], home["lat"]]);
-            setHomeIsSet(true);
-
         });
     }, [mapbox.current, homeMarker]);
 
@@ -1598,12 +1606,27 @@ function Map() {
     useEffect(
         () => {
             if (!mapbox.current) return; // wait for map to initialize
+            if (homeMarkerPosition.length < 2) return; // wait for home marker position to be set
 
             // if we have a home marker, set it to the new position
             if (homeMarker) {
                 console.log("Setting home marker to ", homeMarkerPosition);
                 homeMarker.setLngLat(homeMarkerPosition);
+            } else {
+                const el = document.createElement('div');
+                el.className = 'marker';
+
+                el.style.backgroundImage = 'url(https://i.imgur.com/JCuIAqJ.png)';
+                el.style.width = '25px';
+                el.style.height = '25px';
+                el.style.backgroundSize = '100%';
+
+                setHomeMarker(new mapboxgl.Marker(el)
+                    .setLngLat([homeMarkerPosition[0], homeMarkerPosition[1]])
+                    .addTo(mapbox.current));
             }
+            console.log("Home marker set, setting homeIsSet to true");
+            setHomeIsSet(true);
         }
         , [homeMarkerPosition]);
 
@@ -1612,8 +1635,6 @@ function Map() {
 
         // get access token
         const accessToken = await getAccessTokenSilently();
-
-        setHomeIsSet(true);
 
         // set home location in database
         setHomeMarkerPosition([lng, lat]);
@@ -1767,10 +1788,9 @@ function Map() {
                 }
 
                 setCustomMapPopupPosition(coordinates);
-                setCustomMapPopupState("default");
                 setCustomMapPopupProperties(e.features[0].properties);
-                renderCustomMapPopup("default", e.features[0].properties, coordinates);
                 console.log("Custom map point properties: ", e.features[0].properties);
+                setCustomMapPopupState("default");
                 setShowCustomMapPopup(true);
             });
 
