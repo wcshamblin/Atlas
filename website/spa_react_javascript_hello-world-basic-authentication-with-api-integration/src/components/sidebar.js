@@ -48,7 +48,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
         {
             Object.entries(customMapsData.maps).map(([mapId, mapData]) => (
-                setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false, "collapsed": true, ...mapData } })
+                console.log("Adding custom map layer to sidebar: " + mapData.name),
+                // add layer to custom maps layers
+                //     setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false, "collapsed": true, ...mapData } })
+                setCustomMapsLayers(prevState => ({
+                    ...prevState,
+                    [mapData.name]: { "visible": false, "collapsed": true, ...mapData }
+                }))
             ))
         }
 
@@ -255,11 +261,11 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 <label>Search</label>
                                 <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
                                 {val.points.filter(point => point.name.includes(pointsSearchValue)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
-                                    <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} style={{ color: point.color }} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
+                                    <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
                                         <div className="custom-map-point-container">
                                             <img className="custom-map-point-icon" src={point.icon} />
                                             <div className="custom-map-point-text-container">
-                                                <span className="custom-map-point-text">{point.name}</span>
+                                                <span className="custom-map-point-text" style={{ color: point.color }}>{point.name}</span>
                                                 <span className="custom-map-point-text-desc">{point.description}</span>
                                                 <span>{point.lat},{point.lng}</span>
                                             </div>
