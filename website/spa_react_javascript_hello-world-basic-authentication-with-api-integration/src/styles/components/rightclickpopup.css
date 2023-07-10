@@ -31,25 +31,28 @@ text#custompopupdescription {
 }
 
 text#routing-information {
-    z-index: 999;
+    z-index: 9;
     color: black;
     position: absolute;
     font-size: 15px;
+    width: 70%;
 }
 
 div#rightclickpopupbuttons {
-    /*z-index: 999;*/
-    /*width: 20px;*/
-    /*right: 0;*/
-    /*float:right;*/
-    /*!*position: absolute;*!*/
-    /*!*display: inline-block;*!*/
-    /*margin-right: 2px;*/
-    /*margin-bottom: 2px;*/
+/*    align right*/
+/*    position: absolute;*/
+    margin-top: 10px;
+    margin-left: 20px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+
+    z-index: 999;
 }
 
 button#rightclickpopupbutton {
+    float: right;
     z-index: 999;
+    display: block;
 }
 
 text#popupcoords {
@@ -60,7 +63,6 @@ text#popupcoords {
     z-index: 999;
     text-align: center;
     display: block;
-    width: 100%;
 }
 
 
@@ -72,17 +74,12 @@ div#custompopupdetail {
     z-index: 999;
 }
 
-table#custompopupinfotable {
-    font-family: arial, sans-serif;
-    border-collapse: collapse;
-    width: 100%;
-}
-
 input#custompopupname {
     font-weight: bold;
     font-size: 16px;
     color: black;
     width: 95%;
+    margin-right: 20px;
 }
 
 textarea#custompopupdescription {
@@ -113,9 +110,17 @@ select#custompopupcolor {
     width: 100%;
 }
 
+table#custompopupinfotable {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
 td, th {
+    width: 100%;
     text-align: left;
-    padding: 3px;
+    padding-top: 3px;
+    padding-bottom: 3px;
     color: black;
 }
 
