@@ -137,6 +137,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
     const updateCustomMapsLayers = (name, visible) => {
         console.log("Trying to update custom maps layer: " + name + " to " + visible)
+        // need to make sure that the layer is actually on the map before we try to update it - there could be a layer in local storage that isn't on the map
+        if (!customMapsLayers[name]) return;
         setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
         customMapsLayers[name].visible = visible;
 
