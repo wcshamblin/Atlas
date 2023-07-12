@@ -193,6 +193,14 @@ function Map() {
             }
         });
 
+        mapbox.current.on('mouseenter', 'All Towers', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'All Towers', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
+
         // all towers extrusion source
         mapbox.current.addSource('All Tower Extrusions', {
             'type': 'geojson',
@@ -218,6 +226,14 @@ function Map() {
             'type': 'geojson',
             'data': antennaPoints
         });
+
+        mapbox.current.on('mouseenter', 'Antennas', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'Antennas', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
 
         mapbox.current.loadImage('https://i.imgur.com/s2Wgdgx.png', (error, image) => {
             if (error) throw error;
@@ -1753,6 +1769,14 @@ function Map() {
                     'icon-halo-color': '#fff',
                     'icon-halo-width': 5,
                 }
+            });
+
+            // on mouseenter and mouseleave, set the cursor to pointer
+            mapbox.current.on('mouseenter', customMap.name, () => {
+                mapbox.current.getCanvas().style.cursor = 'pointer';
+            });
+            mapbox.current.on('mouseleave', customMap.name, () => {
+                mapbox.current.getCanvas().style.cursor = '';
             });
 
             // custom map layer on click
