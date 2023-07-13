@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance
+from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance, verify_user_permissions
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -272,7 +272,7 @@ async def put_map_info(response: Response, map_id: str, info: MapPut, token: str
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
 
-    # verify permissions
+    # verify owner permissions
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
@@ -297,6 +297,32 @@ async def put_map_info(response: Response, map_id: str, info: MapPut, token: str
 
     return {"status": "success", "message": "Map updated"}
 
+
+# delete a map
+@app.delete("/maps/{map_id}")
+async def delete_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # delete map
+    delete_map(map_id)
+
+    return {"status": "success", "message": "Map deleted"}
+
 # add a user to the map
 @app.post("/maps/{map_id}/users")
 async def put_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
@@ -312,7 +338,7 @@ async def put_map_user(response: Response, map_id: str, user: UserPut, token: st
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
 
-    # verify permissions
+    # verify owner permissions
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
@@ -337,7 +363,7 @@ async def delete_map_user(response: Response, map_id: str, user: UserPut, token:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
 
-    # verify permissions
+    # verify owner permissions
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
@@ -362,13 +388,18 @@ async def put_map_user_permissions(response: Response, map_id: str, user_id: str
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Map not found"}
 
-    # verify permissions
+    # verify owner permissions
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
+    permission_list = []
+    for permission in permissions:
+        if permission[1]:
+            permission_list.append(permission[0])
+
     # edit user permissions
-    edit_user_permissions(map_id, user_id, permissions.permissions)
+    print(edit_user_permissions(map_id, user_id, permission_list))
 
     return {"status": "success", "message": "User permissions updated"}
 
@@ -379,6 +410,11 @@ async def get_map_points(response: Response, map_id: str, token: str = Depends(t
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
+    
+    # verify permissions
+    if not verify_user_permissions(map_id, result["sub"], "view"):
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to view this map"}
     
     # get points
     return {"status": "success", "message": "Points retrieved", "points": get_points_geojson_for_map(map_id)}
@@ -401,13 +437,9 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
 
     # check if we have permissions to add a point to this map
     # if we're not the owner and we don't have add permissions, return 403
-    try:
-        if map["owner"] != result["sub"] and "add" not in map["user_permissions"][result["sub"]]:
-            response.status_code = status.HTTP_403_FORBIDDEN
-            return {"status": "error", "message": "You do not have permission to add points to this map"}
-    except KeyError:
+    if not verify_user_permissions(map_id, result["sub"], "add"):
         response.status_code = status.HTTP_403_FORBIDDEN
-        return {"status": "error", "message": "You do not have permission to add points to this map"}
+        return {"status": "error", "message": "You do not have permission to add a point to this map"}
     
 
     # create Point object
@@ -456,13 +488,9 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
     
     # check if we have permissions to delete a point from this map
     # if we're not the owner and we don't have delete permissions, return 403
-    try:
-        if map["owner"] != result["sub"] and "delete" not in map["user_permissions"][result["sub"]]:
-            response.status_code = status.HTTP_403_FORBIDDEN
-            return {"status": "error", "message": "You do not have permission to delete points from this map"}
-    except KeyError:
+    if not verify_user_permissions(map_id, result["sub"], "edit"):
         response.status_code = status.HTTP_403_FORBIDDEN
-        return {"status": "error", "message": "You do not have permission to delete points from this map"}
+        return {"status": "error", "message": "You do not have permission to delete a point from this map"}
 
     
     remove_point_from_map(map_id, point_id)
@@ -487,14 +515,9 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
     
     # check if we have permissions to edit a point on this map
     # if we're not the owner and we don't have edit permissions, return 403
-    
-    try:
-        if map["owner"] != result["sub"] and "edit" not in map["user_permissions"][result["sub"]]:
-            response.status_code = status.HTTP_403_FORBIDDEN
-            return {"status": "error", "message": "You do not have permission to edit points on this map"}
-    except KeyError:
+    if not verify_user_permissions(map_id, result["sub"], "edit"):
         response.status_code = status.HTTP_403_FORBIDDEN
-        return {"status": "error", "message": "You do not have permission to edit points on this map"}
+        return {"status": "error", "message": "You do not have permission to edit a point on this map"}
 
     # get point
     currentPoint = get_point_by_id(map_id, point_id)

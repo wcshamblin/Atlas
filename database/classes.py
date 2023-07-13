@@ -133,8 +133,7 @@ class Map:
         self.categories = categories
         self.icons = icons
         self.points = []
-        self.users = []
-        self.user_permissions = {}
+        self.users = {}
         self.creation_date = datetime.now()
         self.editor = owner
         self.edit_date = datetime.now()
@@ -244,7 +243,6 @@ class Map:
             "icons": self.icons,
             "points": [point.to_dict() for point in self.points],
             "users": self.users,
-            "user_permissions": self.user_permissions,
             "creation_date": self.creation_date,
             "editor": self.editor,
             "edit_date": self.edit_date,

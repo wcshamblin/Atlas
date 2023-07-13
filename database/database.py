@@ -92,24 +92,32 @@ def get_map_by_id(id) -> dict:
 
 
 def get_maps_by_user(usersub) -> List[dict]:
+    # maps has a field called owner, which is the usersub
     return [doc.to_dict() for doc in db.collection(u'maps').where(u'owner', u'==', usersub).get()]
 
 
 def get_maps_for_user(usersub) -> List[dict]:
     # return maps that the user owns and maps that the user has access to
     my_maps = get_maps_by_user(usersub)
-    shared_maps = [doc.to_dict() for doc in db.collection(u'maps').where(u'users', u'array_contains', usersub).get()]
 
+    # get maps that the user has access to
+    # maps has a user dict which is {usersub: {permissions: []}, so find maps where the usersub is in the users dict
+    shared_maps = []
+    for map in [doc.to_dict() for doc in db.collection(u'maps').get()]:
+        if usersub in map["users"]:
+            shared_maps.append(map)
+
+    # increase view counts 
+    # for map in my_maps:
+    #     [doc.reference.update({u'views': map['views'] + 1}) for doc in db.collection(u'maps').where(u'id', u'==', map['id']).get()]
+    
     # remove points from maps, we don't need them here
     for map in my_maps:
         # append my permissions
         map["my_permissions"] = ["owner"]
     for map in shared_maps:
         # append my permissions
-        try:
-            map["my_permissions"] = map["user_permissions"][usersub]
-        except KeyError:
-            map["my_permissions"] = []
+        map["my_permissions"] = map["users"][usersub]["permissions"]
 
     return my_maps + shared_maps
 
@@ -119,7 +127,10 @@ def add_user_to_map(map_id, user) -> str:
     map_dict = map_obj.to_dict()
 
     # add user to map
-    map_dict["users"].append(user)
+    if user not in map_dict["users"]:
+        map_dict["users"][user] = {"permissions": []}
+    else:
+        return "User already in map"
 
     # update map
     return map_obj.reference.update(map_dict)
@@ -130,13 +141,14 @@ def remove_user_from_map(map_id, user) -> str:
     map_dict = map_obj.to_dict()
 
     # remove user from map
-    map_dict["users"].remove(user)
-
-    # also clear permissions
-    map_dict["user_permissions"].pop(user, None)
-
+    if user in map_dict["users"]:
+        map_dict["users"].pop(user)
+    else:
+        return "User not in map"
+    
     # update map
     return map_obj.reference.update(map_dict)
+
 
 def edit_user_permissions(map_id, user, permissions) -> str:
     # find map
@@ -144,10 +156,38 @@ def edit_user_permissions(map_id, user, permissions) -> str:
     map_dict = map_obj.to_dict()
 
     # edit user permissions
-    map_dict["user_permissions"][user] = permissions
+    if user in map_dict["users"]:
+        map_dict["users"][user]["permissions"] = permissions
+    else:
+        return "User not in map"
 
     # update map
     return map_obj.reference.update(map_dict)
+
+# verify_map_permissions(map_id, result["sub"], "view")
+def verify_user_permissions(map_id, user, permission) -> bool:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    if user == map_dict["owner"]:
+        return True
+     
+
+    # check if user has permission
+    if user in map_dict["users"]:
+        # if checking for view permissions, we can return true
+        if permission == "view":
+            return True
+        
+        if permission in map_dict["users"][user]["permissions"]:
+            return True
+        
+        else:
+            return False
+    else:
+        return False
+    
 
 def add_map(map) -> str:
     return db.collection(u'maps').add(map)
