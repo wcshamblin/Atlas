@@ -49,7 +49,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
 
     const renderPointAddModal = () => {
         return (
-            <div id="modal-content">
+            <div id="modal-form-content">
                 <span id="modal-title">Adding point for map {map.name}</span><br />
                 <label>Name: </label>
                 <input type="text" value={pointName} onChange={e => setPointName(e.target.value)}></input><br/>
@@ -79,7 +79,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
 
     const renderPointEditModal = () => {
         return (
-            <div id="modal-content">
+            <div id="modal-form-content">
                 <span id="modal-title">Editing point {point.name} for map {map.name}</span><br />
                 <label>Name: </label>
                 <input type="text" value={pointName == "" ? point.name : pointName} onChange={e => setPointName(e.target.value)}></input><br/>
@@ -145,46 +145,53 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         if(Object.keys(mapIcons).length == 0 && Object.keys(map.icons).length > 0) setMapIcons(map.icons);
         if (Object.keys(mapColors).length == 0 && Object.keys(map.colors).length > 0) setMapColors(map.colors);
         return (
-            <div id="modal-content">
+            <div id="modal-form-content">
                 <span id="modal-title">Editing map {map.name}</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={mapName == "" ? map.name : mapName} onChange={e => setMapName(e.target.value)}></input><br/>
-                <label>Description: </label>
+                <label className="modal-form-content-label">Description: </label>
                 <textarea value={mapDesc == "" ? map.description : mapDesc} onChange={e => setMapDesc(e.target.value)}></textarea><br/>
-                <label>Legend: </label>
+                <label className="modal-form-content-label">Legend: </label>
                 <textarea value={mapLegend == "" ? map.legend : mapLegend} onChange={e => setMapLegend(e.target.value)}></textarea><br/>
-                <label>Categories: </label>
+                <div>
+                    <label className="modal-form-content-label">Categories</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapCategory()}>+</button><br />
+                </div>
                 {mapCategories.map((cat, i) => (
                     <div>
                         <input type="text" value={cat} onChange={e => updateMapCategories(e.target.value, i)} />
-                        <button onClick={() => removeMapCategory(i)}>-</button>
+                        <button className="modal-form-list-button" onClick={() => removeMapCategory(i)}>-</button>
                         <br/>
                     </div>
                 ))}
-                <button onClick={() => addNewMapCategory()}>+</button><br/>
-                <label>Icons: </label>
+                <br/>
+                <div>
+                    <label className="modal-form-content-label">Icons</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapIcon()}>+</button><br />
+                </div>
                 {Object.entries(mapIcons).map(([iconName, iconUrl]) => (
                     <div>
                         <input type="text" value={iconName} onChange={e => updateMapIconName(e.target.value, iconName)}/>
                         <input type="text" value={iconUrl} onChange={e => updateMapIconUrl(e.target.value, iconName)}/>
-                        <button onClick={() => removeMapIcon(iconName)}>-</button>
+                        <button className="modal-form-list-button" onClick={() => removeMapIcon(iconName)}>-</button>
                         <br/>
                     </div>
                 ))}
-                <button onClick={() => addNewMapIcon()}>+</button><br/>
-                <label>Colors: </label>
+                <br/>
+                <div>
+                    <label className="modal-form-content-label">Colors</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapColor()}>+</button><br />
+                </div>
                 {Object.entries(mapColors).map(([colorName, colorHex]) => (
                     <div>
                         <input type="text" value={colorName} onChange={e => updateMapColorName(e.target.value, colorName)}/>
                         <input type="text" value={colorHex} onChange={e => updateMapColorUrl(e.target.value, colorName)}/>
-                        <button onClick={() => removeMapColor(colorName)}>-</button>
+                        <button className="modal-form-list-button" onClick={() => removeMapColor(colorName)}>-</button>
                         <br/>
                     </div>
                 ))}
-                <button onClick={() => addNewMapColor()}>+</button><br/>
-
                 <br/>
-                <button onClick={() => submitMapInfo(false)}>Submit</button>
+                <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
                 {/* need delete button */}
             </div>
         );
@@ -192,46 +199,53 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
 
     const renderMapAddModal = () => {
         return (
-            <div id="modal-content">
+            <div id="modal-form-content">
                 <span id="modal-title">Adding new map</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={mapName} onChange={e => setMapName(e.target.value)}></input><br />
-                <label>Description: </label>
-                <textarea value={mapDesc} onChange={e => setMapDesc(e.target.value)}></textarea><br />
-                <label>Legend: </label>
+                <label className="modal-form-content-label">Description: </label>
+                <textarea value={mapDesc} onChange={e => setMapDesc(e.target.value)} ></textarea><br />
+                <label className="modal-form-content-label">Legend: </label>
                 <textarea value={mapLegend} onChange={e => setMapLegend(e.target.value)}></textarea><br />
-                <label>Categories: </label>
+                <div>
+                    <label className="modal-form-content-label">Categories</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapCategory()}>+</button><br />
+                </div>
                 {mapCategories.map((cat, i) => (
                     <div>
-                        <input type="text" value={cat} onChange={e => updateMapCategories(e.target.value, i)} />
-                        <button onClick={() => removeMapCategory(i)}>-</button>
+                        <input type="text" placeholder="new-category-name" value={cat} onChange={e => updateMapCategories(e.target.value, i)} />
+                        <button className="modal-form-list-button" onClick={() => removeMapCategory(i)}>-</button>
                         <br />
                     </div>
                 ))}
-                <button onClick={() => addNewMapCategory()}>+</button><br />
-                <label>Icons: </label>
+                <br/>
+                <div>
+                    <label className="modal-form-content-label">Icons</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapIcon()}>+</button><br />
+                </div>
                 {Object.entries(mapIcons).map(([iconName, iconUrl]) => (
                     <div>
-                        <input type="text" value={iconName} onChange={e => updateMapIconName(e.target.value, iconName)} />
-                        <input type="text" value={iconUrl} onChange={e => updateMapIconUrl(e.target.value, iconName)} />
-                        <button onClick={() => removeMapIcon(iconName)}>-</button>
+                        <input type="text" placeholder="new-icon-name" value={iconName} onChange={e => updateMapIconName(e.target.value, iconName)} />
+                        <input type="text" placeholder="new-icon-url" value={iconUrl} onChange={e => updateMapIconUrl(e.target.value, iconName)} />
+                        <button className="modal-form-list-button" onClick={() => removeMapIcon(iconName)}>-</button>
                         <br />
                     </div>
                 ))}
-                <button onClick={() => addNewMapIcon()}>+</button><br />
-                <label>Colors: </label>
+                <br/>
+                <div>
+                    <label className="modal-form-content-label">Colors</label>
+                    <button className="modal-form-list-button" onClick={() => addNewMapColor()}>+</button><br />
+                </div>
                 {Object.entries(mapColors).map(([colorName, colorHex]) => (
                     <div>
-                        <input type="text" value={colorName} onChange={e => updateMapColorName(e.target.value, colorName)} />
-                        <input type="text" value={colorHex} onChange={e => updateMapColorUrl(e.target.value, colorName)} />
-                        <button onClick={() => removeMapColor(colorName)}>-</button>
+                        <input type="text" placeholder="new-color-name" value={colorName} onChange={e => updateMapColorName(e.target.value, colorName)} />
+                        <input type="text" placeholder="new-color-hex" value={colorHex} onChange={e => updateMapColorUrl(e.target.value, colorName)} />
+                        <button className="modal-form-list-button" onClick={() => removeMapColor(colorName)}>-</button>
                         <br />
                     </div>
                 ))}
-                <button onClick={() => addNewMapColor()}>+</button><br />
-
                 <br />
-                <button onClick={() => submitMapInfo(true)}>Submit</button>
+                <button id="modal-form-submit-button" onClick={() => submitMapInfo(true)}>Submit</button>
                 {/* need delete button */}
             </div>
         );
@@ -265,7 +279,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     }
 
     const addNewMapIcon = () => {
-        mapIcons["new-icon"] = "new-url";
+        mapIcons["new-icon-name"] = "";
         setMapIcons({...mapIcons});
     }
 
@@ -287,7 +301,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     }
 
     const addNewMapColor = () => {
-        mapColors["new-color"] = "new-hex";
+        mapColors["new-color-name"] = "";
         setMapColors({...mapColors});
     }
 
@@ -336,8 +350,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     return modalOpen ? (
         <div id="modal">
             <div id="modal-background"></div>
-            {renderModalInfo()}
-            <button id="modal-close-button" onClick={() => setOpenModal(false)}>Close Window</button>
+            <div id="modal-content">
+                {renderModalInfo()}
+                <button id="modal-close-button" onClick={() => setOpenModal(false)}>Close Window</button>
+            </div>
         </div>
     ) : "";
 };

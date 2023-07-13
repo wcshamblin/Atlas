@@ -243,3 +243,22 @@
     text-decoration: underline;
     cursor: pointer;
 }
+
+.custom-map-add-button {
+    color: black;
+    padding: 10px;
+    border: 1px solid black;
+    font-size: 15px;
+    border-radius: 8px;
+}
+
+.custom-map-add-button:hover {
+    cursor: pointer;
+    background-color: lightblue;
+    border: 1px solid grey;
+    color: white;
+}
+
+.no-custom-maps {
+    height: 200px;
+}
