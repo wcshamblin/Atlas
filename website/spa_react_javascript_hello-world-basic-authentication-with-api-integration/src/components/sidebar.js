@@ -137,6 +137,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
     const updateCustomMapsLayers = (name, visible) => {
         console.log("Trying to update custom maps layer: " + name + " to " + visible)
+        // need to make sure that the layer is actually on the map before we try to update it - there could be a layer in local storage that isn't on the map
+        if (!customMapsLayers[name]) return;
         setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
         customMapsLayers[name].visible = visible;
 
@@ -233,6 +235,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                 <div id="custom-layer-container">
                     <div className="no-custom-maps">
                         <h5>You don't have any custom maps yet. Create one or ask a friend to share one with you!</h5>
+                        <span className="custom-map-add-button" onClick={() => openMapAddModal()}>Add Map</span>
                     </div>
                 </div>
             )
@@ -240,7 +243,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
         return (
             <div id="custom-layer-container">
-                <span className="custom-map-point-edit-button" onClick={() => openMapAddModal()}>Add Map</span>
+                <span className="custom-map-add-button" onClick={() => openMapAddModal()}>Add Map</span>
                 {Object.entries(customMapsLayers).map(([mapName, val]) => (
                     <div className="custom-map-container">
                         <div className="custom-map-container-header" onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
