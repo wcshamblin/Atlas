@@ -1,7 +1,7 @@
 import React from "react";
 
 export const HeroBanner = () => {
-  const logo = "https://cdn.auth0.com/blog/developer-hub/react-logo.svg";
+  const logo = "https://i.imgur.com/wBrJw7j.png";
   const backgroundImages = [
       "https://i.imgur.com/hMv2K6i.jpg",
       "https://i.imgur.com/IzqqYe6.jpg",
