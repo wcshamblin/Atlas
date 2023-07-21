@@ -5,6 +5,12 @@ import {
     faPenToSquare,
     faEye,
     faEyeSlash,
+    faMap,
+    faCloudSun,
+    faLayerGroup,
+    faBars,
+    faGear,
+    faCloud,
 } from '@fortawesome/free-solid-svg-icons'
 
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId }) => {
@@ -326,19 +332,19 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         <div id="sidebar">
             <div id="sidebar-header">
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button weather" onClick={e => setSelectedPart('weather')}></button>
+                    <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')}/>
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button maps" onClick={e => setSelectedPart('layers')}></button>
+                    <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('layers')}/>
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button clock" onClick={e => setSelectedPart('customMaps')}></button>
+                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button settings" onClick={e => setSelectedPart('settings')}></button>
+                    <FontAwesomeIcon icon={faGear} class="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button expand" onClick={e => setDisplaySidebar(false)}></button>
+                    <FontAwesomeIcon icon={faBars} class="sidebar-link-button" onClick={e => setDisplaySidebar(false)}/>
                 </div>
             </div>
 
@@ -380,6 +386,6 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                 /> */}
             </div>
         </div>
-    ) : <button class="sidebar-link-button expand sidebar-hidden" onClick={e => setDisplaySidebar(true)}></button>;
+    ) : <FontAwesomeIcon icon={faBars} class="sidebar-link-button sidebar-hidden" onClick={e => setDisplaySidebar(true)} />
 };
 export default Sidebar;

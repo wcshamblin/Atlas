@@ -60,22 +60,6 @@
     overflow-x: hidden;
 }
 
-.weather {
-    background-image: url('../images/sunrise.png')
-}
-
-.maps {
-    background-image: url('../images/maps.png')
-}
-
-.clock {
-    background-image: url('../images/clock.png')
-}
-
-.expand {
-    background-image: url('../images/expand.png')
-}
-
 #base-layer-container {
     margin-left: 10px;
     display: grid;
