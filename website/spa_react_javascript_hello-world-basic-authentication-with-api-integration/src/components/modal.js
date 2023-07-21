@@ -18,6 +18,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     const [mapIcons, setMapIcons] = useState({});
     const [mapColors, setMapColors] = useState({});
 
+    useEffect(() => {
+        if (modalOpen == false) resetState();
+    }, [modalOpen])
+
     const renderModalInfo = () => {
         console.log("modalinfo");
         console.log(map);
@@ -47,32 +51,48 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         }
     }
 
+    const resetState = () => {
+        console.log("resetting state");
+        setPointName("");
+        setPointDesc("");
+        setPointLat("");
+        setPointLong("");
+        setPointCat("");
+        setPointIcon("");
+        setPointColor("");
+        setMapName("");
+        setMapDesc("");
+        setMapLegend("");
+        setMapCategories([]);
+        setMapIcons({});
+        setMapColors({});
+    }
+
     const renderPointAddModal = () => {
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Adding point for map {map.name}</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={pointName} onChange={e => setPointName(e.target.value)}></input><br/>
-                <label>Description: </label>
+                <label className="modal-form-content-label">Description: </label>
                 <textarea value={pointDesc} onChange={e => setPointDesc(e.target.value)}></textarea><br/>
-                <label>Latitude: </label>
+                <label className="modal-form-content-label">Latitude: </label>
                 <input type="text" value={pointLat} onChange={e => setPointLat(e.target.value)}></input><br/>
-                <label>Longitude: </label>
+                <label className="modal-form-content-label">Longitude: </label>
                 <input type="text" value={pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
-                <label>Category: </label>
+                <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat} onChange={e => setPointCat(e.target.value)}>
                     {map.categories.map(cat => (<option value={cat}>{cat}</option>))}
                 </select><br/>
-                <label>Color: </label>
+                <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor} onChange={e => setPointColor(e.target.value)}>
                     {Object.entries(map.colors).map(([colorName, colorHex]) => (<option value={colorHex}>{colorName}</option>))}
                 </select><br/>
-                <label>Icon: </label>
+                <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon} onChange={e => setPointIcon(e.target.value)}>
                     {Object.entries(map.icons).map(([iconName, iconUrl]) => (<option value={iconUrl}>{iconName}</option>))}
                 </select><br/>
-                <button onClick={() => submitPointEdit(true)}>Submit</button>
-                {/* need delete button */}
+                <button id="modal-form-submit-button" onClick={() => submitPointEdit(true)}>Submit</button>
             </div>
         );
     }
@@ -81,28 +101,30 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Editing point {point.name} for map {map.name}</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={pointName == "" ? point.name : pointName} onChange={e => setPointName(e.target.value)}></input><br/>
-                <label>Description: </label>
+                <label className="modal-form-content-label">Description: </label>
                 <textarea value={pointDesc == "" ? point.description : pointDesc} onChange={e => setPointDesc(e.target.value)}></textarea><br/>
-                <label>Latitude: </label>
+                <label className="modal-form-content-label">Latitude: </label>
                 <input type="text" value={pointLat == "" ? point.lat : pointLat} onChange={e => setPointLat(e.target.value)}></input><br/>
-                <label>Longitude: </label>
+                <label className="modal-form-content-label">Longitude: </label>
                 <input type="text" value={pointLong == "" ? point.lng : pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
-                <label>Category: </label>
+                <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat == "" ? point.category : pointCat} onChange={e => setPointCat(e.target.value)}>
                     {map.categories.map(cat => (<option value={cat}>{cat}</option>))}
                 </select><br/>
-                <label>Color: </label>
+                <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor == "" ? point.color : pointColor} onChange={e => setPointColor(e.target.value)}>
                     {Object.entries(map.colors).map(([colorName, colorHex]) => (<option value={colorHex}>{colorName}</option>))}
                 </select><br/>
-                <label>Icon: </label>
+                <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon == "" ? point.icon : pointIcon} onChange={e => setPointIcon(e.target.value)}>
                     {Object.entries(map.icons).map(([iconName, iconUrl]) => (<option value={iconUrl}>{iconName}</option>))}
                 </select><br/>
-                <button onClick={() => submitPointEdit(false)}>Submit</button>
-                {/* need delete button */}
+                <div className="modal-form-control-buttons">
+                    <button id="modal-form-submit-button" onClick={() => submitPointEdit(false)}>Submit</button>
+                    <button id="modal-form-delete-button" onClick={() => deletePoint()}>Delete</button>
+                </div>
             </div>
         );
     }
@@ -137,7 +159,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 // need some sort of point resetting code here
             });
         }
-        setOpenModal(false)
+        setOpenModal(false);
+    }
+
+    const deletePoint = () => {
+        //needs delete code
     }
 
     const renderMapEditModal = () => {
@@ -191,10 +217,16 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                     </div>
                 ))}
                 <br/>
-                <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
-                {/* need delete button */}
+                <div className="modal-form-control-buttons">
+                    <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
+                    <button id="modal-form-delete-button" onClick={() => deleteMap()}>Delete</button>
+                </div>
             </div>
         );
+    }
+
+    const deleteMap = () => {
+        // delete code here
     }
 
     const renderMapAddModal = () => {
@@ -246,7 +278,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 ))}
                 <br />
                 <button id="modal-form-submit-button" onClick={() => submitMapInfo(true)}>Submit</button>
-                {/* need delete button */}
             </div>
         );
     }

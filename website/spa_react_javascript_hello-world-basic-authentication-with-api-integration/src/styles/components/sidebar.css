@@ -180,24 +180,76 @@
     border: 1px solid blue;
 }
 
+#custom-maps-main-container {
+    margin-top: 10px;
+}
+
 .custom-map-container {
-    border: 1px solid black;
+    border: 2px solid black;
     color: black;
+    margin-top: 15px;
+}
+
+.custom-map-container-title {
+    margin-left: 6px;
 }
 
 .custom-map-container-header {
     font-size: 20px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
 }
 
 .custom-map-container-main {
     font-size: 15px;
     display: flex;
     flex-direction: column;
+    padding: 5px;
 }
 
 .custom-map-container-points {
     display: flex;
     flex-direction: column;
+}
+
+.custom-map-display-toggle {
+    width: 25px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.custom-map-description {
+    font-size: 12px;
+    margin-bottom: 5px;
+    overflow-wrap: break-word;
+}
+
+.custom-map-show-points-button {
+    width: 100%;
+    border: none;
+    background-color: grey;
+    color: white;
+    height: 25px;
+}
+
+.custom-map-point-control {
+    display: flex;
+
+}
+
+.custom-map-show-points-button:hover {
+    background-color: black;
+}
+
+.custom-map-point-edit-button {
+    height: 17px;
+    width: 17px;
+    margin-right: 5px;
+}
+
+.custom-map-point-edit-button:hover {
+    cursor: pointer;
 }
 
 .custom-map-point {
@@ -219,7 +271,7 @@
 .custom-map-point-icon {
     margin: 0 5px;
     height: 20px;
-    width: 20px;
+    min-width: 20px;
     object-fit: contain;
 }
 
@@ -233,14 +285,13 @@
     justify-content: space-between;
 }
 
-.custom-map-point-edit-button {
-    color: black;
-    font-size: 15px;
-    margin-right: 20px;
+.custom-map-edit-button {
+   width: 22px;
+   height: 22px;
+   margin-right: 5px;
 }
 
-.custom-map-point-edit-button:hover {
-    text-decoration: underline;
+.custom-map-edit-button:hover {
     cursor: pointer;
 }
 
