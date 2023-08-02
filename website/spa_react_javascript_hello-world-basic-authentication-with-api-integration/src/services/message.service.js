@@ -94,6 +94,24 @@ export const putPoint = async (accessToken, map_id, point_id, point) => {
     };
 }
 
+export const deletePoint = async (accessToken, map_id, point_id) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${map_id}/points/${point_id}`,
+        method: "DELETE",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    };
+}
+
 export const putMapInfo = async (accessToken, map_id, map) => {
     const config = {
         url: `${apiServerUrl}/maps/${map_id}/info`,
@@ -103,6 +121,24 @@ export const putMapInfo = async (accessToken, map_id, map) => {
         Authorization: `Bearer ${accessToken}`,
         },
         data: map
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    };
+}
+
+export const deleteMap = async (accessToken, map_id) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${map_id}`,
+        method: "DELETE",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
     };
 
     const { data, error } = await callExternalApi({ config });

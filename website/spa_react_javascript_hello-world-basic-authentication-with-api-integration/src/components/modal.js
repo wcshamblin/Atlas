@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint } from "../services/message.service";
+import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap } from "../services/message.service";
 import '../styles/components/modal.css';
 import { accessToken } from "mapbox-gl";
 
@@ -123,7 +123,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 </select><br/>
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitPointEdit(false)}>Submit</button>
-                    <button id="modal-form-delete-button" onClick={() => deletePoint()}>Delete</button>
+                    <button id="modal-form-delete-button" onClick={() => deletePointFunc()}>Delete</button>
                 </div>
             </div>
         );
@@ -162,8 +162,15 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         setOpenModal(false);
     }
 
-    const deletePoint = () => {
-        //needs delete code
+    const deletePointFunc = async () => {
+        let token = await getAccessToken();
+        await deletePoint(token, map.id, point.id).then((data) => {
+            console.log("point deleted");
+        }).catch((error) => {
+            console.log("Error deleting point: " + error);
+            // need some sort of point resetting code here
+        });
+        setOpenModal(false);
     }
 
     const renderMapEditModal = () => {
@@ -219,14 +226,21 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 <br/>
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
-                    <button id="modal-form-delete-button" onClick={() => deleteMap()}>Delete</button>
+                    <button id="modal-form-delete-button" onClick={() => deleteMapFunc()}>Delete</button>
                 </div>
             </div>
         );
     }
 
-    const deleteMap = () => {
-        // delete code here
+    const deleteMapFunc = async () => {
+        let token = await getAccessToken();
+        await deleteMap(token, map.id).then((data) => {
+            console.log("point deleted");
+        }).catch((error) => {
+            console.log("Error deleting point: " + error);
+            // need some sort of point resetting code here
+        });
+        setOpenModal(false);
     }
 
     const renderMapAddModal = () => {

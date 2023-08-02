@@ -335,10 +335,10 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')}/>
                 </div>
                 <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('layers')}/>
+                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('layers')}/>
                 </div>
                 <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
+                    <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
                 </div>
                 <div class="sidebar-link">
                     <FontAwesomeIcon icon={faGear} class="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
