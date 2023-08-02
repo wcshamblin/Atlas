@@ -321,6 +321,25 @@ export const putMapUser = async (accessToken, map_id, userSub) => {
     }
 }
 
+export const putMapUserPermissions = async (accessToken, map_id, user_id, permissions) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${map_id}/users/${user_id}`,
+        method: "PUT",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        data: permissions
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
 export const retrieveCustomMapPoints = async (accessToken, mapId) => {
     const config = {
         url: `${apiServerUrl}/maps/${mapId}/points`,

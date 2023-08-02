@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap } from "../services/message.service";
+import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap, putMapUserPermissions } from "../services/message.service";
 import '../styles/components/modal.css';
 import { accessToken } from "mapbox-gl";
 
@@ -17,6 +17,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     const [mapCategories, setMapCategories] = useState([]);
     const [mapIcons, setMapIcons] = useState({});
     const [mapColors, setMapColors] = useState({});
+    const [mapUsers, setMapUsers] = useState({});
 
     useEffect(() => {
         if (modalOpen == false) resetState();
@@ -66,6 +67,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         setMapCategories([]);
         setMapIcons({});
         setMapColors({});
+        setMapUsers({});
     }
 
     const renderPointAddModal = () => {
@@ -177,6 +179,14 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         if(mapCategories.length == 0 && map.categories.length > 0) setMapCategories(map.categories);
         if(Object.keys(mapIcons).length == 0 && Object.keys(map.icons).length > 0) setMapIcons(map.icons);
         if (Object.keys(mapColors).length == 0 && Object.keys(map.colors).length > 0) setMapColors(map.colors);
+        if (Object.keys(mapUsers).length == 0 && Object.keys(map.users).length > 0) {
+            let mappedUserPerms = map.users;
+            Object.keys(map.users).forEach(user => {
+                if(map.users[user].permissions)
+                    mappedUserPerms[user] = map.users[user].permissions.join(",");
+            })
+            setMapUsers(mappedUserPerms);
+        }
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Editing map {map.name}</span><br />
@@ -224,6 +234,24 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                     </div>
                 ))}
                 <br/>
+                {(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
+                    <>
+                        <div>
+                            <label className="modal-form-content-label">User Permissions</label>
+                            <button className="modal-form-list-button" onClick={() => addNewUser()}>+</button><br />
+                        </div>
+                        {Object.entries(mapUsers).map(([userId, userPermissions]) => (
+                            <div>
+                                <input type="text" value={userId} onChange={e => updateMapUserId(e.target.value, userId)} />
+                                <input type="text" value={userPermissions} onChange={e => updateMapUserPermissionString(e.target.value, userId)} />
+                                <button className="modal-form-list-button" onClick={() => removeMapUser(userId)}>-</button>
+                                <br />
+                            </div>
+                        ))}
+                        <br />
+                    </>
+                    : ""
+                }
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
                     <button id="modal-form-delete-button" onClick={() => deleteMapFunc()}>Delete</button>
@@ -355,6 +383,28 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         setMapColors({ ...mapColors });
     }
 
+    const updateMapUserId = (newValue, name) => {
+        let url = mapUsers[name];
+        delete mapUsers[name];
+        mapUsers[newValue] = url;
+        setMapUsers({ ...mapUsers });
+    }
+
+    const updateMapUserPermissionString = (newValue, name) => {
+        mapUsers[name] = newValue;
+        setMapUsers({ ...mapUsers });
+    }
+
+    const addNewUser = () => {
+        mapUsers["new-user-id"] = "";
+        setMapUsers({ ...mapUsers });
+    }
+
+    const removeMapUser = (name) => {
+        delete mapUsers[name];
+        setMapUsers({ ...mapUsers });
+    }
+
 
     const submitMapInfo = async (isNew = false) => {
         let token = await getAccessToken();
@@ -367,7 +417,31 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         if (Object.keys(mapColors).length > 0) mapData.colors = mapColors;
         console.log(mapData);
 
-        if(isNew) {
+        if (!isNew && (map.my_permissions.includes("owner") || map.my_permissions.includes("admin"))) {
+
+            console.log(mapUsers);
+
+            Object.keys(mapUsers).forEach(async (userId) => {
+                if(mapUsers[userId] != '') {
+                    let permissionsObj = { "edit": false, "add": false, "admin": false};
+                    mapUsers[userId].split(",").forEach(val => {
+                        permissionsObj[val] = true;
+                    });
+
+                    await putMapUserPermissions(token, map.id, userId, permissionsObj).then((data) => {
+                        if (data) {
+                            console.log("user permissions updated for user: " + userId);
+                        }
+                        // need some sort of point resetting code here
+                    }).catch((error) => {
+                        console.log("Error updating user permissions: " + error);
+                        // need some sort of point resetting code here
+                    });
+                }
+            })
+        }
+
+        /*if(isNew) {
             await postNewMap(token, mapData).then((data) => {
                 if(data) {
                     console.log("map added");
@@ -378,7 +452,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 console.log("Error saving point: " + error);
                 // need some sort of point resetting code here
             });
-
         } else {
             await putMapInfo(token, map.id, mapData).then((data) => {
                 console.log("map saved");
@@ -388,7 +461,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 console.log("Error saving point: " + error);
                 // need some sort of point resetting code here
             });
-        }
+        }*/
         setOpenModal(false);
     }
 
