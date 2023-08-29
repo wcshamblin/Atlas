@@ -7,9 +7,9 @@ export const NavBarBrand = () => {
       <NavLink to="/">
         <img
           className="nav-bar__logo"
-          src="https://cdn.auth0.com/blog/hub/code-samples/hello-world/auth0-logo.svg"
+          src="https://i.imgur.com/IJiZS4x.png"
           alt="Atlas"
-          width="122"
+          width="70"
           height="36"
         />
       </NavLink>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint } from "../services/message.service";
+import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap, putMapUserPermissions } from "../services/message.service";
 import '../styles/components/modal.css';
 import { accessToken } from "mapbox-gl";
 
@@ -17,6 +17,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     const [mapCategories, setMapCategories] = useState([]);
     const [mapIcons, setMapIcons] = useState({});
     const [mapColors, setMapColors] = useState({});
+    const [mapUsers, setMapUsers] = useState({});
+
+    useEffect(() => {
+        if (modalOpen == false) resetState();
+    }, [modalOpen])
 
     const renderModalInfo = () => {
         console.log("modalinfo");
@@ -47,32 +52,49 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         }
     }
 
+    const resetState = () => {
+        console.log("resetting state");
+        setPointName("");
+        setPointDesc("");
+        setPointLat("");
+        setPointLong("");
+        setPointCat("");
+        setPointIcon("");
+        setPointColor("");
+        setMapName("");
+        setMapDesc("");
+        setMapLegend("");
+        setMapCategories([]);
+        setMapIcons({});
+        setMapColors({});
+        setMapUsers({});
+    }
+
     const renderPointAddModal = () => {
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Adding point for map {map.name}</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={pointName} onChange={e => setPointName(e.target.value)}></input><br/>
-                <label>Description: </label>
+                <label className="modal-form-content-label">Description: </label>
                 <textarea value={pointDesc} onChange={e => setPointDesc(e.target.value)}></textarea><br/>
-                <label>Latitude: </label>
+                <label className="modal-form-content-label">Latitude: </label>
                 <input type="text" value={pointLat} onChange={e => setPointLat(e.target.value)}></input><br/>
-                <label>Longitude: </label>
+                <label className="modal-form-content-label">Longitude: </label>
                 <input type="text" value={pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
-                <label>Category: </label>
+                <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat} onChange={e => setPointCat(e.target.value)}>
                     {map.categories.map(cat => (<option value={cat}>{cat}</option>))}
                 </select><br/>
-                <label>Color: </label>
+                <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor} onChange={e => setPointColor(e.target.value)}>
                     {Object.entries(map.colors).map(([colorName, colorHex]) => (<option value={colorHex}>{colorName}</option>))}
                 </select><br/>
-                <label>Icon: </label>
+                <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon} onChange={e => setPointIcon(e.target.value)}>
                     {Object.entries(map.icons).map(([iconName, iconUrl]) => (<option value={iconUrl}>{iconName}</option>))}
                 </select><br/>
-                <button onClick={() => submitPointEdit(true)}>Submit</button>
-                {/* need delete button */}
+                <button id="modal-form-submit-button" onClick={() => submitPointEdit(true)}>Submit</button>
             </div>
         );
     }
@@ -81,28 +103,30 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Editing point {point.name} for map {map.name}</span><br />
-                <label>Name: </label>
+                <label className="modal-form-content-label">Name: </label>
                 <input type="text" value={pointName == "" ? point.name : pointName} onChange={e => setPointName(e.target.value)}></input><br/>
-                <label>Description: </label>
+                <label className="modal-form-content-label">Description: </label>
                 <textarea value={pointDesc == "" ? point.description : pointDesc} onChange={e => setPointDesc(e.target.value)}></textarea><br/>
-                <label>Latitude: </label>
+                <label className="modal-form-content-label">Latitude: </label>
                 <input type="text" value={pointLat == "" ? point.lat : pointLat} onChange={e => setPointLat(e.target.value)}></input><br/>
-                <label>Longitude: </label>
+                <label className="modal-form-content-label">Longitude: </label>
                 <input type="text" value={pointLong == "" ? point.lng : pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
-                <label>Category: </label>
+                <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat == "" ? point.category : pointCat} onChange={e => setPointCat(e.target.value)}>
                     {map.categories.map(cat => (<option value={cat}>{cat}</option>))}
                 </select><br/>
-                <label>Color: </label>
+                <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor == "" ? point.color : pointColor} onChange={e => setPointColor(e.target.value)}>
                     {Object.entries(map.colors).map(([colorName, colorHex]) => (<option value={colorHex}>{colorName}</option>))}
                 </select><br/>
-                <label>Icon: </label>
+                <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon == "" ? point.icon : pointIcon} onChange={e => setPointIcon(e.target.value)}>
                     {Object.entries(map.icons).map(([iconName, iconUrl]) => (<option value={iconUrl}>{iconName}</option>))}
                 </select><br/>
-                <button onClick={() => submitPointEdit(false)}>Submit</button>
-                {/* need delete button */}
+                <div className="modal-form-control-buttons">
+                    <button id="modal-form-submit-button" onClick={() => submitPointEdit(false)}>Submit</button>
+                    <button id="modal-form-delete-button" onClick={() => deletePointFunc()}>Delete</button>
+                </div>
             </div>
         );
     }
@@ -137,13 +161,32 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 // need some sort of point resetting code here
             });
         }
-        setOpenModal(false)
+        setOpenModal(false);
+    }
+
+    const deletePointFunc = async () => {
+        let token = await getAccessToken();
+        await deletePoint(token, map.id, point.id).then((data) => {
+            console.log("point deleted");
+        }).catch((error) => {
+            console.log("Error deleting point: " + error);
+            // need some sort of point resetting code here
+        });
+        setOpenModal(false);
     }
 
     const renderMapEditModal = () => {
         if(mapCategories.length == 0 && map.categories.length > 0) setMapCategories(map.categories);
         if(Object.keys(mapIcons).length == 0 && Object.keys(map.icons).length > 0) setMapIcons(map.icons);
         if (Object.keys(mapColors).length == 0 && Object.keys(map.colors).length > 0) setMapColors(map.colors);
+        if (Object.keys(mapUsers).length == 0 && Object.keys(map.users).length > 0) {
+            let mappedUserPerms = map.users;
+            Object.keys(map.users).forEach(user => {
+                if(map.users[user].permissions)
+                    mappedUserPerms[user] = map.users[user].permissions.join(",");
+            })
+            setMapUsers(mappedUserPerms);
+        }
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Editing map {map.name}</span><br />
@@ -191,10 +234,41 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                     </div>
                 ))}
                 <br/>
-                <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
-                {/* need delete button */}
+                {(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
+                    <>
+                        <div>
+                            <label className="modal-form-content-label">User Permissions</label>
+                            <button className="modal-form-list-button" onClick={() => addNewUser()}>+</button><br />
+                        </div>
+                        {Object.entries(mapUsers).map(([userId, userPermissions]) => (
+                            <div>
+                                <input type="text" value={userId} onChange={e => updateMapUserId(e.target.value, userId)} />
+                                <input type="text" value={userPermissions} onChange={e => updateMapUserPermissionString(e.target.value, userId)} />
+                                <button className="modal-form-list-button" onClick={() => removeMapUser(userId)}>-</button>
+                                <br />
+                            </div>
+                        ))}
+                        <br />
+                    </>
+                    : ""
+                }
+                <div className="modal-form-control-buttons">
+                    <button id="modal-form-submit-button" onClick={() => submitMapInfo(false)}>Submit</button>
+                    <button id="modal-form-delete-button" onClick={() => deleteMapFunc()}>Delete</button>
+                </div>
             </div>
         );
+    }
+
+    const deleteMapFunc = async () => {
+        let token = await getAccessToken();
+        await deleteMap(token, map.id).then((data) => {
+            console.log("point deleted");
+        }).catch((error) => {
+            console.log("Error deleting point: " + error);
+            // need some sort of point resetting code here
+        });
+        setOpenModal(false);
     }
 
     const renderMapAddModal = () => {
@@ -246,7 +320,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 ))}
                 <br />
                 <button id="modal-form-submit-button" onClick={() => submitMapInfo(true)}>Submit</button>
-                {/* need delete button */}
             </div>
         );
     }
@@ -310,6 +383,28 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         setMapColors({ ...mapColors });
     }
 
+    const updateMapUserId = (newValue, name) => {
+        let url = mapUsers[name];
+        delete mapUsers[name];
+        mapUsers[newValue] = url;
+        setMapUsers({ ...mapUsers });
+    }
+
+    const updateMapUserPermissionString = (newValue, name) => {
+        mapUsers[name] = newValue;
+        setMapUsers({ ...mapUsers });
+    }
+
+    const addNewUser = () => {
+        mapUsers["new-user-id"] = "";
+        setMapUsers({ ...mapUsers });
+    }
+
+    const removeMapUser = (name) => {
+        delete mapUsers[name];
+        setMapUsers({ ...mapUsers });
+    }
+
 
     const submitMapInfo = async (isNew = false) => {
         let token = await getAccessToken();
@@ -322,6 +417,30 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         if (Object.keys(mapColors).length > 0) mapData.colors = mapColors;
         console.log(mapData);
 
+        if (!isNew && (map.my_permissions.includes("owner") || map.my_permissions.includes("admin"))) {
+
+            console.log(mapUsers);
+
+            Object.keys(mapUsers).forEach(async (userId) => {
+                if(mapUsers[userId] != '') {
+                    let permissionsObj = { "edit": false, "add": false, "admin": false};
+                    mapUsers[userId].split(",").forEach(val => {
+                        permissionsObj[val] = true;
+                    });
+
+                    await putMapUserPermissions(token, map.id, userId, permissionsObj).then((data) => {
+                        if (data) {
+                            console.log("user permissions updated for user: " + userId);
+                        }
+                        // need some sort of point resetting code here
+                    }).catch((error) => {
+                        console.log("Error updating user permissions: " + error);
+                        // need some sort of point resetting code here
+                    });
+                }
+            })
+        }
+
         if(isNew) {
             await postNewMap(token, mapData).then((data) => {
                 if(data) {
@@ -333,7 +452,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 console.log("Error saving point: " + error);
                 // need some sort of point resetting code here
             });
-
         } else {
             await putMapInfo(token, map.id, mapData).then((data) => {
                 console.log("map saved");

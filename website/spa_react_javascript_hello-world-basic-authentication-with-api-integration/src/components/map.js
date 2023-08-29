@@ -490,29 +490,29 @@ function Map() {
         });
 
         mapbox.current.on('style.load', () => {
-            // if (isNight) {
-            //     mapbox.current.setFog(
-            //         {
-            //             'range': [3, 4],
-            //             'horizon-blend': 0.3,
-            //             'color': '#242B4B',
-            //             'high-color': '#161B36',
-            //             'space-color': '#0B1026',
-            //             'star-intensity': .95
-            //         }
-            //     )
-            // } else {
-            //     mapbox.current.setFog(
-            //         {
-            //             'range': [3, 4],
-            //             'horizon-blend': 0.3,
-            //             'color': 'white',
-            //             'high-color': '#add8e6',
-            //             'space-color': '#d8f2ff',
-            //             'star-intensity': 0.0
-            //         }
-            //     )
-            // }
+            if (isNight) {
+                mapbox.current.setFog(
+                    {
+                        'range': [5, 6],
+                        'horizon-blend': 0.3,
+                        'color': '#242B4B',
+                        'high-color': '#161B36',
+                        'space-color': '#0B1026',
+                        'star-intensity': .95
+                    }
+                )
+            } else {
+                mapbox.current.setFog(
+                    {
+                        'range': [5, 6],
+                        'horizon-blend': 0.3,
+                        'color': 'white',
+                        'high-color': '#add8e6',
+                        'space-color': '#d8f2ff',
+                        'star-intensity': 0.0
+                    }
+                )
+            }
             mapbox.current.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
@@ -808,23 +808,27 @@ function Map() {
                             <div id='custompopupselects'>
                                 <select id='custompopupcategory'>
                                     <option value={""}>Select a category</option>
-                                    {map.categories.map((category) => {
-                                        return <option value={category}>{category}</option>
-                                    })}
+                                    {/* map.categories is a dict with key id (uuid4) and value name */}
+                                    {Object.keys(map.categories).map((category) => {
+                                        return <option value={category}>{map.categories[category]}</option>
+                                    })
+                                    }
                                 </select><br/>
 
                                 <select id='custompopupcolor'>
                                     <option value={""}>Select a color</option>
+                                    {/* colors is a dict of dicts {uuid4: {name: "", color: ""}}*/}
                                     {Object.keys(map.colors).map((color) => {
-                                        return <option value={map.colors[color]}>{color}</option>
+                                        return <option value={color}>{map.colors[color].name}</option>
                                     })
                                     }
                                 </select><br/>
 
                                 <select id='custompopupicon'>
                                     <option value={""}>Select an icon</option>
+                                    {/* icons is a dict of dicts {uuid4: {name: "", icon: ""}}*/}
                                     {Object.keys(map.icons).map((icon) => {
-                                        return <option value={map.icons[icon]}>{icon}</option>
+                                        return <option value={icon}>{map.icons[icon].name}</option>
                                     })
                                     }
                                 </select><br/>
@@ -1135,17 +1139,9 @@ function Map() {
 
         const accessToken = await getAccessTokenSilently();
 
-        // find map name
-        let mapName = "";
-        for (let i = 0; i < customMaps.maps.length; i++) {
-            if (customMaps.maps[i].id === mapId) {
-                mapName = customMaps.maps[i].name;
-            }
-        }
-
         // modify our local data
         // setCustomMapPoints
-        // custommappoints is {mapId: {name: mapName, data: points}}
+        // custommappoints is {mapId: points}
         setCustomMapPoints((prev) => {
             let newPoints = prev[mapId].data;
             for (let i = 0; i < newPoints.features.length; i++) {
@@ -1156,10 +1152,7 @@ function Map() {
             }
             return {
                 ...prev,
-                [mapId]: {
-                    name: mapName,
-                    data: newPoints
-                }
+                [mapId]: newPoints
             };
         });
 
@@ -1177,7 +1170,7 @@ function Map() {
             getCustomMapPoints(mapId).then((data) => {
                 if (data) {
                     // update the map
-                    mapbox.current.getSource(mapName).setData(data.data.points);
+                    mapbox.current.getSource(mapId).setData(data.data.points);
                 }
             }).catch((error) => {
                 console.log(error);
@@ -1186,9 +1179,6 @@ function Map() {
     }
 
     async function saveNewPoint(mapId, pointData) {
-        console.log("saving new point");
-        console.log(pointData);
-
         // if category or icon or color or mapId is null, return
         if (!pointData.category || !pointData.icon || !pointData.color || !mapId) {
             return;
@@ -1199,27 +1189,33 @@ function Map() {
 
         const accessToken = await getAccessTokenSilently();
 
-        // find map name
-        let mapName = "";
+        let geoJsonData = {};
+
+        geoJsonData.lat = pointData.lat;
+        geoJsonData.lng = pointData.lng;
+        geoJsonData.name = pointData.name;
+        geoJsonData.description = pointData.description;
+
         for (let i = 0; i < customMaps.maps.length; i++) {
             if (customMaps.maps[i].id === mapId) {
-                mapName = customMaps.maps[i].name;
+                geoJsonData.category = customMaps.maps[i].categories[pointData.category];
+                geoJsonData.icon = customMaps.maps[i].icons[pointData.icon]["icon"];
+                geoJsonData.color = customMaps.maps[i].colors[pointData.color]["color"];
+                break;
             }
         }
+        console.log("Saving with point data", pointData);
 
-        // modify our local data
-        // setCustomMapPoints
-        // custommappoints is {mapId: {name: mapName, data: points}}
+        console.log(mapId);
+        console.log(customMapPoints);
+
         setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId].data;
-            newPoints.features.push({"type": "Feature", "properties": pointData, "geometry": {"type": "Point", "coordinates": [pointData.lng, pointData.lat]}});
+            let newPoints = prev[mapId];
+            newPoints.features.push({"type": "Feature", "properties": geoJsonData, "geometry": {"type": "Point", "coordinates": [geoJsonData.lng, geoJsonData.lat]}});
             console.log("After push", newPoints);
             return {
                 ...prev,
-                [mapId]: {
-                    name: mapName,
-                    data: newPoints
-                }
+                [mapId]: newPoints
             };
         });
 
@@ -1232,7 +1228,7 @@ function Map() {
             // modify the point and set the ID that the backend gave us
             console.log("Trying to set ID as", data.data.point.id);
             setCustomMapPoints((prev) => {
-                let newPoints = prev[mapId].data;
+                let newPoints = prev[mapId];
                 for (let i = 0; i < newPoints.features.length; i++) {
                     if (newPoints.features[i].properties.id === pointData.id) {
                         console.log("Found point to update");
@@ -1242,10 +1238,7 @@ function Map() {
                 }
                 return {
                     ...prev,
-                    [mapId]: {
-                        name: mapName,
-                        data: newPoints
-                    }
+                    [mapId]: newPoints
                 };
             });
         }).catch((error) => {
@@ -1722,7 +1715,7 @@ function Map() {
         customMaps.maps.forEach((customMap) => {
             console.log("Setting custom map: ", customMap);
             // add the source
-            mapbox.current.addSource(customMap.name, {
+            mapbox.current.addSource(customMap.id, {
                 type: 'geojson',
                 data: {
                     type: 'FeatureCollection',
@@ -1731,18 +1724,17 @@ function Map() {
             });
 
             // get the data and set it
-            // if (localStorage.getItem(customMap.name) === "true") {
 
-                // get data
-                getCustomMapPoints(customMap.id).then((data) => {
-                    console.log("Setting data for ", customMap.name, ": ", data);
-                    setCustomMapPoints((customMapPoints) => {
-                        return {
-                            ...customMapPoints,
-                            [customMap.id]: {"name": customMap.name, "data": data.data.points}
-                        }
-                    });
+            // get data
+            getCustomMapPoints(customMap.id).then((data) => {
+                console.log("Setting data for ", customMap.id, ": ", data);
+                setCustomMapPoints((customMapPoints) => {
+                    return {
+                        ...customMapPoints,
+                        [customMap.id]: data.data.points
+                    }
                 });
+            });
 
             Object.keys(customMap.icons).forEach((iconName) => {
                 console.log("Loading icon: ", iconName, customMap.icons[iconName]);
@@ -1755,14 +1747,14 @@ function Map() {
 
             // add the layer (geojson)
             mapbox.current.addLayer({
-                'id': customMap.name,
+                'id': customMap.id,
                 'type': 'symbol',
                 'layout': {
                     'icon-image': ['get', 'icon'],
                     'icon-size': 1,
                     'icon-allow-overlap': true,
                 },
-                'source': customMap.name,
+                'source': customMap.id,
                 'paint': {
                     'icon-opacity': 1,
                     'icon-color': ['get', 'color'],
@@ -1772,15 +1764,15 @@ function Map() {
             });
 
             // on mouseenter and mouseleave, set the cursor to pointer
-            mapbox.current.on('mouseenter', customMap.name, () => {
+            mapbox.current.on('mouseenter', customMap.id, () => {
                 mapbox.current.getCanvas().style.cursor = 'pointer';
             });
-            mapbox.current.on('mouseleave', customMap.name, () => {
+            mapbox.current.on('mouseleave', customMap.id, () => {
                 mapbox.current.getCanvas().style.cursor = '';
             });
 
             // custom map layer on click
-            mapbox.current.on('click', customMap.name, (e) => {
+            mapbox.current.on('click', customMap.id, (e) => {
                 const coordinates = e.features[0].geometry.coordinates.slice();
                 const name = e.features[0].properties.name;
                 const description = e.features[0].properties.description;
@@ -1819,14 +1811,14 @@ function Map() {
             });
 
             // let's also move the custom map to the top of the layers
-            mapbox.current.moveLayer(customMap.name);
+            mapbox.current.moveLayer(customMap.id);
 
             // the sidebar will deal with visibility, so we don't need to do that here
             // set the visibility
-            mapbox.current.setLayoutProperty(customMap.name, 'visibility', 'none');
+            mapbox.current.setLayoutProperty(customMap.id, 'visibility', 'none');
 
             // done
-            console.log("Custom map set: ", customMap.name);
+            console.log("Custom map set: ", customMap.id);
         });
     }, [customMaps]);
 
@@ -1840,10 +1832,11 @@ function Map() {
 
         // set layer data
         // loop through dict and set the data
-        // {mapname: [points]}
+        console.log("Custom map points changed: ", customMapPoints)
+
         Object.keys(customMapPoints).forEach((mapId) => {
             console.log("Setting custom map points for ", mapId, ": ", customMapPoints[mapId]);
-            mapbox.current.getSource(customMapPoints[mapId].name).setData(customMapPoints[mapId].data);
+            mapbox.current.getSource(mapId).setData(customMapPoints[mapId]);
         });
     }, [customMapPoints]);
 

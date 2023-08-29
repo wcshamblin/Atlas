@@ -60,6 +60,11 @@
     min-height: 30px;
 }
 
+.modal-form-control-buttons > button {
+    width: 30px;
+    min-height: 30px;
+}
+
 #modal-form-submit-button {
     width: 100px!important;
     border-radius: 5px;
@@ -69,6 +74,24 @@
 #modal-form-submit-button:hover {
     cursor: pointer;
     background-color: grey;
+}
+
+.modal-form-control-buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+#modal-form-delete-button {
+    width: 100px!important;
+    border-radius: 5px;
+    border: 1px solid grey;
+    background-color: red;
+    color: white;
+}
+
+#modal-form-delete-button:hover {
+    cursor: pointer;
+    background-color: darkred;
 }
 
 .modal-form-list-button {

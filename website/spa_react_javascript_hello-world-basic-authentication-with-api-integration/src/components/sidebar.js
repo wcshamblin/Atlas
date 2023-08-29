@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from "react";
 import '../styles/components/sidebar.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+    faPenToSquare,
+    faEye,
+    faEyeSlash,
+    faMap,
+    faCloudSun,
+    faLayerGroup,
+    faBars,
+    faGear,
+    faCloud,
+} from '@fortawesome/free-solid-svg-icons'
 
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
@@ -223,7 +235,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
         if (!customMapsData) {
             return (
-                <div id="custom-layer-container">
+                <div id="custom-maps-main-container">
                     <div className="no-custom-maps">
                         <h5>Loading custom maps...</h5>
                     </div>
@@ -232,7 +244,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         }
         if (Object.keys(customMapsLayers).length === 0) {
             return (
-                <div id="custom-layer-container">
+                <div id="custom-maps-main-container">
                     <div className="no-custom-maps">
                         <h5>You don't have any custom maps yet. Create one or ask a friend to share one with you!</h5>
                         <span className="custom-map-add-button" onClick={() => openMapAddModal()}>Add Map</span>
@@ -242,28 +254,32 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         }
 
         return (
-            <div id="custom-layer-container">
+            <div id="custom-maps-main-container">
                 <span className="custom-map-add-button" onClick={() => openMapAddModal()}>Add Map</span>
                 {Object.entries(customMapsLayers).map(([mapName, val]) => (
                     <div className="custom-map-container">
-                        <div className="custom-map-container-header" onClick={() => updateCustomMapsLayers(mapName, !val.visible)}>
-                            <input type="radio" checked={val.visible}></input>
-                            <span>{mapName}</span>
-                            <span className="custom-map-point-edit-button" onClick={() => openMapEditModal(val.id)}>Edit Map</span>
+                        <div className="custom-map-container-header">
+                            <div>
+                                <FontAwesomeIcon className="custom-map-display-toggle" icon={val.visible ? faEye : faEyeSlash} onClick={() => updateCustomMapsLayers(mapName, !val.visible)}/>
+                                <span className="custom-map-container-title">{mapName}</span>
+                            </div>
+                            <FontAwesomeIcon icon={faPenToSquare} className="custom-map-edit-button" onClick={() => openMapEditModal(val.id)}/>
                         </div>
                         <div className="custom-map-container-main">
-                            <span>Description</span>
-                            <span>{val.description}</span>
-                            <span>Legend</span>
-                            <span>{val.legend}</span>
+                            <span>Description:</span>
+                            <span className="custom-map-description">{val.description}</span>
+                            <span>Legend:</span>
+                            <span className="custom-map-description">{val.legend}</span>
                         </div>
-                        <button onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
+                        <div className="custom-map-point-control">
+                            <button className="custom-map-show-points-button" onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
+                            <button className="custom-map-show-points-button" onClick={() => openPointAddModal(val.id)}>Add Point</button>
+                        </div>
                         {val.collapsed ? "" :
                             <div className="custom-map-container-points">
-                                <span className="custom-map-point-edit-button" onClick={() => openPointAddModal(val.id)}>Add Point</span>
-                                <label>Search</label>
+                                <label style={{fontSize: "13px"}}>Points Search:</label>
                                 <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
-                                {val.points.filter(point => point.name.includes(pointsSearchValue)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
+                                {val.points.filter(point => point.name.toLowerCase().includes(pointsSearchValue.toLowerCase())).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
                                         <div className="custom-map-point-container">
                                             <img className="custom-map-point-icon" src={point.icon} />
@@ -273,7 +289,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                                 <span>{point.lat},{point.lng}</span>
                                             </div>
                                         </div>
-                                        <span className="custom-map-point-edit-button" onClick={() => openPointEditModal(val.id, point.id)}>Edit</span>
+                                        <FontAwesomeIcon icon={faPenToSquare} className="custom-map-point-edit-button" onClick={() => openPointEditModal(val.id, point.id)}/>
                                     </div>
                                 )}
                             </div>}
@@ -298,6 +314,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     }
 
     const openMapEditModal = (mapId) => {
+        console.log("Opened map edit modal wtih map it: " + mapId)
         setOpenModal(true);
         setModalType("editMap");
         setModalSelectedCustomMapId(mapId);
@@ -315,19 +332,19 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         <div id="sidebar">
             <div id="sidebar-header">
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button weather" onClick={e => setSelectedPart('weather')}></button>
+                    <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')}/>
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button maps" onClick={e => setSelectedPart('layers')}></button>
+                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('layers')}/>
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button clock" onClick={e => setSelectedPart('customMaps')}></button>
+                    <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button settings" onClick={e => setSelectedPart('settings')}></button>
+                    <FontAwesomeIcon icon={faGear} class="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
                 </div>
                 <div class="sidebar-link">
-                    <button class="sidebar-link-button expand" onClick={e => setDisplaySidebar(false)}></button>
+                    <FontAwesomeIcon icon={faBars} class="sidebar-link-button" onClick={e => setDisplaySidebar(false)}/>
                 </div>
             </div>
 
@@ -349,7 +366,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         case 'customMaps':
                             return (
                                 <div>
-                                    <h1>CUSTOM MAPS</h1>
+                                    <h1 style={{ "margin": "5px 0px" }}>CUSTOM MAPS</h1>
                                     {renderCustomMaps()}
                                 </div>
                             )
@@ -369,6 +386,6 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                 /> */}
             </div>
         </div>
-    ) : <button class="sidebar-link-button expand sidebar-hidden" onClick={e => setDisplaySidebar(true)}></button>;
+    ) : <FontAwesomeIcon icon={faBars} class="sidebar-link-button sidebar-hidden" onClick={e => setDisplaySidebar(true)} />
 };
 export default Sidebar;
