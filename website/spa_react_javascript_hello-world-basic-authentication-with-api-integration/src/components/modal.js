@@ -441,7 +441,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
             })
         }
 
-        /*if(isNew) {
+        if(isNew) {
             await postNewMap(token, mapData).then((data) => {
                 if(data) {
                     console.log("map added");
@@ -461,7 +461,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 console.log("Error saving point: " + error);
                 // need some sort of point resetting code here
             });
-        }*/
+        }
         setOpenModal(false);
     }
 
