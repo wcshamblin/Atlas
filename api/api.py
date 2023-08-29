@@ -453,16 +453,17 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
                         lng=point.lng)
 
     # verify Point data makes sense for the map
-    if new_point.get_category() not in map["categories"]:
+    print(map["categories"], map["colors"], map["icons"])
+    if new_point.get_category() not in map["categories"].keys():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
     # we're expecting a hex color code
-    if new_point.get_color() not in map["colors"].values():
+    if new_point.get_color() not in map["colors"].keys():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if new_point.get_icon() not in map["icons"].values():
+    if new_point.get_icon() not in map["icons"].keys():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
   

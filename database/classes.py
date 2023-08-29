@@ -122,16 +122,19 @@ class Point:
     
 
 class Map:
-    # map should have an owner, a name, a description, a legend, a list of Points, a creation date, an editor, an edit date, a deleted flag, a view count, an id, and a list of users that have access to the map and their permissions
     def __init__(self, owner: str, name: str, description: str, legend: str, colors: dict, categories: list, icons: list):
         self.id = str(uuid4())
         self.owner = owner
         self.name = name
         self.description = description
         self.legend = legend
-        self.colors = colors
-        self.categories = categories
-        self.icons = icons
+        # colors is a dict of {name: color}
+        self.colors = {str(uuid4()): {"name": name, "color": color} for name, color in colors.items()}
+        # same for categories and icons
+        # this is so that we can change the name of a category, color, or icon without having to change it in every point
+        self.categories = {str(uuid4()): category for category in categories}
+        self.icons = {str(uuid4()): {"name": name, "icon": icon} for name, icon in icons.items()}
+        
         self.points = []
         self.users = {}
         self.creation_date = datetime.now()

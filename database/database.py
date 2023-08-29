@@ -16,24 +16,6 @@ db = init()
 
 
 def convert_point_to_geojson(point):
-    # example point:
-    # {
-    #     "description": "test",
-    #     "creator": "google-oauth2|112057537397008960552",
-    #     "id": "40bcf170-0a11-45ff-b68f-079fba34428d",
-    #     "editor": "google-oauth2|112057537397008960552",
-    #     "color": "#558B2F",
-    #     "name": "test",
-    #     "category": "Everything else",
-    #     "creation_date": "2023-05-24T16:53:52.903949+00:00",
-    #     "lat": 0.0,
-    #     "icon": "https://i.imgur.com/f6WpXTw.png",
-    #     "lng": 0.0,
-    #     "owner": "google-oauth2|112057537397008960552",
-    #     "edit_date": "2023-05-24T16:53:52.903954+00:00",
-    #     "deleted": false
-    # }
-
     # convert point to geojson using all the fields listed above 
     output = {
         "type": "Feature",
@@ -212,32 +194,6 @@ def update_map_info(id, info, editor) -> str:
 
 def delete_map(id) -> str:
     return db.collection(u'maps').where(u'id', u'==', id).delete()
-
-# def get_geojson_for_map(map_id) -> List[dict]:
-#     geojson = {"type": "FeatureCollection", "features": []}
-
-#     # get points
-#     points = [doc.to_dict() for doc in db.collection(u'maps').document(map_id).collection(u'points').get()]
-
-#     # add points to geojson
-#     for point in points:
-#         geojson["features"].append({
-#             "type": "Feature",
-#             "properties": {
-#                 "name": point["name"],
-#                 "description": point["description"],
-#                 "id": point["id"],
-#                 "type": point["type"],
-#                 "icon": point["icon"],
-#                 "color": point["color"]
-#             },
-#             "geometry": {
-#                 "type": "Point",
-#                 "coordinates": [point["longitude"], point["latitude"]]
-#             }
-#         })
-
-#     return geojson
     
 
 def get_points_geojson_for_map(map_id) -> List[dict]:
