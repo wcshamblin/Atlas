@@ -808,23 +808,27 @@ function Map() {
                             <div id='custompopupselects'>
                                 <select id='custompopupcategory'>
                                     <option value={""}>Select a category</option>
-                                    {map.categories.map((category) => {
-                                        return <option value={category}>{category}</option>
-                                    })}
+                                    {/* map.categories is a dict with key id (uuid4) and value name */}
+                                    {Object.keys(map.categories).map((category) => {
+                                        return <option value={category}>{map.categories[category]}</option>
+                                    })
+                                    }
                                 </select><br/>
 
                                 <select id='custompopupcolor'>
                                     <option value={""}>Select a color</option>
+                                    {/* colors is a dict of dicts {uuid4: {name: "", color: ""}}*/}
                                     {Object.keys(map.colors).map((color) => {
-                                        return <option value={map.colors[color]}>{color}</option>
+                                        return <option value={color}>{map.colors[color].name}</option>
                                     })
                                     }
                                 </select><br/>
 
                                 <select id='custompopupicon'>
                                     <option value={""}>Select an icon</option>
+                                    {/* icons is a dict of dicts {uuid4: {name: "", icon: ""}}*/}
                                     {Object.keys(map.icons).map((icon) => {
-                                        return <option value={map.icons[icon]}>{icon}</option>
+                                        return <option value={icon}>{map.icons[icon].name}</option>
                                     })
                                     }
                                 </select><br/>
@@ -1175,9 +1179,6 @@ function Map() {
     }
 
     async function saveNewPoint(mapId, pointData) {
-        console.log("saving new point");
-        console.log(pointData);
-
         // if category or icon or color or mapId is null, return
         if (!pointData.category || !pointData.icon || !pointData.color || !mapId) {
             return;
@@ -1188,11 +1189,29 @@ function Map() {
 
         const accessToken = await getAccessTokenSilently();
 
-        // modify our local data
-        // setCustomMapPoints
+        let geoJsonData = {};
+
+        geoJsonData.lat = pointData.lat;
+        geoJsonData.lng = pointData.lng;
+        geoJsonData.name = pointData.name;
+        geoJsonData.description = pointData.description;
+
+        for (let i = 0; i < customMaps.maps.length; i++) {
+            if (customMaps.maps[i].id === mapId) {
+                geoJsonData.category = customMaps.maps[i].categories[pointData.category];
+                geoJsonData.icon = customMaps.maps[i].icons[pointData.icon]["icon"];
+                geoJsonData.color = customMaps.maps[i].colors[pointData.color]["color"];
+                break;
+            }
+        }
+        console.log("Saving with point data", pointData);
+
+        console.log(mapId);
+        console.log(customMapPoints);
+
         setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId].data;
-            newPoints.features.push({"type": "Feature", "properties": pointData, "geometry": {"type": "Point", "coordinates": [pointData.lng, pointData.lat]}});
+            let newPoints = prev[mapId];
+            newPoints.features.push({"type": "Feature", "properties": geoJsonData, "geometry": {"type": "Point", "coordinates": [geoJsonData.lng, geoJsonData.lat]}});
             console.log("After push", newPoints);
             return {
                 ...prev,
@@ -1209,7 +1228,7 @@ function Map() {
             // modify the point and set the ID that the backend gave us
             console.log("Trying to set ID as", data.data.point.id);
             setCustomMapPoints((prev) => {
-                let newPoints = prev[mapId].data;
+                let newPoints = prev[mapId];
                 for (let i = 0; i < newPoints.features.length; i++) {
                     if (newPoints.features[i].properties.id === pointData.id) {
                         console.log("Found point to update");
