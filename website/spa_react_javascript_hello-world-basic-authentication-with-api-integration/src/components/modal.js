@@ -15,8 +15,8 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     const [mapDesc, setMapDesc] = useState("");
     const [mapLegend, setMapLegend] = useState("");
     const [mapCategories, setMapCategories] = useState([]);
-    const [mapIcons, setMapIcons] = useState({});
-    const [mapColors, setMapColors] = useState({});
+    const [mapIcons, setMapIcons] = useState([]);
+    const [mapColors, setMapColors] = useState([]);
     const [mapUsers, setMapUsers] = useState({});
 
     useEffect(() => {
@@ -297,11 +297,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                     <label className="modal-form-content-label">Icons</label>
                     <button className="modal-form-list-button" onClick={() => addNewMapIcon()}>+</button><br />
                 </div>
-                {Object.entries(mapIcons).map(([iconName, iconUrl]) => (
+                {mapIcons.map((icon, i) => (
                     <div>
-                        <input type="text" placeholder="new-icon-name" value={iconName} onChange={e => updateMapIconName(e.target.value, iconName)} />
-                        <input type="text" placeholder="new-icon-url" value={iconUrl} onChange={e => updateMapIconUrl(e.target.value, iconName)} />
-                        <button className="modal-form-list-button" onClick={() => removeMapIcon(iconName)}>-</button>
+                        <input type="text" placeholder="new-icon-name" value={icon.name} onChange={e => updateMapIconName(e.target.value, i)} />
+                        <input type="text" placeholder="new-icon-url" value={icon.url} onChange={e => updateMapIconUrl(e.target.value, i)} />
+                        <button className="modal-form-list-button" onClick={() => removeMapIcon(i)}>-</button>
                         <br />
                     </div>
                 ))}
@@ -310,11 +310,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                     <label className="modal-form-content-label">Colors</label>
                     <button className="modal-form-list-button" onClick={() => addNewMapColor()}>+</button><br />
                 </div>
-                {Object.entries(mapColors).map(([colorName, colorHex]) => (
+                {mapColors.map((color, i) => (
                     <div>
-                        <input type="text" placeholder="new-color-name" value={colorName} onChange={e => updateMapColorName(e.target.value, colorName)} />
-                        <input type="text" placeholder="new-color-hex" value={colorHex} onChange={e => updateMapColorUrl(e.target.value, colorName)} />
-                        <button className="modal-form-list-button" onClick={() => removeMapColor(colorName)}>-</button>
+                        <input type="text" placeholder="new-color-name" value={color.name} onChange={e => updateMapColorName(e.target.value, i)} />
+                        <input type="text" placeholder="new-color-hex" value={color.color} onChange={e => updateMapColorHex(e.target.value, i)} />
+                        <button className="modal-form-list-button" onClick={() => removeMapColor(i)}>-</button>
                         <br />
                     </div>
                 ))}
@@ -339,48 +339,44 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
         setMapCategories([...mapCategories]);
     }
 
-    const updateMapIconName = (newValue, name) => {
-        let url = mapIcons[name];
-        delete mapIcons[name];
-        mapIcons[newValue] = url;
+    const updateMapIconName = (newValue, i) => {
+        mapIcons[i].name == newValue;
         setMapIcons({ ...mapIcons });
     }
 
-    const updateMapIconUrl = (newValue, name) => {
-        mapIcons[name] = newValue;
+    const updateMapIconUrl = (newValue, i) => {
+        mapIcons[i].icon = newValue;
         setMapIcons({ ...mapIcons });
     }
 
     const addNewMapIcon = () => {
-        mapIcons["new-icon-name"] = "";
+        mapIcons.push({"name": "map-icon-name", "icon": ""});
         setMapIcons({...mapIcons});
     }
 
-    const removeMapIcon = (name) => {
-        delete mapIcons[name];
-        setMapIcons({ ...mapIcons });
+    const removeMapIcon = (i) => {
+        let newIcons = mapIcons.filter(icon => icon != mapIcons[i])
+        setMapIcons({ ...newIcons });
     }
 
-    const updateMapColorName = (newValue, name) => {
-        let url = mapColors[name];
-        delete mapColors[name];
-        mapColors[newValue] = url;
+    const updateMapColorName = (newValue, i) => {
+        mapColors[i].name = newValue;
         setMapColors({ ...mapColors });
     }
 
-    const updateMapColorUrl = (newValue, name) => {
-        mapColors[name] = newValue;
+    const updateMapColorHex = (newValue, i) => {
+        mapColors[i].color = newValue;
         setMapColors({ ...mapColors });
     }
 
     const addNewMapColor = () => {
-        mapColors["new-color-name"] = "";
+        mapColors.push({ "name": "map-color-name", "color": "" });
         setMapColors({...mapColors});
     }
 
-    const removeMapColor = (name) => {
-        delete mapColors[name];
-        setMapColors({ ...mapColors });
+    const removeMapColor = (i) => {
+        let newColors = mapColors.filter(color => color != mapColors[i])
+        setMapColors({ ...newColors });
     }
 
     const updateMapUserId = (newValue, name) => {
