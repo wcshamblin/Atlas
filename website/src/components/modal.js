@@ -228,7 +228,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
                 {Object.entries(mapColors).map(([colorName, colorHex]) => (
                     <div>
                         <input type="text" value={colorName} onChange={e => updateMapColorName(e.target.value, colorName)}/>
-                        <input type="text" value={colorHex} onChange={e => updateMapColorUrl(e.target.value, colorName)}/>
+                        <input type="text" value={colorHex} onChange={e => updateMapColorHex(e.target.value, colorName)}/>
                         <button className="modal-form-list-button" onClick={() => removeMapColor(colorName)}>-</button>
                         <br/>
                     </div>
@@ -340,7 +340,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal 
     }
 
     const updateMapIconName = (newValue, i) => {
-        mapIcons[i].name == newValue;
+        mapIcons[i].name = newValue;
         setMapIcons({ ...mapIcons });
     }
 

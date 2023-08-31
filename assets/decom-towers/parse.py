@@ -12,7 +12,7 @@ pprint(towers[:10])
 
 geojson = {'type': 'FeatureCollection', 'features': []}
 outfile = open(
-    '../../website/spa_react_javascript_hello-world-basic-authentication-with-api-integration/src/components/safe_towers.geojson', 'w')
+    '../../website/src/components/safe_towers.geojson', 'w')
 
 max_color_height = 243.84 # 800 feet
 

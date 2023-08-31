@@ -1,6 +1,6 @@
 {
-  "name": "spa_react_javascript_hello-world",
-  "version": "0.1.0",
+  "name": "atlas-ui",
+  "version": "2.0.0",
   "private": true,
   "dependencies": {
     "@auth0/auth0-react": "^2.0.0",

@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
-from api.fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
+from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
 from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance, verify_user_permissions
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
@@ -14,7 +14,7 @@ from math import sqrt, sin, cos
 from typing import Optional
 
 
-from api.utils import VerifyToken
+from utils import VerifyToken
 
 import logging
 

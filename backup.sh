@@ -1,2 +1,0 @@
-#!/bin/bash
-/usr/bin/rclone copy --update --verbose --contimeout 60s --timeout 300s --retries 3 --low-level-retries 10 --stats 1s "/home/wcs/octet.llc/atlas/assets/placestoexplore/Places_to_Explore.geojson" "octet drive:"
