@@ -1736,12 +1736,16 @@ function Map() {
                 });
             });
 
-            Object.keys(customMap.icons).forEach((iconName) => {
-                console.log("Loading icon: ", iconName, customMap.icons[iconName]);
-                const iconUrl = customMap.icons[iconName];
+            Object.keys(customMap.icons).forEach((iconId) => {
+                const iconUrl = customMap.icons[iconId]["icon"];
+                console.log("Error loading icon with ID:", iconId, " and url: ", iconUrl);
                 mapbox.current.loadImage(iconUrl, (error, image) => {
-                    if (error) throw error;
-                    mapbox.current.addImage(customMap.icons[iconName], image, { sdf: true });
+                    // catch and log error
+                    if (error) {
+                        console.log("Error loading image with url:", iconUrl, "and error:", error);
+                        return;
+                    }
+                    mapbox.current.addImage(iconId, image, { sdf: true });
                 });
             });
 
