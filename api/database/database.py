@@ -175,6 +175,57 @@ def add_map(map) -> str:
     return db.collection(u'maps').add(map)
 
 
+def update_map_name(id, name, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["name"] = name
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+
+def update_map_description(id, description, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["description"] = description
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+
+def update_map_legend(id, legend, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["legend"] = legend
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+# def update_map_categories(id, categories, editor) -> str:
+
+
+
 def update_map_info(id, info, editor) -> str:
     # find map
     map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]

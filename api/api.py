@@ -6,7 +6,10 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import Point, Map
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, set_eula_acceptance, verify_user_permissions
+from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, \
+    get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
+    add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, \
+    set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -66,49 +69,31 @@ class MapPost(BaseModel):
     name: str
     description: str
     legend: str
-    colors: Dict
+    colors: List[Dict]
     categories: List[str]
-    icons: Dict
+    icons: List[Dict]
 
-class MapPut(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    legend: Optional[str]
-    colors: Optional[Dict]
-    categories: Optional[List[str]]
-    icons: Optional[Dict]
+
+class PutMapColors(BaseModel):
+    colors: List[Dict]
+
+
+class PutMapCategories(BaseModel):
+    categories: List[Dict]
+
+
+class PutMapIcons(BaseModel):
+    icons: List[Dict]
+
 
 class UserPut(BaseModel):
     usersub: str
+
 
 class UserPermissions(BaseModel):
     edit: bool
     add: bool
     admin: bool
-
-
-@app.get("/api/messages/public")
-def public():
-    """No access token required to access this route"""
-
-    result = {
-        "status": "success",
-        "msg": ("Hello from a public endpoint! You don't need to be authenticated to see this.")
-    }
-    result = "Hello from a public endpoint! You don't need to be authenticated to see this."
-    return Response(content=result, status_code=status.HTTP_200_OK, media_type="text/plain")
-
-
-@app.get("/api/messages/private-scoped")
-async def private_scoped(response: Response, token: str = Depends(token_auth_scheme)):
-    """A valid access token with 'read:messages' scope required to access this route"""
-
-    result = VerifyToken(token.credentials, scopes="read").verify()
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-
-    return {"status": "success", "msg": ("Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.")}
 
 @app.get("/")
 async def root():
@@ -249,14 +234,115 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
                     colors=map.colors,
                     categories=map.categories,
                     icons=map.icons)
-    
 
     add_map(new_map.to_dict())
 
     return {"status": "success", "message": "Map created", "map": new_map}
 
 
-# edit map info
+# edit map name
+app.put("/maps/{map_id}/name")
+async def put_map_name(response: Response, map_id: str, name: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # update map name
+    update_map_name(map_id, name, result["sub"])
+
+    return {"status": "success", "message": "Map name updated"}
+
+# edit map description
+app.put("/maps/{map_id}/description")
+async def put_map_description(response: Response, map_id: str, description: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # update map description
+    update_map_description(map_id, description, result["sub"])
+
+    return {"status": "success", "message": "Map description updated"}
+
+# edit map legend
+app.put("/maps/{map_id}/legend")
+async def put_map_legend(response: Response, map_id: str, legend: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # update map legend
+    update_map_legend(map_id, legend, result["sub"])
+
+    return {"status": "success", "message": "Map legend updated"}
+
+# edit map categories
+app.put("/maps/{map_id}/categories")
+async def put_map_categories(response: Response, map_id: str, categories: PutMapCategories, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # update map categories
+    update_map_categories(map_id, categories, result["sub"])
+
+    return {"status": "success", "message": "Map categories updated"}
+
+
+
+
 @app.put("/maps/{map_id}/info")
 async def put_map_info(response: Response, map_id: str, info: MapPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()

@@ -128,12 +128,11 @@ class Map:
         self.name = name
         self.description = description
         self.legend = legend
-        # colors is a dict of {name: color}
-        self.colors = {str(uuid4()): {"name": name, "color": color} for name, color in colors.items()}
-        # same for categories and icons
+        # colors is a dict of dicts {name: color}
+        self.colors = {str(uuid4()): colordict for colordict in colors}
         # this is so that we can change the name of a category, color, or icon without having to change it in every point
         self.categories = {str(uuid4()): category for category in categories}
-        self.icons = {str(uuid4()): {"name": name, "icon": icon} for name, icon in icons.items()}
+        self.icons = {str(uuid4()): icondict for icondict in icons}
         
         self.points = []
         self.users = {}
