@@ -13,7 +13,7 @@ import {
     faCloud,
 } from '@fortawesome/free-solid-svg-icons'
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId }) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
     const [currentModal, setCurrentModal] = useState("");
@@ -121,6 +121,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
             baseLayers[layer].visible = layer === name ? true : false;
         });
 
+        displayLabels(!(name == "OpenStreetMap" || name == "Google Hybrid"));
+        
         localStorage.setItem('base-layer', name);
 
         setBaseLayers({ ...baseLayers });
@@ -283,7 +285,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 <label style={{fontSize: "13px"}}>Points Search:</label>
                                 <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
                                 {val.points.filter(point => point.name.toLowerCase().includes(pointsSearchValue.toLowerCase())).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
-                                    <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => flyTo(point.lat, point.lng)} id={point.id}>
+                                    <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => { flyTo(point.lat, point.lng); setCurrentSelectedCustomMapPoint({ "pointId": point.id, "layerId": mapId }) }} id={point.id}>
                                         <div className="custom-map-point-container">
                                             <img className="custom-map-point-icon" src={point.icon} />
                                             <div className="custom-map-point-text-container">

@@ -1714,19 +1714,6 @@ function Map() {
         console.log("Setting custom maps: ", customMaps);
         customMaps.maps.forEach((customMap) => {
             console.log("Setting custom map: ", customMap);
-            // add the source
-            if (!mapbox.current.getSource(customMap.id)) {
-                mapbox.current.addSource(customMap.id, {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: []
-                    }
-                });
-            }
-
-            // get the data and set it
-
             // get data
             getCustomMapPoints(customMap.id).then((data) => {
                 console.log("Setting data for ", customMap.id, ": ", data);
@@ -1738,90 +1725,101 @@ function Map() {
                 });
             });
 
-            Object.keys(customMap.icons).forEach((iconId) => {
-                const iconUrl = customMap.icons[iconId]["icon"];
-                console.log("Error loading icon with ID:", iconId, " and url: ", iconUrl);
-                mapbox.current.loadImage(iconUrl, (error, image) => {
-                    // catch and log error
-                    if (error) {
-                        console.log("Error loading image with url:", iconUrl, "and error:", error);
-                        return;
+            // add the source
+            if (!mapbox.current.getSource(customMap.id)) {
+                mapbox.current.addSource(customMap.id, {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
                     }
-                    mapbox.current.addImage(iconId, image, { sdf: true });
                 });
-            });
 
-            // add the layer (geojson)
-            mapbox.current.addLayer({
-                'id': customMap.id,
-                'type': 'symbol',
-                'layout': {
-                    'icon-image': ['get', 'icon'],
-                    'icon-size': 1,
-                    'icon-allow-overlap': true,
-                },
-                'source': customMap.id,
-                'paint': {
-                    'icon-opacity': 1,
-                    'icon-color': ['get', 'color'],
-                    'icon-halo-color': '#fff',
-                    'icon-halo-width': 5,
-                }
-            });
+                Object.keys(customMap.icons).forEach((iconId) => {
+                    const iconUrl = customMap.icons[iconId]["icon"];
+                    console.log("Error loading icon with ID:", iconId, " and url: ", iconUrl);
+                mapbox.current.loadImage(iconUrl, (error, image) => {
+                        // catch and log error
+                        if (error) {
+                            console.log("Error loading image with url:", iconUrl, "and error:", error);
+                            return;
+                        }
+                        mapbox.current.addImage(iconId, image, { sdf: true });
+                    });
+                });
 
-            // on mouseenter and mouseleave, set the cursor to pointer
-            mapbox.current.on('mouseenter', customMap.id, () => {
-                mapbox.current.getCanvas().style.cursor = 'pointer';
-            });
-            mapbox.current.on('mouseleave', customMap.id, () => {
-                mapbox.current.getCanvas().style.cursor = '';
-            });
+                // add the layer (geojson)
+                mapbox.current.addLayer({
+                    'id': customMap.id,
+                    'type': 'symbol',
+                    'layout': {
+                        'icon-image': ['get', 'icon'],
+                        'icon-size': 1,
+                        'icon-allow-overlap': true,
+                    },
+                    'source': customMap.id,
+                    'paint': {
+                        'icon-opacity': 1,
+                        'icon-color': ['get', 'color'],
+                        'icon-halo-color': '#fff',
+                        'icon-halo-width': 5,
+                    }
+                });
 
-            // custom map layer on click
-            mapbox.current.on('click', customMap.id, (e) => {
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const name = e.features[0].properties.name;
-                const description = e.features[0].properties.description;
+                // on mouseenter and mouseleave, set the cursor to pointer
+                mapbox.current.on('mouseenter', customMap.id, () => {
+                    mapbox.current.getCanvas().style.cursor = 'pointer';
+                });
+                mapbox.current.on('mouseleave', customMap.id, () => {
+                    mapbox.current.getCanvas().style.cursor = '';
+                });
 
-                setCurrentSelectedCustomMapPoint({"pointId": e.features[0].properties.id, "layerId": e.features[0].layer.id});
+                // custom map layer on click
+                mapbox.current.on('click', customMap.id, (e) => {
+                    const coordinates = e.features[0].geometry.coordinates.slice();
+                    const name = e.features[0].properties.name;
+                    const description = e.features[0].properties.description;
 
-                console.log("Clicked on custom map: ", name, description, coordinates);
+                    setCurrentSelectedCustomMapPoint({"pointId": e.features[0].properties.id, "layerId": e.features[0].layer.id});
 
-                // if the popup is already open, close it
-                // if (!showCustomMapPopup) {
-                //     customMapPopup.addTo(mapbox.current);
-                // }
+                    console.log("Clicked on custom map: ", name, description, coordinates);
 
-                // see if we have edit permissions for this map
-                // this is a slow and inefficient way to do this! We should have a usestate for the permissions and update it when we get the custom maps
-                e.features[0].properties.editable = false;
-                for (let i = 0; i < customMaps.maps.length; i++) {
-                    if (customMaps.maps[i].id === customMap.id) {
-                        e.features[0].properties.categories = customMaps.maps[i].categories;
-                        e.features[0].properties.colors = customMaps.maps[i].colors;
-                        e.features[0].properties.icons = customMaps.maps[i].icons;
-                        e.features[0].properties.iconName = Object.keys(customMaps.maps[i].icons).find(key => customMaps.maps[i].icons[key] === e.features[0].properties.icon);
-                        e.features[0].properties.mapName = customMaps.maps[i].name;
-                        e.features[0].properties.mapId = customMaps.maps[i].id;
-                        if (customMaps.maps[i].my_permissions.includes("edit") || customMaps.maps[i].my_permissions.includes("owner")) {
-                            e.features[0].properties.editable = true;
+                    // if the popup is already open, close it
+                    // if (!showCustomMapPopup) {
+                    //     customMapPopup.addTo(mapbox.current);
+                    // }
+
+                    // see if we have edit permissions for this map
+                    // this is a slow and inefficient way to do this! We should have a usestate for the permissions and update it when we get the custom maps
+                    e.features[0].properties.editable = false;
+                    for (let i = 0; i < customMaps.maps.length; i++) {
+                        if (customMaps.maps[i].id === customMap.id) {
+                            e.features[0].properties.categories = customMaps.maps[i].categories;
+                            e.features[0].properties.colors = customMaps.maps[i].colors;
+                            e.features[0].properties.icons = customMaps.maps[i].icons;
+                            e.features[0].properties.iconName = Object.keys(customMaps.maps[i].icons).find(key => customMaps.maps[i].icons[key] === e.features[0].properties.icon);
+                            e.features[0].properties.mapName = customMaps.maps[i].name;
+                            e.features[0].properties.mapId = customMaps.maps[i].id;
+                            if (customMaps.maps[i].my_permissions.includes("edit") || customMaps.maps[i].my_permissions.includes("owner")) {
+                                e.features[0].properties.editable = true;
+                            }
                         }
                     }
-                }
 
-                setCustomMapPopupPosition(coordinates);
-                setCustomMapPopupProperties(e.features[0].properties);
-                console.log("Custom map point properties: ", e.features[0].properties);
-                setCustomMapPopupState("default");
-                setShowCustomMapPopup(true);
-            });
+                    setCustomMapPopupPosition(coordinates);
+                    setCustomMapPopupProperties(e.features[0].properties);
+                    console.log("Custom map point properties: ", e.features[0].properties);
+                    setCustomMapPopupState("default");
+                    setShowCustomMapPopup(true);
+                });
 
-            // let's also move the custom map to the top of the layers
-            mapbox.current.moveLayer(customMap.id);
+                // let's also move the custom map to the top of the layers
+                mapbox.current.moveLayer(customMap.id);
 
-            // the sidebar will deal with visibility, so we don't need to do that here
-            // set the visibility
-            mapbox.current.setLayoutProperty(customMap.id, 'visibility', 'none');
+                // the sidebar will deal with visibility, so we don't need to do that here
+                // set the visibility
+                mapbox.current.setLayoutProperty(customMap.id, 'visibility', 'none');
+            }
 
             // done
             console.log("Custom map set: ", customMap.id);
@@ -1858,6 +1856,12 @@ function Map() {
                     return;
                 }
 
+                // then try to close any open modals
+                if (openModal) {
+                    setOpenModal(false);
+                    return;
+                }
+
                 // then try to close sidebar, if we can then return
                 if (displaySidebar) {
                     setDisplaySidebar(false);
@@ -1880,7 +1884,7 @@ function Map() {
         return () => {
             window.removeEventListener('keydown', handleKeydown);
         }
-    }, [displaySidebar, displayStreetView]);
+    }, [displaySidebar, displayStreetView, openModal]);
 
 
     // sunburst home info - update on home change or map datetime change
@@ -1905,6 +1909,13 @@ function Map() {
         });
     }, [homeMarkerPosition, mapDatetime]);
 
+    const displayLabels = display => {
+        if (!mapbox.current) return;
+        mapbox.current.style.stylesheet.layers.forEach(function (layer) {
+            if (layer.type === 'symbol' && layer["layout"] && layer["layout"]["text-field"])
+                mapbox.current.setLayoutProperty(layer.id, "visibility", display ? "visible" : "none");
+        });
+    }
 
     // sunburst API fetch
     const getSunburstData = async (lat, lng, after) => {
@@ -1998,7 +2009,7 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId}/>}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} displayLabels={displayLabels}/>}
             <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0].points.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} getMaps={getMaps}/>
 
             {displayStreetView ? getStreetView() : ""}
