@@ -59,15 +59,18 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         console.log("custom maps data loaded: " + JSON.stringify(customMapsData));
 
         {
-            Object.entries(customMapsData.maps).map(([mapId, mapData]) => (
-                console.log("Adding custom map layer to sidebar: " + mapData.name),
+            customMapsData.maps.map(mapData => {
+                console.log("Adding custom map layer to sidebar: " + mapData.name);
                 // add layer to custom maps layers
                 //     setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false, "collapsed": true, ...mapData } })
+                let collapsed = true;
+                let oldRecord = customMapsLayers[mapData.id];
+                if (oldRecord) collapsed = oldRecord.collapsed;
                 setCustomMapsLayers(prevState => ({
                     ...prevState,
-                    [mapData.name]: { "visible": false, "collapsed": true, ...mapData }
+                    [mapData.id]: { "visible": false, "collapsed": collapsed, ...mapData }
                 }))
-            ))
+            })
         }
 
         setCustomMapsLayersLoaded(true);
@@ -147,12 +150,12 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         setLayers({ ...layers });
     }
 
-    const updateCustomMapsLayers = (name, visible) => {
-        console.log("Trying to update custom maps layer: " + name + " to " + visible)
+    const updateCustomMapsLayers = (id, visible) => {
+        console.log("Trying to update custom maps layer: " + id + " to " + visible)
         // need to make sure that the layer is actually on the map before we try to update it - there could be a layer in local storage that isn't on the map
-        if (!customMapsLayers[name]) return;
-        setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
-        customMapsLayers[name].visible = visible;
+        if (!customMapsLayers[id]) return;
+        setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+        customMapsLayers[id].visible = visible;
 
         localStorage.setItem('selected-custom-maps-layers', JSON.stringify(Object.entries(customMapsLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
 
@@ -256,12 +259,12 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         return (
             <div id="custom-maps-main-container">
                 <span className="custom-map-add-button" onClick={() => openMapAddModal()}>Add Map</span>
-                {Object.entries(customMapsLayers).map(([mapName, val]) => (
+                {Object.entries(customMapsLayers).map(([mapId, val]) => (
                     <div className="custom-map-container">
                         <div className="custom-map-container-header">
                             <div>
-                                <FontAwesomeIcon className="custom-map-display-toggle" icon={val.visible ? faEye : faEyeSlash} onClick={() => updateCustomMapsLayers(mapName, !val.visible)}/>
-                                <span className="custom-map-container-title">{mapName}</span>
+                                <FontAwesomeIcon className="custom-map-display-toggle" icon={val.visible ? faEye : faEyeSlash} onClick={() => updateCustomMapsLayers(mapId, !val.visible)}/>
+                                <span className="custom-map-container-title">{val.name}</span>
                             </div>
                             <FontAwesomeIcon icon={faPenToSquare} className="custom-map-edit-button" onClick={() => openMapEditModal(val.id)}/>
                         </div>
@@ -272,7 +275,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                             <span className="custom-map-description">{val.legend}</span>
                         </div>
                         <div className="custom-map-point-control">
-                            <button className="custom-map-show-points-button" onClick={() => updateCustomMapsLayersPointsCollapsed(mapName, !val.collapsed)}>Show Points</button>
+                            <button className="custom-map-show-points-button" onClick={() => updateCustomMapsLayersPointsCollapsed(mapId, !val.collapsed)}>Show Points</button>
                             <button className="custom-map-show-points-button" onClick={() => openPointAddModal(val.id)}>Add Point</button>
                         </div>
                         {val.collapsed ? "" :

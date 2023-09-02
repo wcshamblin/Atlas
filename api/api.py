@@ -648,11 +648,11 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
-    if currentPoint["color"] not in map["colors"].values():
+    if currentPoint["color"] not in map["colors"].keys():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if currentPoint["icon"] not in map["icons"].values():
+    if currentPoint["icon"] not in map["icons"].keys():
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
     
