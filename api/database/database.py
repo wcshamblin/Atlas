@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from json import dumps, load
 
@@ -222,8 +223,184 @@ def update_map_legend(id, legend, editor) -> str:
     # update map
     return map_obj.reference.update(map_dict)
 
-# def update_map_categories(id, categories, editor) -> str:
 
+def update_map_categories(id, categories, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["categories"] = categories
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+
+def add_map_categories(id, categories, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # add category
+    for category in categories:
+        # generate category dict
+        category_dict = {str(uuid4()): category}
+        # add category to map
+        map_dict["categories"].append(category_dict)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["categories"]
+
+
+def remove_map_categories(id, category_ids, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # remove category
+    for category_id in category_ids:
+        # find category
+        for category in map_dict["categories"]:
+            if category_id in category:
+                # remove category
+                map_dict["categories"].remove(category)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["categories"]
+
+
+def update_map_colors(id, colors, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["colors"] = colors
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+
+def add_map_colors(id, colors, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # add color
+    for color in colors:
+        # generate color dict
+        color_dict = {str(uuid4()): color}
+        # add color to map
+        map_dict["colors"].append(color_dict)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["colors"]
+
+def remove_map_colors(id, color_ids, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # remove color
+    for color_id in color_ids:
+        # find color
+        for color in map_dict["colors"]:
+            if color_id in color:
+                # remove color
+                map_dict["colors"].remove(color)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["colors"]
+
+def add_map_icons(id, icons, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # add icon
+    for icon in icons:
+        # generate icon dict
+        icon_dict = {str(uuid4()): icon}
+        # add icon to map
+        map_dict["icons"].append(icon_dict)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["icons"]
+
+def update_map_icons(id, icons, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # update map
+    map_dict["icons"] = icons
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    return map_obj.reference.update(map_dict)
+
+def remove_map_icons(id, icon_ids, editor) -> str:
+    # find map
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    map_dict = map_obj.to_dict()
+
+    # remove icon
+    for icon_id in icon_ids:
+        # find icon
+        for icon in map_dict["icons"]:
+            if icon_id in icon:
+                # remove icon
+                map_dict["icons"].remove(icon)
+
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
+
+    # update map
+    map_obj.reference.update(map_dict)
+
+    return map_dict["icons"]
 
 
 def update_map_info(id, info, editor) -> str:

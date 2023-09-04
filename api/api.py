@@ -9,7 +9,9 @@ from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objec
 from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, \
     get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
     add_map, add_point_to_map, update_point_in_map, update_map_info, remove_point_from_map, get_eula_acceptance, \
-    set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend
+    set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend, \
+    update_map_categories, remove_map_categories, update_map_colors, add_map_colors, remove_map_colors, add_map_icons, \
+    add_map_categories, remove_map_icons, update_map_icons
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -73,17 +75,32 @@ class MapPost(BaseModel):
     categories: List[str]
     icons: List[Dict]
 
+class PostMapColors(BaseModel):
+    colors: List[str]
 
 class PutMapColors(BaseModel):
     colors: List[Dict]
 
+class DeleteMapColors(BaseModel):
+    colors: List[str]
+
+class PostMapCategories(BaseModel):
+    categories: List[str]
 
 class PutMapCategories(BaseModel):
     categories: List[Dict]
 
+class DeleteMapCategories(BaseModel):
+    categories: List[str]
+
+class PostMapIcons(BaseModel):
+    icons: List[Dict]
 
 class PutMapIcons(BaseModel):
     icons: List[Dict]
+
+class DeleteMapIcons(BaseModel):
+    icons: List[str]
 
 
 class UserPut(BaseModel):
@@ -315,8 +332,34 @@ async def put_map_legend(response: Response, map_id: str, legend: str, token: st
 
     return {"status": "success", "message": "Map legend updated"}
 
+
+# post a new map category
+app.post("/maps/{map_id}/categories")
+async def post_map_category(response: Response, map_id: str, categories: PostMapCategories, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # add the category and get an ID
+    new_category_list = add_map_categories(map_id, categories.categories, result["sub"])
+
+    return {"status": "success", "message": "Map category added", "categories": new_category_list}
+
+
 # edit map categories
-app.put("/maps/{map_id}/categories")
 async def put_map_categories(response: Response, map_id: str, categories: PutMapCategories, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
@@ -335,24 +378,34 @@ async def put_map_categories(response: Response, map_id: str, categories: PutMap
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    # update map categories
-    update_map_categories(map_id, categories, result["sub"])
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
+    # essentially we're just getting a list of categories to change the name of
+    current_categories = current_map["categories"]
+
+    for category in categories.categories:
+        [(id, name)] = category.items()
+        for categorydict in current_categories:
+            if id in categorydict:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Category not found, can't update name. If this is a new category please POST it first."}
+
+    # now push changes to the database
+    update_map_categories(map_id, categories.categories, result["sub"])
 
     return {"status": "success", "message": "Map categories updated"}
 
-
-
-
-@app.put("/maps/{map_id}/info")
-async def put_map_info(response: Response, map_id: str, info: MapPut, token: str = Depends(token_auth_scheme)):
+# delete map categories
+app.delete("/maps/{map_id}/categories")
+async def delete_map_categories(response: Response, map_id: str, categories: DeleteMapCategories, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
-    
-    current_map = get_map_by_id(map_id)
 
+    current_map = get_map_by_id(map_id)
 
     if current_map is None:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -362,26 +415,296 @@ async def put_map_info(response: Response, map_id: str, info: MapPut, token: str
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
-    
-    infodict = {}
 
-    if info.name is not None:
-        infodict["name"] = info.name
-    if info.description is not None:
-        infodict["description"] = info.description
-    if info.legend is not None:
-        infodict["legend"] = info.legend
-    if info.colors is not None:
-        infodict["colors"] = info.colors
-    if info.categories is not None:
-        infodict["categories"] = info.categories
-    if info.icons is not None:
-        infodict["icons"] = info.icons
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
 
-    # update map info
-    update_map_info(map_id, infodict, result["sub"])
+    current_categories = current_map["categories"]
 
-    return {"status": "success", "message": "Map updated"}
+    for id in categories.categories:
+        for categorydict in current_categories:
+            if id in categorydict:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Category not found, can't delete."}
+
+    # now push changes to the database
+    remove_map_categories(map_id, categories.categories, result["sub"])
+
+    return {"status": "success", "message": "Map categories updated"}
+
+@app.get("/maps/{map_id}/categories")
+async def get_map_categories(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    return {"status": "success", "message": "Map categories retrieved", "categories": current_map["categories"]}
+
+
+# post a new map color
+@app.post("/maps/{map_id}/colors")
+async def post_map_color(response: Response, map_id: str, colors: PostMapColors, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # add the category and get an ID
+    new_color_list = add_map_colors(map_id, colors.colors, result["sub"])
+
+    return {"status": "success", "message": "Map color added", "colors": new_color_list}
+
+@app.delete("/maps/{map_id}/colors")
+async def delete_map_colors(response: Response, map_id: str, colors: DeleteMapColors, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
+
+    current_colors = current_map["colors"]
+
+    for id in colors.colors:
+        for colordict in current_colors:
+            if id in colordict:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Color not found, can't delete."}
+
+    # now push changes to the database
+    remove_map_colors(map_id, colors.colors, result["sub"])
+
+    return {"status": "success", "message": "Map colors updated"}
+
+@app.get("/maps/{map_id}/colors")
+async def get_map_colors(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    return {"status": "success", "message": "Map colors retrieved", "colors": current_map["colors"]}
+
+
+@app.put("/maps/{map_id}/colors")
+async def put_map_colors(response: Response, map_id: str, colors: PutMapColors, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
+    # essentially we're just getting a list of categories to change the name of
+    current_colors = current_map["colors"]
+
+    for color in colors.colors:
+        [(id, colordict)] = color.items()
+        for colorobj in current_colors:
+            if id in colorobj:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Color not found, can't update qualities. If this is a new color please POST it first."}
+
+    # now push changes to the database
+    update_map_colors(map_id, colors.colors, result["sub"])
+
+    return {"status": "success", "message": "Map colors updated"}
+
+
+@app.post("/maps/{map_id}/icons")
+async def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # add the category and get an ID
+    new_icon_list = add_map_icons(map_id, icons.icons, result["sub"])
+
+    return {"status": "success", "message": "Map icon added", "icons": new_icon_list}
+
+@app.put("/maps/{map_id}/icons")
+async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
+    # essentially we're just getting a list of categories to change the name of
+    current_icons = current_map["icons"]
+
+    for icon in icons.icons:
+        [(id, icondict)] = icon.items()
+        for iconobj in current_icons:
+            if id in iconobj:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Icon not found, can't update qualities. If this is a new icon please POST it first."}
+
+    # now push changes to the database
+    update_map_icons(map_id, icons.icons, result["sub"])
+
+    return {"status": "success", "message": "Map icons updated"}
+
+@app.delete("/maps/{map_id}/icons")
+async def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcons, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+
+    current_map = get_map_by_id(map_id)
+
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+
+    # verify owner permissions
+    if current_map["owner"] != result["sub"]:
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {"status": "error", "message": "You do not have permission to edit this map"}
+
+    # now we need to validate the categories we received
+    # we should have a list of dicts that are {id: "name"}
+
+    current_icons = current_map["icons"]
+
+    for id in icons.icons:
+        for icondict in current_icons:
+            if id in icondict:
+                continue
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": "Icon not found, can't delete."}
+
+    # now push changes to the database
+    remove_map_icons(map_id, icons.icons, result["sub"])
+
+    return {"status": "success", "message": "Map icons updated"}
+
+
+
+
+# @app.put("/maps/{map_id}/info")
+# async def put_map_info(response: Response, map_id: str, info: MapPut, token: str = Depends(token_auth_scheme)):
+#     result = VerifyToken(token.credentials).verify()
+#
+#     if result.get("status"):
+#         response.status_code = status.HTTP_400_BAD_REQUEST
+#         return result
+#
+#     current_map = get_map_by_id(map_id)
+#
+#
+#     if current_map is None:
+#         response.status_code = status.HTTP_404_NOT_FOUND
+#         return {"status": "error", "message": "Map not found"}
+#
+#     # verify owner permissions
+#     if current_map["owner"] != result["sub"]:
+#         response.status_code = status.HTTP_403_FORBIDDEN
+#         return {"status": "error", "message": "You do not have permission to edit this map"}
+#
+#     infodict = {}
+#
+#     if info.name is not None:
+#         infodict["name"] = info.name
+#     if info.description is not None:
+#         infodict["description"] = info.description
+#     if info.legend is not None:
+#         infodict["legend"] = info.legend
+#     if info.colors is not None:
+#         infodict["colors"] = info.colors
+#     if info.categories is not None:
+#         infodict["categories"] = info.categories
+#     if info.icons is not None:
+#         infodict["icons"] = info.icons
+#
+#     # update map info
+#     update_map_info(map_id, infodict, result["sub"])
+#
+#     return {"status": "success", "message": "Map updated"}
 
 
 # delete a map
