@@ -35,7 +35,8 @@ export const MapPage = () => {
     const checkEulaAcceptance = async () => {
         const accessToken = await getAccessTokenSilently();
         const eulaAccepted = await retrieveEulaAcceptance(accessToken);
-        setEulaAccepted(eulaAccepted.data.accepted);
+        if(eulaAccepted.data)
+            setEulaAccepted(eulaAccepted.data.accepted);
     }
 
     checkEulaAcceptance().then(r => console.log(r));

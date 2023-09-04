@@ -297,3 +297,12 @@
 .no-custom-maps {
     height: 200px;
 }
+
+.settings-container {
+    color: black;
+    font-size: 13px;
+}
+
+.settings-container > input {
+    vertical-align: middle;
+}

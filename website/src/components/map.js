@@ -131,6 +131,9 @@ function Map() {
 
     const [newPointMap, setNewPointMap] = useState(null);
 
+    const settingsRef = useRef({});
+    const [settings, setSettings] = useState({});
+
     // determine if the user's local time is between 6pm and 6am
     const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
 
@@ -657,6 +660,9 @@ function Map() {
                     "Safe zone controlled: 🕱" + "<br>" +
                     "Safe zone uncontrolled: 🕱" + "<br>" +
                     "Last updated: " + last_update;
+            } else if (e.features[0].properties.data_type === "ULS") {
+                description = "Transmitter type: " + transmitter_type + "<br>" +
+                    "Call Sign: " + facility_id;
             }
 
 
@@ -754,6 +760,18 @@ function Map() {
 
     }, [mapRef]);
 
+    useEffect(() => {
+        settingsRef.current = settings;
+        if(Object.keys(settings).length > 0) {
+            localStorage.setItem('settings', JSON.stringify(settings));
+        }
+    }, [settings]);
+
+    useEffect(() => {
+        if (localStorage.getItem('settings'))
+            setSettings(JSON.parse(localStorage.getItem('settings')));
+        else setSettings({"showUls": false});
+    }, []);
 
     const renderRightClickPopup = (state) => {
         const placeholder = document.createElement('div');
@@ -1334,19 +1352,28 @@ function Map() {
         console.log("updateAllTowers");
         await retrieveTowers(accessToken, lat, lng, 5000).then(
             (response) => {
-                setAllTowerPolygons(response.data.towers_polygons);
-                setAllTowersPoints(response.data.towers_points);
+                if(response.data) {
+                    setAllTowerPolygons(response.data.towers_polygons);
+                    setAllTowersPoints(response.data.towers_points);
+                }
             }
         )
     }
 
     const updateAntennas = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveAntennas(accessToken, lat, lng, 5000).then(
+        await retrieveAntennas(accessToken, lat, lng, 5000, settingsRef.current["showUls"]).then(
             (response) => {
-                setAntennaPoints(response.data.antennas);
+                if(response.data)
+                    setAntennaPoints(response.data.antennas);
             }
         )
+    }
+
+    const updateSettings = (settingName, settingValue) => {
+        console.log(settingsRef.current);
+        settings[settingName] = settingValue;
+        setSettings({...settings});
     }
 
     // show right click popup useeffect
@@ -2009,7 +2036,7 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} displayLabels={displayLabels}/>}
+            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} displayLabels={displayLabels} settings={settings} updateSettings={updateSettings}/>}
             <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0].points.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} getMaps={getMaps}/>
 
             {displayStreetView ? getStreetView() : ""}

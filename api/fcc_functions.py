@@ -26,8 +26,8 @@ am_declaration = "st_x | st_y | am_dom_status | ant_dir_ind | ant_mode | any_sys
 am_declaration = am_declaration.replace(" ", "").split("|")
 am_hours = {"U": "Unlimited", "N": "Nighttime", "D": "Daytime", "C": "Critical Hours", "R": "Canadian Restricted", "P": "Pre-sunrise"}
 
-cell_declaration = "st_x        |        st_y        | record_type | unique_system_identifier | uls_file_number | ebf_number | call_sign  | location_action_performed | location_type_code | location_class_code | location_number | site_status | corresponding_fixed_location |                           location_address                           |  location_city  | location_county | location_state | radius_of_operation | area_of_operation_code | clearance_indicator | ground_elevation | lat_degrees | lat_minutes | lat_seconds | lat_direction | long_degrees | long_minutes | long_seconds | long_direction | max_lat_degrees | max_lat_minutes | max_lat_seconds | max_lat_direction | max_long_degrees | max_long_minutes | max_long_seconds | max_long_direction | nepa | quiet_zone_notification_date | tower_registration_number | height_of_support_structure | overall_height_of_structure | structure_type | airport_id |    location_name     | units_hand_held | units_mobile | units_temp_fixed | units_aircraft | units_itinerant | status_code | status_date | earth_agree |                   location_point"
-cell_declaration = cell_declaration.replace(" ", "").split("|")
+uls_declaration = "st_x        |        st_y        | record_type | unique_system_identifier | uls_file_number | ebf_number | call_sign  | location_action_performed | location_type_code | location_class_code | location_number | site_status | corresponding_fixed_location |                           location_address                           |  location_city  | location_county | location_state | radius_of_operation | area_of_operation_code | clearance_indicator | ground_elevation | lat_degrees | lat_minutes | lat_seconds | lat_direction | long_degrees | long_minutes | long_seconds | long_direction | max_lat_degrees | max_lat_minutes | max_lat_seconds | max_lat_direction | max_long_degrees | max_long_minutes | max_long_seconds | max_long_direction | nepa | quiet_zone_notification_date | tower_registration_number | height_of_support_structure | overall_height_of_structure | structure_type | airport_id |    location_name     | units_hand_held | units_mobile | units_temp_fixed | units_aircraft | units_itinerant | status_code | status_date | earth_agree | uls_datatype | location_point"
+uls_declaration = uls_declaration.replace(" ", "").split("|")
 
 
 
@@ -81,6 +81,12 @@ def retrieve_fcc_towers(lat: float, lng: float, radius: float):
 def retrieve_fcc_antennas(lat: float, lng: float, radius: float, table: str):
     # radius should be in feet
     querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE eng_record_type = 'C' AND ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
+    fcccursor.execute(querystring)
+    return fcccursor.fetchall()
+
+def retrieve_fcc_uls_antenna_data(lat: float, lng: float, radius: float, table: str):
+    # radius should be in feet
+    querystring = f"SELECT ST_X(ST_Transform(location_point, 4326)), ST_Y(ST_Transform(location_point, 4326)), * FROM {table} WHERE ST_Dwithin(ST_Transform(ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326), 2877), location_point, {radius});"
     fcccursor.execute(querystring)
     return fcccursor.fetchall()
 
@@ -366,22 +372,44 @@ def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
 
     return antennas_out
 
-# This doesn't work with the current DB, there's no way to see their true status
-def retrieve_fcc_cell_antennas(lat: float, lng: float, radius: float):
-    antennas = retrieve_fcc_antennas(lat, lng, radius, "uls_locations")
+def retrieve_fcc_uls_antennas(lat: float, lng: float, radius: float):
+    antennas = retrieve_fcc_uls_antenna_data(lat, lng, radius, "uls_locations")
     antennas_out = []
 
     for antenna in antennas:
         antennas_out.append({
-            "lat": antenna[cell_declaration.index("st_y")],
-            "lng": antenna[cell_declaration.index("st_x")],
-            "facility_id": antenna[cell_declaration.index("call_sign")],
-            "class_code": antenna[cell_declaration.index("location_class_code")],
+            "lat": antenna[uls_declaration.index("st_y")],
+            "lng": antenna[uls_declaration.index("st_x")],
+            "call_sign": antenna[uls_declaration.index("call_sign")],
+            "uls_type": antenna[uls_declaration.index("uls_datatype")],
+            "type": convertUlsDatatype(antenna[uls_declaration.index("uls_datatype")]),
+            "height_agl": antenna[uls_declaration.index("ground_elevation")],
         })
 
     return antennas_out
 
-def retrieve_fcc_antenna_objects(lat, lng, radius):
+def convertUlsDatatype(dataType):
+    if(dataType == "cell"):
+        return "Cellular"
+    if(dataType == "coast"):
+        return "Maritime Coast & Aviation Ground"
+    if(dataType == "LMbcast"):
+        return "Land Mobile - Broadcast Auxiliary"
+    if(dataType == "LMcomm"):
+        return "Land Mobile - Commercial"
+    if(dataType == "LMpriv"):
+        return "Land Mobile - Private"
+    if(dataType == "market"):
+        return "Market Based Services"
+    if(dataType == "micro"):
+        return "Microwave"
+    if(dataType == "paging"):
+        return "Paging"
+    if(dataType == "mdsitfs"):
+        return "BRS & EBS (Formerly known as MDS/ITFS)"
+    return "Unknown ULS Data Type"
+
+def retrieve_fcc_antenna_objects(lat, lng, radius, uls=False):
     # geojson output
     antennas = {"type": "FeatureCollection",
                         "features": []
@@ -391,7 +419,20 @@ def retrieve_fcc_antenna_objects(lat, lng, radius):
     tv_antennas = retrieve_fcc_tv_antennas(lat, lng, radius) #feet
     fm_antennas = retrieve_fcc_fm_antennas(lat, lng, radius) #feet
     am_antennas = retrieve_fcc_am_antennas(lat, lng, radius) #feet
-    # cell_antennas = retrieve_fcc_cell_antennas(lat, lng, radius) #feet
+
+    if(uls):
+        uls_antennas = retrieve_fcc_uls_antennas(lat, lng, radius) #feet
+        for antenna in uls_antennas:
+            antennas["features"].append({"type": "Feature", "properties": {
+                "data_type": "ULS",
+                "name": antenna["uls_type"] + " " + antenna["call_sign"],
+                "description": "",
+                "transmitter_type": antenna["type"],
+                "facility_id": antenna["call_sign"],
+                "color": "#ffffff"},
+                "geometry": {"type": "Point", "coordinates":
+                                        [antenna["lng"], antenna["lat"]]
+                        }})
 
     # loop through antennas and add to geojson
     for antenna in tv_antennas:

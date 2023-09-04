@@ -247,9 +247,9 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     }
 }
 
-export const retrieveAntennas = async (accessToken, lat, lng, radius) => {
+export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
     const config = {
-        url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}`,
+        url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}/${uls}`,
         method: "GET",
         headers: {
             "content-type": "application/json",

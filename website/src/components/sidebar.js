@@ -13,7 +13,7 @@ import {
     faCloud,
 } from '@fortawesome/free-solid-svg-icons'
 
-const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels }) => {
+const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels, settings, updateSettings }) => {
     const [selectedPart, setSelectedPart] = useState("weather");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
     const [currentModal, setCurrentModal] = useState("");
@@ -376,7 +376,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 </div>
                             )
                         case 'settings':
-                            return <h1>SETTINGS</h1>
+                            return (
+                                <div className="settings-container">
+                                    <h1 style={{ "margin": "5px 0px" }}>SETTINGS</h1>
+                                    <span>Show low power antennas (information may not be accurate): </span>
+                                    <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
+                                </div>
+                            )
                         default:
                             return ""
                     }

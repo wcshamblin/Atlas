@@ -677,15 +677,15 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
     return {"status": "success", "message": "Towers retrieved", "towers_polygons": towers_polygons, "towers_points": towers_points}
 
 
-@app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}")
-async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+@app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}/{uls}")
+async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, uls: bool, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
 
-    antennas = retrieve_fcc_antenna_objects(lat, lng, radius) #feet
+    antennas = retrieve_fcc_antenna_objects(lat, lng, radius, uls) #feet
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
