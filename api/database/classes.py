@@ -257,3 +257,91 @@ class Map:
 
 
 
+class Icon:
+    def __init__(self, name: str, url: str):
+        self.id = str(uuid4())
+        self.name = name
+        self.url = url
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_url(self, url):
+        self.url = url
+
+    def get_name(self):
+        return self.name
+
+    def get_url(self):
+        return self.url
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "url": self.url
+        }
+
+    def to_json(self) -> str:
+        return dumps(self.to_dict())
+
+class Color:
+    def __init__(self, name: str, hex: str):
+        self.id = str(uuid4())
+        self.name = name
+        self.hex = hex
+
+    def set_id(self, id):
+        self.id = id
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_hex(self, color):
+        self.hex = hex
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.name
+
+    def get_hex(self):
+        return self.hex
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "hex": self.hex
+        }
+
+    def to_json(self) -> str:
+        return dumps(self.to_dict())
+
+
+class Category:
+    def __init__(self, name: str):
+        self.id = str(uuid4())
+        self.name = name
+
+    def set_id(self, id):
+        self.id = id
+
+    def get_id(self):
+        return self.id
+
+    def set_name(self, name):
+        self.name = name
+
+    def get_name(self):
+        return self.name
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+
+    def to_json(self) -> str:
+        return dumps(self.to_dict())
