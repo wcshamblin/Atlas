@@ -409,7 +409,9 @@ async def put_map_categories(response: Response, map_id: str, categories: PutMap
 
     for category in categories.categories:
         if category["id"] in current_map["categories"]:
-            current_map["categories"][category["id"]] = Category(category["name"]).set_id(category["id"]).to_dict()
+            changed_category = Category(category["name"])
+            changed_category.set_id(category["id"])
+            current_map["categories"].append(changed_category.to_dict())
 
     update_map_categories(map_id, current_map["categories"], result["sub"])
 
@@ -515,6 +517,7 @@ async def delete_map_colors(response: Response, map_id: str, colors: DeleteMapCo
 
     return {"status": "success", "message": "Map color deleted", "colors": current_colors}
 
+
 @app.get("/maps/{map_id}/colors")
 async def get_map_colors(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
@@ -555,7 +558,10 @@ async def put_map_colors(response: Response, map_id: str, colors: PutMapColors, 
         for current in current_map["colors"]:
             if to_edit["id"] == current["id"]:
                 current_map["colors"].pop(current_map["colors"].index(current))
-                current_map["colors"].append(Color(name=to_edit["name"], hex=to_edit["hex"])).set_id(to_edit["id"]).to_dict()
+                changed_color = Color(name=to_edit["name"], hex=to_edit["hex"])
+                changed_color.set_id(to_edit["id"])
+                current_map["colors"].append(changed_color.to_dict())
+
 
     update_map_colors(map_id, current_map["colors"], result["sub"])
 
@@ -611,7 +617,9 @@ async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, tok
         for current in current_map["icons"]:
             if to_edit["id"] == current["id"]:
                 current_map["icons"].pop(current_map["icons"].index(current))
-                current_map["icons"].append(Icon(name=to_edit["name"], url=to_edit["icon"])).set_id(to_edit["id"]).to_dict()
+                changed_icon = Icon(name=to_edit["name"], url=to_edit["icon"])
+                changed_icon.set_id(to_edit["id"])
+                current_map["icons"].append(changed_icon.to_dict())
 
     new_icon_list = update_map_icons(map_id, current_map["icons"], result["sub"])
 
