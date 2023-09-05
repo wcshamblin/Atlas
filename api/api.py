@@ -423,14 +423,6 @@ async def put_map_categories(response: Response, map_id: str, categories: PutMap
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    # for to_edit in colors.colors:
-    #     for current_color in current_map["colors"]:
-    #         if to_edit["id"] == current_color["id"]:
-    #             current_map["colors"] = [color for color in current_map["colors"] if color["id"] != to_edit["id"]]
-    #             changed_color = Color(name=to_edit["name"], hex=to_edit["hex"])
-    #             changed_color.set_id(to_edit["id"])
-    #             current_map["colors"].append(changed_color.to_dict())
-
     for to_edit in categories.categories:
         for current_category in current_map["categories"]:
             if to_edit["id"] == current_category["id"]:
@@ -463,11 +455,6 @@ async def delete_map_categories(response: Response, map_id: str, categories: Del
     if current_map["owner"] != result["sub"]:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
-
-    # for color_id in colors.colors:
-    #     for current in current_map["colors"]:
-    #         if color_id == current["id"]:
-    #             current_map["colors"].pop(current_map["colors"].index(current))
 
     for category_id in categories.categories:
         for current in current_map["categories"]:
