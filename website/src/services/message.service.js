@@ -357,3 +357,22 @@ export const retrieveCustomMapPoints = async (accessToken, mapId) => {
         error,
     }
 }
+
+export const editMapInfo = async (accessToken, method, mapId, infoType, data) => {
+    const config = {
+        url: `${apiServerUrl}/maps/${mapId}/${infoType}`,
+        method: method,
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        data: data
+    };
+
+    const { dataResponse, error } = await callExternalApi({ config });
+
+    return {
+        data: dataResponse || null,
+        error,
+    };
+}

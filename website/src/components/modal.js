@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap, putMapUserPermissions } from "../services/message.service";
+import { putPoint, putMapInfo, postNewMap, putMapUser, postPoint, deletePoint, deleteMap, putMapUserPermissions, editMapInfo } from "../services/message.service";
 import '../styles/components/modal.css';
 import { accessToken } from "mapbox-gl";
 
@@ -41,9 +41,13 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 newMapName = map.name;
                 newMapDesc = map.description;
                 newMapLegend = map.legend;
-                newMapCats = map.categories;
-                newMapIcons = map.icons;
-                newMapColors = map.colors;
+                newMapCats = JSON.parse(JSON.stringify(map.categories));
+                newMapIcons = JSON.parse(JSON.stringify(map.icons));
+                newMapColors = JSON.parse(JSON.stringify(map.colors));
+                Object.keys(map.users).forEach(user => {
+                    if (map.users[user].permissions)
+                        newMapUsers[user] = map.users[user].permissions.join(",");
+                });
             }
             if (point) {
                 newPointName = point.name;
@@ -311,17 +315,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
     }
 
     const renderMapEditModal = () => {
-        if (mapCategories.length == 0 && map.categories.length > 0) setMapCategories(map.categories);
-        if (Object.keys(mapIcons).length == 0 && Object.keys(map.icons).length > 0) setMapIcons(map.icons);
-        if (Object.keys(mapColors).length == 0 && Object.keys(map.colors).length > 0) setMapColors(map.colors);
-        if (Object.keys(mapUsers).length == 0 && Object.keys(map.users).length > 0) {
-            let mappedUserPerms = map.users;
-            Object.keys(map.users).forEach(user => {
-                if (map.users[user].permissions)
-                    mappedUserPerms[user] = map.users[user].permissions.join(",");
-            })
-            setMapUsers(mappedUserPerms);
-        }
         return (
             <div id="modal-form-content">
                 <span id="modal-title">Editing map {map.name}</span><br />
@@ -390,7 +383,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                             mapIcons[iconId].name = e.target.value;
                             setMapIcons({ ...mapIcons });
                         }} />
-                        <input type="text" placeholder="new-icon-url" value={icon.url} onChange={e => {
+                        <input type="text" placeholder="new-icon-url" value={icon.icon} onChange={e => {
                             mapIcons[iconId].icon = e.target.value;
                             setMapIcons({ ...mapIcons });
                         }} />
@@ -402,11 +395,14 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     </div>
                 ))}
                 <br />
-                {/* TODO ADD PERMISSIONS (map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
+                {/*(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
                     <>
                         <div>
                             <label className="modal-form-content-label">User Permissions</label>
-                            <button className="modal-form-list-button" onClick={() => addNewUser()}>+</button><br />
+                            <button className="modal-form-list-button" onClick={() => {
+                                mapIcons[`temp-id-${Math.random() * 10000}`] = { "name": "", "icon": "" };
+                                setMapIcons({ ...mapIcons });
+                            }}>+</button><br />
                         </div>
                         {Object.entries(mapUsers).map(([userId, userPermissions]) => (
                             <div>
@@ -419,7 +415,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                         <br />
                     </>
                     : ""
-                        */}
+                */}
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitMap(false)}>Submit</button>
                     <button id="modal-form-delete-button" onClick={() => delMap()}>Delete</button>
@@ -428,45 +424,19 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
         );
     }
 
-
     const submitMap = async (isNew = false) => {
         let token = await getAccessToken();
-        let mapData = {};
-        if (mapName != "") mapData.name = mapName;
-        if (mapDesc != "") mapData.description = mapDesc;
-        if (mapLegend != "") mapData.legend = mapLegend;
-        // if (mapCategories.length > 0) mapData.categories = mapCategories;
-        // if (Object.keys(mapIcons).length > 0) mapData.icons = mapIcons;
-        // if (Object.keys(mapColors).length > 0) mapData.colors = mapColors;
-        console.log(mapData);
-
-        /* TODO ADD USER PERMISSION CODE if (!isNew && (map.my_permissions.includes("owner") || map.my_permissions.includes("admin"))) {
-
-            console.log(mapUsers);
-
-            Object.keys(mapUsers).forEach(async (userId) => {
-                if(mapUsers[userId] != '') {
-                    let permissionsObj = { "edit": false, "add": false, "admin": false};
-                    mapUsers[userId].split(",").forEach(val => {
-                        permissionsObj[val] = true;
-                    });
-
-                    await putMapUserPermissions(token, map.id, userId, permissionsObj).then((data) => {
-                        if (data) {
-                            console.log("user permissions updated for user: " + userId);
-                        }
-                        // need some sort of point resetting code here
-                    }).catch((error) => {
-                        console.log("Error updating user permissions: " + error);
-                        // need some sort of point resetting code here
-                    });
-                }
-            })
-        }*/
 
         if(isNew) {
+            let mapData = {};
+            mapData.categories = Object.values(mapCategories);
+            mapData.icons = Object.values(mapIcons);
+            mapData.colors = Object.values(mapColors);
+            mapData.name = mapName;
+            mapData.description = mapDesc;
+            mapData.legend = mapLegend;
             await postNewMap(token, mapData).then((data) => {
-                if(data) {
+                if (data) {
                     console.log("map added");
                     console.log(data.data.map);
                 }
@@ -476,15 +446,158 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 getMaps();
             });
         } else {
-            await putMapInfo(token, map.id, mapData).then((data) => {
-                console.log("map saved");
-                console.log(data);
-                getMaps();
-            }).catch((error) => {
-                console.log("Error saving point: " + error);
-                getMaps();
-            });
+            if (mapName != map.name) {
+                await editMapInfo(token, "PUT", map.id, "name", {"name": mapName}).then((data) => {
+                    if (data) {
+                        console.log("edited name");
+                        console.log(data);
+                    }
+                }).catch((error) => {
+                    console.log("Error editing name: " + error);
+                });
+            }
+            if (mapDesc != map.description) {
+                await editMapInfo(token, "PUT", map.id, "description", {"description": mapDesc}).then((data) => {
+                    if (data) {
+                        console.log("edited desc");
+                        console.log(data);
+                    }
+                }).catch((error) => {
+                    console.log("Error editing desc: " + error);
+                });
+            }
+            if (mapLegend != map.legend) {
+                await editMapInfo(token, "PUT", map.id, "legend", {"legend": mapLegend}).then((data) => {
+                    if (data) {
+                        console.log("edited legend");
+                        console.log(data);
+                    }
+                }).catch((error) => {
+                    console.log("Error editing legend: " + error);
+                });
+            }
+            let categories = Object.entries(mapCategories);
+            if (categories.length > 0) {
+                let newCategories = categories.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                if (newCategories.length > 0)
+                    await editMapInfo(token, "POST", map.id, "categories", newCategories).then((data) => {
+                        if (data) {
+                            console.log("added categories");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error adding categories: " + error);
+                    });
+                console.log(categories);
+                console.log(map.categories);
+                let changedCategories = categories.filter(([key, val]) => !key.startsWith("temp-id") && map.categories[key] != val).map(([key, val]) => { return { "id": key, "name": val } });
+                if (changedCategories.length > 0)
+                    await editMapInfo(token, "PUT", map.id, "categories", {categories: changedCategories}).then((data) => {
+                        if (data) {
+                            console.log("editing categories");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error editing categories: " + error);
+                    });
+                let deletedCategories = Object.keys(map.categories).filter(key => !mapCategories[key]);
+                if (deletedCategories.length > 0)
+                    await editMapInfo(token, "DELETE", map.id, "categories", deletedCategories).then((data) => {
+                        if (data) {
+                            console.log("deleted categories");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error deleting categories: " + error);
+                    });
+            }
+            let colors = Object.entries(mapColors);
+            if (colors.length > 0) {
+                let newColors = colors.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                if (newColors.length > 0)
+                    await editMapInfo(token, "POST", map.id, "colors", newColors).then((data) => {
+                        if (data) {
+                            console.log("added colors");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error adding colors: " + error);
+                    });
+                let changedColors = colors.filter(([key, val]) => !key.startsWith("temp-id") && map.colors[key] != val).map(([key, val]) => { return { "id": key, "color": val.color, "name": val.name } }); 
+                if (changedColors.length > 0)
+                    await editMapInfo(token, "PUT", map.id, "colors", {colors: changedColors}).then((data) => {
+                        if (data) {
+                            console.log("editing colors");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error editing colors: " + error);
+                    });
+                let deletedColors = Object.keys(map.colors).filter(key => !mapColors[key]);
+                if (deletedColors.length > 0)
+                    await editMapInfo(token, "DELETE", map.id, "colors", deletedColors).then((data) => {
+                        if (data) {
+                            console.log("deleted colors");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error deleting colors: " + error);
+                    });
+            }
+            let icons = Object.entries(mapIcons);
+            if (icons.length > 0) {
+                let newIcons = icons.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                if (newIcons.length > 0)
+                    await editMapInfo(token, "POST", map.id, "icons", newIcons).then((data) => {
+                        if (data) {
+                            console.log("added icons");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error adding icons: " + error);
+                    });
+            console.log(map.icons);
+            console.log(icons);
+            let changedIcons = icons.filter(([key, val]) => !key.startsWith("temp-id") && map.icons[key] != val).map(([key, val]) => { return { "id": key, "icon": val.icon, "name": val.name } });
+            if (changedIcons.length > 0)
+                await editMapInfo(token, "PUT", map.id, "icons", {icons: changedIcons}).then((data) => {
+                        if (data) {
+                            console.log("editing icons");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error editing icons: " + error);
+                    });
+            let deletedIcons = Object.keys(map.icons).filter(key => !mapIcons[key]);
+            if (deletedIcons.length > 0)
+                await editMapInfo(token, "DELETE", map.id, "icons", deletedIcons).then((data) => {
+                        if (data) {
+                            console.log("deleted icons");
+                            console.log(data);
+                        }
+                    }).catch((error) => {
+                        console.log("Error deleting icons: " + error);
+                    });
+            }
+            if(false && map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) {
+                Object.keys(mapUsers).forEach(async (userId) => {
+                    if (mapUsers[userId] != '') {
+                        let permissionsObj = { "edit": false, "admin": false, "view": false };
+                        mapUsers[userId].split(",").forEach(val => {
+                            permissionsObj[val] = true;
+                        });
+                        await putMapUserPermissions(token, map.id, userId, permissionsObj).then((data) => {
+                            if (data) {
+                                console.log("user permissions updated for user: " + userId);
+                            }
+                        }).catch((error) => {
+                            console.log("Error updating user permissions: " + error);
+                        });
+                    }
+                })
+            }
         }
+        getMaps();
         setOpenModal(false);
     }
 

@@ -304,7 +304,7 @@ async def put_map_name(response: Response, map_id: str, name: PutMapName, token:
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # update map name
-    update_map_name(map_id, name, result["sub"])
+    update_map_name(map_id, name.name, result["sub"])
 
     return {"status": "success", "message": "Map name updated"}
 
@@ -329,7 +329,7 @@ async def put_map_description(response: Response, map_id: str, description: PutM
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # update map description
-    update_map_description(map_id, description, result["sub"])
+    update_map_description(map_id, description.description, result["sub"])
 
     return {"status": "success", "message": "Map description updated"}
 
@@ -354,7 +354,7 @@ async def put_map_legend(response: Response, map_id: str, legend: PutMapLegend, 
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # update map legend
-    update_map_legend(map_id, legend, result["sub"])
+    update_map_legend(map_id, legend.legend, result["sub"])
 
     return {"status": "success", "message": "Map legend updated"}
 
