@@ -495,13 +495,13 @@ async def post_map_color(response: Response, map_id: str, colors: PostMapColors,
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    # add the category and get an ID
     for color in colors.colors:
-        current_map["colors"].append(Color(name=color["name"], hex=color["hex"])).to_dict()
+        color = Color(name=color["name"], hex=color["hex"])
+        current_map["colors"].append(color.to_dict())
 
-    new_color_list = update_map_colors(map_id, current_map["colors"], result["sub"])
+    update_map_colors(map_id, current_map["colors"], result["sub"])
 
-    return {"status": "success", "message": "Map color added", "colors": new_color_list}
+    return {"status": "success", "message": "Map color added", "colors": current_map["colors"]}
 
 
 @app.delete("/maps/{map_id}/colors")
@@ -523,15 +523,14 @@ async def delete_map_colors(response: Response, map_id: str, colors: DeleteMapCo
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    current_colors = current_map["colors"]
-
     for color_id in colors.colors:
-        if color_id in [color["id"] for color in current_colors]:
-            current_colors = [color for color in current_colors if color["id"] != color_id]
+        for current in current_map["colors"]:
+            if color_id == current["id"]:
+                current_map["colors"].pop(current_map["colors"].index(current))
 
-    update_map_colors(map_id, current_colors, result["sub"])
+    update_map_colors(map_id, current_map["colors"], result["sub"])
 
-    return {"status": "success", "message": "Map color deleted", "colors": current_colors}
+    return {"status": "success", "message": "Map color deleted", "colors": current_map["colors"]}
 
 
 @app.get("/maps/{map_id}/colors")
@@ -571,13 +570,12 @@ async def put_map_colors(response: Response, map_id: str, colors: PutMapColors, 
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for to_edit in colors.colors:
-        for current in current_map["colors"]:
-            if to_edit["id"] == current["id"]:
-                current_map["colors"].pop(current_map["colors"].index(current))
+        for current_color in current_map["colors"]:
+            if to_edit["id"] == current_color["id"]:
+                current_map["colors"] = [color for color in current_map["colors"] if color["id"] != to_edit["id"]]
                 changed_color = Color(name=to_edit["name"], hex=to_edit["hex"])
                 changed_color.set_id(to_edit["id"])
                 current_map["colors"].append(changed_color.to_dict())
-
 
     update_map_colors(map_id, current_map["colors"], result["sub"])
 
@@ -631,10 +629,8 @@ async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, tok
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for to_edit in icons.icons:
-        print("Current map icons:", current_map["icons"])
-        for current_category in current_map["icons"]:
-            print("to_edit:", to_edit, "current_category:", current_category)
-            if to_edit["id"] == current_category["id"]:
+        for current_icon in current_map["icons"]:
+            if to_edit["id"] == current_icon["id"]:
                 current_map["icons"] = [icon for icon in current_map["icons"] if icon["id"] != to_edit["id"]]
                 changed_icon = Icon(name=to_edit["name"], url=to_edit["url"])
                 changed_icon.set_id(to_edit["id"])
@@ -672,6 +668,22 @@ async def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcon
     update_map_icons(map_id, current_map["icons"], result["sub"])
 
     return {"status": "success", "message": "Map icon deleted", "icons": current_map["icons"]}
+
+@app.get("/maps/{map_id}/icons")
+async def get_map_icons(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    current_map = get_map_by_id(map_id)
+    
+    if current_map is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Map not found"}
+    
+    return {"status": "success", "message": "Map icons retrieved", "icons": current_map["icons"]}
 
 
 # @app.put("/maps/{map_id}/info")
