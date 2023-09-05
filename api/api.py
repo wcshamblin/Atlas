@@ -270,13 +270,29 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
     # owner: str, name: str, description: str, legend: str, colors: list, categories: list, icons: dict
     print(map)
 
+    # make categories into category objects
+    categories = []
+    for category in map.categories:
+        categories.append(Category(category).to_dict())
+    
+    # make colors into color objects
+    colors = []
+    for color in map.colors:
+        colors.append(Color(name=color["name"], hex=color["color"]).to_dict())
+
+    # make icons into icon objects
+    icons = []
+    for icon in map.icons:
+        icons.append(Icon(name=icon["name"], url=icon["icon"]).to_dict())
+
+    
     new_map = Map(owner=result["sub"],
                     name=map.name,
                     description=map.description,
                     legend=map.legend,
-                    colors=map.colors,
-                    categories=map.categories,
-                    icons=map.icons)
+                    colors=colors,
+                    categories=categories,
+                    icons=icons)
 
     add_map(new_map.to_dict())
 
@@ -588,11 +604,12 @@ async def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, t
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for icon in icons.icons:
-        current_map["icons"].append(Icon(name=icon["name"], url=icon["icon"])).to_dict()
+        icon = Icon(name=icon["name"], url=icon["url"])
+        current_map["icons"].append(icon.to_dict())
 
-    new_icon_list = update_map_icons(map_id, current_map["icons"], result["sub"])
+    update_map_icons(map_id, current_map["icons"], result["sub"])
 
-    return {"status": "success", "message": "Map icon added", "icons": new_icon_list}
+    return {"status": "success", "message": "Map icon added", "icons": current_map["icons"]}
 
 @app.put("/maps/{map_id}/icons")
 async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, token: str = Depends(token_auth_scheme)):
@@ -614,16 +631,18 @@ async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, tok
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for to_edit in icons.icons:
-        for current in current_map["icons"]:
-            if to_edit["id"] == current["id"]:
-                current_map["icons"].pop(current_map["icons"].index(current))
-                changed_icon = Icon(name=to_edit["name"], url=to_edit["icon"])
+        print("Current map icons:", current_map["icons"])
+        for current_category in current_map["icons"]:
+            print("to_edit:", to_edit, "current_category:", current_category)
+            if to_edit["id"] == current_category["id"]:
+                current_map["icons"] = [icon for icon in current_map["icons"] if icon["id"] != to_edit["id"]]
+                changed_icon = Icon(name=to_edit["name"], url=to_edit["url"])
                 changed_icon.set_id(to_edit["id"])
                 current_map["icons"].append(changed_icon.to_dict())
 
-    new_icon_list = update_map_icons(map_id, current_map["icons"], result["sub"])
+    update_map_icons(map_id, current_map["icons"], result["sub"])
 
-    return {"status": "success", "message": "Map icon edited", "icons": new_icon_list}
+    return {"status": "success", "message": "Map icon edited", "icons": current_map["icons"]}
 
 
 @app.delete("/maps/{map_id}/icons")
@@ -650,9 +669,9 @@ async def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcon
             if icon_id == current["id"]:
                 current_map["icons"].pop(current_map["icons"].index(current))
 
-    new_icon_list = update_map_icons(map_id, current_map["icons"], result["sub"])
+    update_map_icons(map_id, current_map["icons"], result["sub"])
 
-    return {"status": "success", "message": "Map icon deleted", "icons": new_icon_list}
+    return {"status": "success", "message": "Map icon deleted", "icons": current_map["icons"]}
 
 
 # @app.put("/maps/{map_id}/info")
