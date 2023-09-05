@@ -396,7 +396,7 @@ async def post_map_categories(response: Response, map_id: str, categories: PostM
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for category in categories.categories:
-        current_map["categories"].append(Category(category)).to_dict()
+        current_map["categories"].append(Category(category).to_dict())
 
     update_map_categories(map_id, current_map["categories"], result["sub"])
 
@@ -496,8 +496,7 @@ async def post_map_color(response: Response, map_id: str, colors: PostMapColors,
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for color in colors.colors:
-        color = Color(name=color["name"], hex=color["hex"])
-        current_map["colors"].append(color.to_dict())
+        current_map["colors"].append(Color(name=color["name"], hex=color["hex"]).to_dict())
 
     update_map_colors(map_id, current_map["colors"], result["sub"])
 
@@ -602,8 +601,7 @@ async def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, t
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     for icon in icons.icons:
-        icon = Icon(name=icon["name"], url=icon["url"])
-        current_map["icons"].append(icon.to_dict())
+        current_map["icons"].append(Icon(name=icon["name"], url=icon["url"]).to_dict())
 
     update_map_icons(map_id, current_map["icons"], result["sub"])
 
