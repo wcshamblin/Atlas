@@ -263,11 +263,17 @@ class Icon:
         self.name = name
         self.url = url
 
+    def set_id(self, id):
+        self.id = id
+
     def set_name(self, name):
         self.name = name
 
     def set_url(self, url):
         self.url = url
+
+    def get_id(self):
+        return self.id
 
     def get_name(self):
         return self.name
