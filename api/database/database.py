@@ -148,6 +148,9 @@ def verify_user_permissions(map_id, user, permission) -> bool:
 def add_map(map) -> str:
     return db.collection(u'maps').add(map)
 
+def delete_map_by_id(id) -> str:
+    return db.collection(u'maps').where(u'id', u'==', id).delete()
+
 
 def update_map_name(id, name, editor) -> str:
     # find map

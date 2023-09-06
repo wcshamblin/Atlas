@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from database.classes import MapPermissions, MapUser, Point, Map, Category, Color, Icon
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
-from database.database import get_home, get_point_by_id, \
+from database.database import delete_map_by_id, get_home, get_point_by_id, \
     get_points_geojson_for_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
     add_map, add_point_to_map, update_map_users, update_point_in_map, remove_point_from_map, get_eula_acceptance, \
     set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend, \
@@ -712,7 +712,7 @@ async def delete_map(response: Response, map_id: str, token: str = Depends(token
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # delete map
-    # delete_map(map_id)
+    delete_map_by_id(map_id, result["sub"])
 
     return {"status": "success", "message": "Map deleted"}
 
