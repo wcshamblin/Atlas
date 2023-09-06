@@ -104,48 +104,18 @@ def get_maps_for_user(usersub) -> List[dict]:
 
     return my_maps + shared_maps
 
-def add_user_to_map(map_id, user) -> str:
+
+def update_map_users(map_id, users) -> str:
     # find map
     map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
     map_dict = map_obj.to_dict()
 
-    # add user to map
-    if user not in map_dict["users"]:
-        map_dict["users"][user] = {"permissions": []}
-    else:
-        return "User already in map"
+    # update map
+    map_dict["users"] = users
 
     # update map
     return map_obj.reference.update(map_dict)
 
-def remove_user_from_map(map_id, user) -> str:
-    # find map
-    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
-    map_dict = map_obj.to_dict()
-
-    # remove user from map
-    if user in map_dict["users"]:
-        map_dict["users"].pop(user)
-    else:
-        return "User not in map"
-    
-    # update map
-    return map_obj.reference.update(map_dict)
-
-
-def edit_user_permissions(map_id, user, permissions) -> str:
-    # find map
-    map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
-    map_dict = map_obj.to_dict()
-
-    # edit user permissions
-    if user in map_dict["users"]:
-        map_dict["users"][user]["permissions"] = permissions
-    else:
-        return "User not in map"
-
-    # update map
-    return map_obj.reference.update(map_dict)
 
 # verify_map_permissions(map_id, result["sub"], "view")
 def verify_user_permissions(map_id, user, permission) -> bool:

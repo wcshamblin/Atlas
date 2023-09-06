@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Response, Request, status
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
-from database.classes import Point, Map, Category, Color, Icon
+from database.classes import Point, Map, Category, Color, Icon, User
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
 from database.database import add_user_to_map, edit_user_permissions, get_home, get_point_by_id, \
     get_points_geojson_for_map, remove_user_from_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
@@ -691,47 +691,6 @@ async def get_map_icons(response: Response, map_id: str, token: str = Depends(to
     return {"status": "success", "message": "Map icons retrieved", "icons": current_map["icons"]}
 
 
-# @app.put("/maps/{map_id}/info")
-# async def put_map_info(response: Response, map_id: str, info: MapPut, token: str = Depends(token_auth_scheme)):
-#     result = VerifyToken(token.credentials).verify()
-#
-#     if result.get("status"):
-#         response.status_code = status.HTTP_400_BAD_REQUEST
-#         return result
-#
-#     current_map = get_map_by_id(map_id)
-#
-#
-#     if current_map is None:
-#         response.status_code = status.HTTP_404_NOT_FOUND
-#         return {"status": "error", "message": "Map not found"}
-#
-#     # verify owner permissions
-#     if current_map["owner"] != result["sub"]:
-#         response.status_code = status.HTTP_403_FORBIDDEN
-#         return {"status": "error", "message": "You do not have permission to edit this map"}
-#
-#     infodict = {}
-#
-#     if info.name is not None:
-#         infodict["name"] = info.name
-#     if info.description is not None:
-#         infodict["description"] = info.description
-#     if info.legend is not None:
-#         infodict["legend"] = info.legend
-#     if info.colors is not None:
-#         infodict["colors"] = info.colors
-#     if info.categories is not None:
-#         infodict["categories"] = info.categories
-#     if info.icons is not None:
-#         infodict["icons"] = info.icons
-#
-#     # update map info
-#     update_map_info(map_id, infodict, result["sub"])
-#
-#     return {"status": "success", "message": "Map updated"}
-
-
 # delete a map
 @app.delete("/maps/{map_id}")
 async def delete_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
@@ -777,9 +736,12 @@ async def put_map_user(response: Response, map_id: str, user: UserPut, token: st
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    # add user to map
-    add_user_to_map(map_id, user.usersub)
+    user = User(id=user.user, permissions=MapPermissions(edit=False, add=False, admin=False).to_dict())
 
+    current_map["users"].append(user.to_dict())
+
+    update_map_users(map_id, current_map["users"], result["sub"])
+     
     return {"status": "success", "message": "User added to map"}
 
 # remove a user from the map
@@ -802,8 +764,11 @@ async def delete_map_user(response: Response, map_id: str, user: UserPut, token:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    # remove user from map
-    remove_user_from_map(map_id, user.user)
+    for current in current_map["users"]:
+        if current["id"] == user.user:
+            current_map["users"].pop(current_map["users"].index(current))
+        
+    update_map_users(map_id, current_map["users"], result["sub"])
 
     return {"status": "success", "message": "User removed from map"}
 
@@ -827,15 +792,14 @@ async def put_map_user_permissions(response: Response, map_id: str, user_id: str
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    permission_list = []
-    for permission in permissions:
-        if permission[1]:
-            permission_list.append(permission[0])
+    for current in current_map["users"]:
+        if current["id"] == user_id:
+            current["permissions"] = MapPermissions(edit=permissions.edit, add=permissions.add, admin=permissions.admin).to_dict()
 
-    # edit user permissions
-    print(edit_user_permissions(map_id, user_id, permission_list))
+    update_map_users(map_id, current_map["users"], result["sub"])
 
     return {"status": "success", "message": "User permissions updated"}
+    
 
 # get points geojson
 @app.get("/maps/{map_id}/points")

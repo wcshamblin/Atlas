@@ -133,7 +133,7 @@ class Map:
         self.icons = icons
         
         self.points = []
-        self.users = {}
+        self.users = []
         self.creation_date = datetime.now()
         self.editor = owner
         self.edit_date = datetime.now()
@@ -345,6 +345,64 @@ class Category:
         return {
             "id": self.id,
             "name": self.name
+        }
+
+    def to_json(self) -> str:
+        return dumps(self.to_dict())
+
+
+class MapUser:
+    def __init__(self, id: str, permissions = {}: dict):
+        self.id = id
+        self.permissions = permissions
+    
+    def set_id(self, id):
+        self.id = id
+
+    def set_permissions(self, permissions):
+        self.permissions = permissions
+
+    def get_id(self):
+        return self.id
+
+    def get_permissions(self):
+        return self.permissions
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "permissions": self.permissions
+        }
+
+class MapPermissions:
+    def __init__(self, edit: bool, add: bool, admin: bool):
+        self.edit = edit
+        self.add = add
+        self.admin = admin
+
+    def set_edit(self, edit):
+        self.edit = edit
+        
+    def set_add(self, add):
+        self.add = add
+
+    def set_admin(self, admin):
+        self.admin = admin
+
+    def get_edit(self):
+        return self.edit
+
+    def get_add(self):
+        return self.add
+
+    def get_admin(self):
+        return self.admin
+
+    def to_dict(self) -> dict:
+        return {
+            "edit": self.edit,
+            "add": self.add,
+            "admin": self.admin
         }
 
     def to_json(self) -> str:
