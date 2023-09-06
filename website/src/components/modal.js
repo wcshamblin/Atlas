@@ -14,10 +14,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
     const [mapName, setMapName] = useState("");
     const [mapDesc, setMapDesc] = useState("");
     const [mapLegend, setMapLegend] = useState("");
-    const [mapCategories, setMapCategories] = useState({});
-    const [mapIcons, setMapIcons] = useState({});
-    const [mapColors, setMapColors] = useState({});
-    const [mapUsers, setMapUsers] = useState({});
+    const [mapCategories, setMapCategories] = useState([]);
+    const [mapIcons, setMapIcons] = useState([]);
+    const [mapColors, setMapColors] = useState([]);
+    const [mapUsers, setMapUsers] = useState([]);
 
     useEffect(() => {
         if (modalOpen == false) {
@@ -33,10 +33,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
             let newMapName = "";
             let newMapDesc = "";
             let newMapLegend = "";
-            let newMapCats = {};
-            let newMapIcons = {};
-            let newMapColors = {};
-            let newMapUsers = {};
+            let newMapCats = [];
+            let newMapIcons = [];
+            let newMapColors = [];
+            let newMapUsers = [];
             if(map) {
                 newMapName = map.name;
                 newMapDesc = map.description;
@@ -116,10 +116,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
         setMapName("");
         setMapDesc("");
         setMapLegend("");
-        setMapCategories({});
-        setMapIcons({});
-        setMapColors({});
-        setMapUsers({});
+        setMapCategories([]);
+        setMapIcons([]);
+        setMapColors([]);
+        setMapUsers([]);
     }
 
     const renderPointAddModal = () => {
@@ -241,19 +241,18 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Categories</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapCategories[`temp-id-${Math.random() * 10000}`] = "";
-                        setMapCategories({ ...mapCategories }); 
+                        mapCategories.push({ id: `temp-id-${Math.random() * 10000}`, name: "" })
+                        setMapCategories([ ...mapCategories ]); 
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapCategories).sort(([id, val]) => id).map(([catId, catName]) => (
+                {mapCategories.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-category-name" value={catName} onChange={e => {
-                            mapCategories[catId] = e.target.value;
-                            setMapCategories({ ...mapCategories }); 
+                        <input type="text" placeholder="new-category-name" value={val.name} onChange={e => {
+                            mapCategories[idx].name = e.target.value;
+                            setMapCategories([ ...mapCategories ]);
                         }}/>
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapCategories[catId];
-                            setMapCategories({ ...mapCategories }); 
+                            setMapCategories([ ...mapCategories.toSpliced(idx, 1) ]);
                         }}>-</button>
                         <br />
                     </div>
@@ -262,23 +261,22 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Colors</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapColors[`temp-id-${Math.random() * 10000}`] = { "name": "", "color": "" };
-                        setMapColors({ ...mapColors });
+                        mapColors.push({ id: `temp-id-${Math.random() * 10000}`, name: "", color: "" })
+                        setMapColors([...mapColors]); 
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapColors).sort(([id, val]) => id).map(([colorId, color]) => (
+                {mapColors.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-color-name" value={color.name} onChange={e => { 
-                            mapColors[colorId].name = e.target.value;
-                            setMapColors({ ...mapColors }); 
+                        <input type="text" placeholder="new-color-name" value={val.name} onChange={e => { 
+                            mapColors[idx].name = e.target.value;
+                            setMapColors([ ...mapColors ]); 
                         }}/>
-                        <input type="text" placeholder="new-color-hex" value={color.color} onChange={e => {
-                            mapColors[colorId].color = e.target.value;
-                            setMapColors({ ...mapColors });
+                        <input type="text" placeholder="new-color-hex" value={val.hex} onChange={e => {
+                            mapColors[idx].hex = e.target.value;
+                            setMapColors([ ...mapColors ]);
                         }}/>
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapColors[colorId];
-                            setMapColors({ ...mapColors });
+                            setMapColors([ ...mapColors.toSpliced(idx, 1) ]);
                         }}>-</button>
                         <br />
                     </div>
@@ -287,23 +285,22 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Icons</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapIcons[`temp-id-${Math.random() * 10000}`] = { "name": "", "icon": "" };
-                        setMapIcons({ ...mapIcons });
+                        mapIcons.push({ id: `temp-id-${Math.random() * 10000}`, name: "", icon: "" })
+                        setMapIcons([...mapIcons]); 
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapIcons).sort(([id, val]) => id).map(([iconId, icon]) => (
+                {mapIcons.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-icon-name" value={icon.name} onChange={e => {
-                            mapIcons[iconId].name = e.target.value;
-                            setMapIcons({ ...mapIcons });
+                        <input type="text" placeholder="new-icon-name" value={val.name} onChange={e => {
+                            mapIcons[idx].name = e.target.value;
+                            setMapIcons([ ...mapIcons ]);
                         }}/>
-                        <input type="text" placeholder="new-icon-url" value={icon.url} onChange={e => {
-                            mapIcons[iconId].icon = e.target.value;
-                            setMapIcons({ ...mapIcons });
+                        <input type="text" placeholder="new-icon-url" value={val.url} onChange={e => {
+                            mapIcons[idx].url = e.target.value;
+                            setMapIcons([ ...mapIcons ]);
                         }}/>
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapIcons[iconId];
-                            setMapIcons({ ...mapIcons });
+                            setMapIcons([ ...mapIcons.toSpliced(idx, 1)] );
                         }}>-</button>
                         <br />
                     </div>
@@ -327,19 +324,18 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Categories</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapCategories[`temp-id-${Math.random() * 10000}`] = "";
-                        setMapCategories({ ...mapCategories });
+                        mapCategories.push({ id: `temp-id-${Math.random() * 10000}`, name: "" })
+                        setMapCategories([ ...mapCategories ]);
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapCategories).sort(([id, val]) => id).map(([catId, catName]) => (
+                {mapCategories.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-category-name" value={catName} onChange={e => {
-                            mapCategories[catId] = e.target.value;
-                            setMapCategories({ ...mapCategories });
+                        <input type="text" placeholder="new-category-name" value={val.name} onChange={e => {
+                            mapCategories[idx].name = e.target.value;
+                            setMapCategories([...mapCategories]);
                         }} />
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapCategories[catId];
-                            setMapCategories({ ...mapCategories });
+                            setMapCategories([...mapCategories.toSpliced(idx, 1)]);
                         }}>-</button>
                         <br />
                     </div>
@@ -348,23 +344,22 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Colors</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapColors[`temp-id-${Math.random() * 10000}`] = { "name": "", "color": "" };
-                        setMapColors({ ...mapColors });
+                        mapColors.push({ id: `temp-id-${Math.random() * 10000}`, name: "", color: "" })
+                        setMapColors([...mapColors]);
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapColors).sort(([id, val]) => id).map(([colorId, color]) => (
+                {mapColors.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-color-name" value={color.name} onChange={e => {
-                            mapColors[colorId].name = e.target.value;
-                            setMapColors({ ...mapColors });
+                        <input type="text" placeholder="new-color-name" value={val.name} onChange={e => {
+                            mapColors[idx].name = e.target.value;
+                            setMapColors([...mapColors]);
                         }} />
-                        <input type="text" placeholder="new-color-hex" value={color.color} onChange={e => {
-                            mapColors[colorId].color = e.target.value;
-                            setMapColors({ ...mapColors });
+                        <input type="text" placeholder="new-color-hex" value={val.hex} onChange={e => {
+                            mapColors[idx].hex = e.target.value;
+                            setMapColors([...mapColors]);
                         }} />
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapColors[colorId];
-                            setMapColors({ ...mapColors });
+                            setMapColors([...mapColors.toSpliced(idx, 1)]);
                         }}>-</button>
                         <br />
                     </div>
@@ -373,23 +368,22 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <div>
                     <label className="modal-form-content-label">Icons</label>
                     <button className="modal-form-list-button" onClick={() => {
-                        mapIcons[`temp-id-${Math.random() * 10000}`] = { "name": "", "icon": "" };
-                        setMapIcons({ ...mapIcons });
+                        mapIcons.push({ id: `temp-id-${Math.random() * 10000}`, name: "", icon: "" })
+                        setMapIcons([...mapIcons]);
                     }}>+</button><br />
                 </div>
-                {Object.entries(mapIcons).sort(([id, val]) => id).map(([iconId, icon]) => (
+                {mapIcons.sort(val => val.id).map((val, idx) => (
                     <div>
-                        <input type="text" placeholder="new-icon-name" value={icon.name} onChange={e => {
-                            mapIcons[iconId].name = e.target.value;
-                            setMapIcons({ ...mapIcons });
+                        <input type="text" placeholder="new-icon-name" value={val.name} onChange={e => {
+                            mapIcons[idx].name = e.target.value;
+                            setMapIcons([...mapIcons]);
                         }} />
-                        <input type="text" placeholder="new-icon-url" value={icon.icon} onChange={e => {
-                            mapIcons[iconId].icon = e.target.value;
-                            setMapIcons({ ...mapIcons });
+                        <input type="text" placeholder="new-icon-url" value={val.url} onChange={e => {
+                            mapIcons[idx].url = e.target.value;
+                            setMapIcons([...mapIcons]);
                         }} />
                         <button className="modal-form-list-button" onClick={() => {
-                            delete mapIcons[iconId];
-                            setMapIcons({ ...mapIcons });
+                            setMapIcons([...mapIcons.toSpliced(idx, 1)]);
                         }}>-</button>
                         <br />
                     </div>
@@ -429,9 +423,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
 
         if(isNew) {
             let mapData = {};
-            mapData.categories = Object.values(mapCategories);
-            mapData.icons = Object.values(mapIcons);
-            mapData.colors = Object.values(mapColors);
+            mapData.categories = mapCategories.map(cat => cat.name);
+            mapData.icons = mapIcons.map(icon => { return {"name": icon.name, "icon": icon.icon} });
+            mapData.colors = mapColors.map(color => { return { "name": color.name, "color": color.hex } });
             mapData.name = mapName;
             mapData.description = mapDesc;
             mapData.legend = mapLegend;
@@ -476,11 +470,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     console.log("Error editing legend: " + error);
                 });
             }
-            let categories = Object.entries(mapCategories);
+            let categories = mapCategories;
             if (categories.length > 0) {
-                let newCategories = categories.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                let newCategories = categories.filter(cat => cat.id.startsWith("temp-id")).map(cat => cat.name);
                 if (newCategories.length > 0)
-                    await editMapInfo(token, "POST", map.id, "categories", newCategories).then((data) => {
+                    await editMapInfo(token, "POST", map.id, "categories", {categories: newCategories}).then((data) => {
                         if (data) {
                             console.log("added categories");
                             console.log(data);
@@ -488,9 +482,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error adding categories: " + error);
                     });
-                console.log(categories);
-                console.log(map.categories);
-                let changedCategories = categories.filter(([key, val]) => !key.startsWith("temp-id") && map.categories[key] != val).map(([key, val]) => { return { "id": key, "name": val } });
+                let changedCategories = categories.filter(cat => !cat.id.startsWith("temp-id") && JSON.stringify(map.categories.filter(oldCat => oldCat.id == cat.id)[0]) != JSON.stringify(cat));
                 if (changedCategories.length > 0)
                     await editMapInfo(token, "PUT", map.id, "categories", {categories: changedCategories}).then((data) => {
                         if (data) {
@@ -500,9 +492,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error editing categories: " + error);
                     });
-                let deletedCategories = Object.keys(map.categories).filter(key => !mapCategories[key]);
+                let deletedCategories = map.categories.filter(oldCat => !categories.some(cat => cat.id == oldCat.id)).map(cat => cat.id);
                 if (deletedCategories.length > 0)
-                    await editMapInfo(token, "DELETE", map.id, "categories", deletedCategories).then((data) => {
+                    await editMapInfo(token, "DELETE", map.id, "categories", {categories: deletedCategories}).then((data) => {
                         if (data) {
                             console.log("deleted categories");
                             console.log(data);
@@ -511,11 +503,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                         console.log("Error deleting categories: " + error);
                     });
             }
-            let colors = Object.entries(mapColors);
+            let colors = mapColors;
             if (colors.length > 0) {
-                let newColors = colors.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                let newColors = colors.filter(color => color.id.startsWith("temp-id")).map(color => { return { name: color.name, hex: color.hex } });
                 if (newColors.length > 0)
-                    await editMapInfo(token, "POST", map.id, "colors", newColors).then((data) => {
+                    await editMapInfo(token, "POST", map.id, "colors", {colors: newColors}).then((data) => {
                         if (data) {
                             console.log("added colors");
                             console.log(data);
@@ -523,7 +515,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error adding colors: " + error);
                     });
-                let changedColors = colors.filter(([key, val]) => !key.startsWith("temp-id") && map.colors[key] != val).map(([key, val]) => { return { "id": key, "color": val.color, "name": val.name } }); 
+                let changedColors = colors.filter(color => !color.id.startsWith("temp-id") && JSON.stringify(map.colors.filter(oldColor => oldColor.id == color.id)[0]) != JSON.stringify(color));
                 if (changedColors.length > 0)
                     await editMapInfo(token, "PUT", map.id, "colors", {colors: changedColors}).then((data) => {
                         if (data) {
@@ -533,9 +525,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error editing colors: " + error);
                     });
-                let deletedColors = Object.keys(map.colors).filter(key => !mapColors[key]);
+                let deletedColors = map.colors.filter(oldColor => !colors.some(color => color.id == oldColor.id)).map(color => color.id);
                 if (deletedColors.length > 0)
-                    await editMapInfo(token, "DELETE", map.id, "colors", deletedColors).then((data) => {
+                    await editMapInfo(token, "DELETE", map.id, "colors", {colors: deletedColors}).then((data) => {
                         if (data) {
                             console.log("deleted colors");
                             console.log(data);
@@ -544,11 +536,11 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                         console.log("Error deleting colors: " + error);
                     });
             }
-            let icons = Object.entries(mapIcons);
+            let icons = mapIcons;
             if (icons.length > 0) {
-                let newIcons = icons.filter(([key]) => key.startsWith("temp-id")).map(([key, val]) => val);
+                let newIcons = icons.filter(icon => icon.id.startsWith("temp-id")).map(icon => { return { name: icon.name, url: icon.url } });
                 if (newIcons.length > 0)
-                    await editMapInfo(token, "POST", map.id, "icons", newIcons).then((data) => {
+                    await editMapInfo(token, "POST", map.id, "icons", {icons: newIcons}).then((data) => {
                         if (data) {
                             console.log("added icons");
                             console.log(data);
@@ -556,11 +548,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error adding icons: " + error);
                     });
-            console.log(map.icons);
-            console.log(icons);
-            let changedIcons = icons.filter(([key, val]) => !key.startsWith("temp-id") && map.icons[key] != val).map(([key, val]) => { return { "id": key, "icon": val.icon, "name": val.name } });
-            if (changedIcons.length > 0)
-                await editMapInfo(token, "PUT", map.id, "icons", {icons: changedIcons}).then((data) => {
+                let changedIcons = icons.filter(icon => !icon.id.startsWith("temp-id") && JSON.stringify(map.icons.filter(oldIcon => oldIcon.id == icon.id)[0]) != JSON.stringify(icon));
+                if (changedIcons.length > 0)
+                    await editMapInfo(token, "PUT", map.id, "icons", {icons: changedIcons}).then((data) => {
                         if (data) {
                             console.log("editing icons");
                             console.log(data);
@@ -568,9 +558,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     }).catch((error) => {
                         console.log("Error editing icons: " + error);
                     });
-            let deletedIcons = Object.keys(map.icons).filter(key => !mapIcons[key]);
-            if (deletedIcons.length > 0)
-                await editMapInfo(token, "DELETE", map.id, "icons", deletedIcons).then((data) => {
+                let deletedIcons = map.icons.filter(oldIcon => !icons.some(icon => icon.id == oldIcon.id)).map(icon => icon.id);
+                if (deletedIcons.length > 0)
+                    await editMapInfo(token, "DELETE", map.id, "icons", {icons: deletedIcons}).then((data) => {
                         if (data) {
                             console.log("deleted icons");
                             console.log(data);
