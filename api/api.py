@@ -712,7 +712,7 @@ async def delete_map(response: Response, map_id: str, token: str = Depends(token
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
     # delete map
-    delete_map_by_id(map_id, result["sub"])
+    delete_map_by_id(map_id)
 
     return {"status": "success", "message": "Map deleted"}
 
