@@ -718,7 +718,7 @@ async def delete_map(response: Response, map_id: str, token: str = Depends(token
 
 # add a user to the map
 @app.post("/maps/{map_id}/users")
-async def put_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
+async def post_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
