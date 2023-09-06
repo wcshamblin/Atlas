@@ -352,25 +352,25 @@ class Category:
 
 
 class MapUser:
-    def __init__(self, id: str, permissions = {}: dict):
-        self.id = id
+    def __init__(self, usersub: str, permissions: dict):
+        self.usersub = usersub
         self.permissions = permissions
     
-    def set_id(self, id):
-        self.id = id
+    def set_usersub(self, usersub):
+        self.usersub = usersub
 
     def set_permissions(self, permissions):
         self.permissions = permissions
 
-    def get_id(self):
-        return self.id
+    def get_usersub(self):
+        return self.usersub
 
     def get_permissions(self):
         return self.permissions
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id,
+            "usersub": self.usersub,
             "permissions": self.permissions
         }
 

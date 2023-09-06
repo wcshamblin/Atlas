@@ -87,8 +87,13 @@ def get_maps_for_user(usersub) -> List[dict]:
     # maps has a user dict which is {usersub: {permissions: []}, so find maps where the usersub is in the users dict
     shared_maps = []
     for map in [doc.to_dict() for doc in db.collection(u'maps').get()]:
-        if usersub in map["users"]:
-            shared_maps.append(map)
+        # maps["users"] is a list of MapUser objects
+        for user in map["users"]:
+            if user["usersub"] == usersub:
+                # append my permissions
+                map["my_permissions"] = [permission for permission, value in user["permissions"].items() if value == True]
+                shared_maps.append(map)
+                break
 
     # increase view counts 
     # for map in my_maps:
@@ -98,9 +103,7 @@ def get_maps_for_user(usersub) -> List[dict]:
     for map in my_maps:
         # append my permissions
         map["my_permissions"] = ["owner"]
-    for map in shared_maps:
-        # append my permissions
-        map["my_permissions"] = map["users"][usersub]["permissions"]
+    
 
     return my_maps + shared_maps
 
