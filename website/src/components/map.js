@@ -826,27 +826,24 @@ function Map() {
                             <div id='custompopupselects'>
                                 <select id='custompopupcategory'>
                                     <option value={""}>Select a category</option>
-                                    {/* map.categories is a dict with key id (uuid4) and value name */}
-                                    {Object.keys(map.categories).map((category) => {
-                                        return <option value={category}>{map.categories[category]}</option>
+                                    {map.categories.map(category => {
+                                        return <option value={category.id}>{category.name}</option>
                                     })
                                     }
                                 </select><br/>
 
                                 <select id='custompopupcolor'>
                                     <option value={""}>Select a color</option>
-                                    {/* colors is a dict of dicts {uuid4: {name: "", color: ""}}*/}
-                                    {Object.keys(map.colors).map((color) => {
-                                        return <option value={color}>{map.colors[color].name}</option>
+                                    {map.colors.map(color => {
+                                        return <option value={color.id}>{color.name}</option>
                                     })
                                     }
                                 </select><br/>
 
                                 <select id='custompopupicon'>
                                     <option value={""}>Select an icon</option>
-                                    {/* icons is a dict of dicts {uuid4: {name: "", icon: ""}}*/}
-                                    {Object.keys(map.icons).map((icon) => {
-                                        return <option value={icon}>{map.icons[icon].name}</option>
+                                    {map.icons.map(icon => {
+                                        return <option value={icon.id}>{icon.name}</option>
                                     })
                                     }
                                 </select><br/>
@@ -929,8 +926,8 @@ function Map() {
                 <text id='custompopupname'>{properties.name}</text><br/>
                 <text id='custompopupdescription'>{properties.description}</text><br/>
                 <div id='custompopupdetail'>
-                    Category: <b>{properties.category}</b><br/>
-                    Icon: {properties.iconName}<br/>
+                    Category: {properties.categories.filter(cat => cat.id == properties.category)[0]?.name}<br/>
+                    Icon: {properties.icons.filter(icon => icon.id == properties.icon)[0]?.name}<br/>
                     Map: {properties.mapName}</div>
 
                 <div id="rightclickpopupbuttons">
@@ -961,21 +958,21 @@ function Map() {
                 <div id='custompopupselects'>
 
                     <select id='custompopupcategory' defaultValue={properties.category}>
-                        {properties.categories.map((category) => {
-                            return <option value={category}>{category}</option>
+                        {properties.categories.map(category => {
+                            return <option value={category.id}>{category.name}</option>
                         })}
                     </select><br/>
 
-                    <select id='custompopupcolor' defaultValue={properties.color}>
-                        {Object.keys(properties.colors).map((color) => {
-                            return <option value={properties.colors[color]}>{color}</option>
+                    <select id='custompopupcolor' defaultValue={properties.colors.filter(color => color.hex == properties.color)[0]?.id}>
+                        {properties.colors.map(color => {
+                            return <option value={color.id}>{color.name}</option>
                             })
                         }
                     </select><br/>
 
                     <select id='custompopupicon' defaultValue={properties.icon}>
-                        {Object.keys(properties.icons).map((icon) => {
-                            return <option value={properties.icons[icon]}>{icon}</option>
+                        {properties.icons.map(icon => {
+                            return <option value={icon.id}>{icon.name}</option>
                             })
                         }
                     </select><br/>
@@ -1161,10 +1158,12 @@ function Map() {
         // setCustomMapPoints
         // custommappoints is {mapId: points}
         setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId].data;
+            let newPoints = prev[mapId];
             for (let i = 0; i < newPoints.features.length; i++) {
                 if (newPoints.features[i].properties.id === pointId) {
                     newPoints.features[i].properties = pointData;
+                    let currentMap = customMaps.maps.filter(map => map.id == mapId)[0];
+                    newPoints.features[i].properties.color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
                     break;
                 }
             }
@@ -1216,9 +1215,9 @@ function Map() {
 
         for (let i = 0; i < customMaps.maps.length; i++) {
             if (customMaps.maps[i].id === mapId) {
-                geoJsonData.category = customMaps.maps[i].categories[pointData.category];
-                geoJsonData.icon = customMaps.maps[i].icons[pointData.icon]["icon"];
-                geoJsonData.color = customMaps.maps[i].colors[pointData.color]["color"];
+                geoJsonData.category = pointData.category;
+                geoJsonData.icon = pointData.icon;
+                geoJsonData.color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
                 break;
             }
         }
@@ -1743,7 +1742,15 @@ function Map() {
             console.log("Setting custom map: ", customMap);
             // get data
             getCustomMapPoints(customMap.id).then((data) => {
+                let currentMap = customMaps.maps.filter(map => map.id == customMap.id)[0];
                 console.log("Setting data for ", customMap.id, ": ", data);
+                let pointsData = data.data.points;
+                pointsData.features = pointsData.features.map(feature => {
+                    let newFeature = feature;
+                    newFeature.properties.color = currentMap?.colors.filter(color => color.id == feature.properties.color)[0]?.hex;
+                    return newFeature;
+                })
+                
                 setCustomMapPoints((customMapPoints) => {
                     return {
                         ...customMapPoints,
@@ -1762,16 +1769,14 @@ function Map() {
                     }
                 });
 
-                Object.keys(customMap.icons).forEach((iconId) => {
-                    const iconUrl = customMap.icons[iconId]["icon"];
-                    console.log("Error loading icon with ID:", iconId, " and url: ", iconUrl);
-                mapbox.current.loadImage(iconUrl, (error, image) => {
+                customMap.icons.forEach(icon => {
+                    mapbox.current.loadImage(icon.url, (error, image) => {
                         // catch and log error
                         if (error) {
-                            console.log("Error loading image with url:", iconUrl, "and error:", error);
+                            console.log("Error loading image with url:", icon.url, "and error:", error);
                             return;
                         }
-                        mapbox.current.addImage(iconId, image, { sdf: true });
+                        mapbox.current.addImage(icon.id, image, { sdf: true });
                     });
                 });
 
@@ -1824,7 +1829,6 @@ function Map() {
                             e.features[0].properties.categories = customMaps.maps[i].categories;
                             e.features[0].properties.colors = customMaps.maps[i].colors;
                             e.features[0].properties.icons = customMaps.maps[i].icons;
-                            e.features[0].properties.iconName = Object.keys(customMaps.maps[i].icons).find(key => customMaps.maps[i].icons[key] === e.features[0].properties.icon);
                             e.features[0].properties.mapName = customMaps.maps[i].name;
                             e.features[0].properties.mapId = customMaps.maps[i].id;
                             if (customMaps.maps[i].my_permissions.includes("edit") || customMaps.maps[i].my_permissions.includes("owner")) {
