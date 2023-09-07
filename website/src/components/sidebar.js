@@ -59,6 +59,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         console.log("custom maps data loaded: " + JSON.stringify(customMapsData));
 
         {
+            setCustomMapsLayers({});
             customMapsData.maps.map(mapData => {
                 console.log("Adding custom map layer to sidebar: " + mapData.name);
                 // add layer to custom maps layers
