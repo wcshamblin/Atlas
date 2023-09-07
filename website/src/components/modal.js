@@ -48,6 +48,10 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     if (user.permissions)
                         newMapUsers.push({ usersub: user.usersub, permissions: Object.keys(user.permissions).join(",") });
                 });
+
+                newPointCat = newMapCats[0].id;
+                newPointIcon = newMapIcons[0].id;
+                newPointColor = newMapColors[0].id;
             }
             if (point) {
                 newPointName = point.name;
@@ -136,15 +140,15 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <input type="text" value={pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
                 <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat} onChange={e => setPointCat(e.target.value)}>
-                    {Object.entries(map.categories).sort(([id, val]) => id).map(([catId, catName]) => (<option value={catId}>{catName}</option>))}
+                    {map.categories.sort(cat => cat.id).map(cat => (<option value={cat.id}>{cat.name}</option>))}
                 </select><br/>
                 <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor} onChange={e => setPointColor(e.target.value)}>
-                    {Object.entries(map.colors).sort(([id, val]) => id).map(([colorId, color]) => (<option value={colorId}>{color.name}</option>))}
+                    {map.colors.sort(color => color.id).map(color => (<option value={color.id}>{color.name}</option>))}
                 </select><br/>
                 <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon} onChange={e => setPointIcon(e.target.value)}>
-                    {Object.entries(map.icons).sort(([id, val]) => id).map(([iconId, icon]) => (<option value={iconId}>{icon.name}</option>))}
+                    {map.icons.sort(icon => icon.id).map(icon => (<option value={icon.id}>{icon.name}</option>))}
                 </select><br/>
                 <button id="modal-form-submit-button" onClick={() => submitPoint(true)}>Submit</button>
             </div>
@@ -165,15 +169,15 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 <input type="text" value={pointLong} onChange={e => setPointLong(e.target.value)}></input><br/>
                 <label className="modal-form-content-label">Category: </label>
                 <select value={pointCat} onChange={e => setPointCat(e.target.value)}>
-                    {Object.entries(map.categories).sort(([id, val]) => id).map(([catId, catName]) => (<option value={catId}>{catName}</option>))}
+                    {map.categories.sort(cat => cat.id).map(cat => (<option value={cat.id}>{cat.name}</option>))}
                 </select><br/>
                 <label className="modal-form-content-label">Color: </label>
                 <select value={pointColor} onChange={e => setPointColor(e.target.value)}>
-                    {Object.entries(map.colors).sort(([id, val]) => id).map(([colorId, color]) => (<option value={colorId}>{color.name}</option>))}
+                    {map.colors.sort(color => color.id).map(color => (<option value={color.id}>{color.name}</option>))}
                 </select><br/>
                 <label className="modal-form-content-label">Icon: </label>
                 <select value={pointIcon} onChange={e => setPointIcon(e.target.value)}>
-                    {Object.entries(map.icons).sort(([id, val]) => id).map(([iconId, icon]) => (<option value={iconId}>{icon.name}</option>))}
+                    {map.icons.sort(icon => icon.id).map(icon => (<option value={icon.id}>{icon.name}</option>))}
                 </select><br/>
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitPoint(false)}>Submit</button>

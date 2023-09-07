@@ -852,16 +852,16 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
 
     # verify Point data makes sense for the map
     print(map["categories"], map["colors"], map["icons"])
-    if new_point.get_category() not in map["categories"].keys():
+    if next((x for x in map["categories"] if x["id"] is new_point.get_category()), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
     # we're expecting a hex color code
-    if new_point.get_color() not in map["colors"].keys():
+    if next((x for x in map["colors"] if x["id"] is new_point.get_color()), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if new_point.get_icon() not in map["icons"].keys():
+    if next((x for x in map["icons"] if x["id"] is new_point.get_icon()), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
   
@@ -956,15 +956,15 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
         currentPoint["lng"] = point.lng
         
     # verify Point data makes sense for the map
-    if currentPoint["category"] not in map["categories"]:
+    if next((x for x in map["categories"] if x["id"] is currentPoint["category"]), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
-    if currentPoint["color"] not in map["colors"].keys():
+    if next((x for x in map["colors"] if x["id"] is currentPoint["color"]), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if currentPoint["icon"] not in map["icons"].keys():
+    if next((x for x in map["icons"] if x["id"] is currentPoint["icon"]), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
     
