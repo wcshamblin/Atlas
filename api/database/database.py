@@ -129,6 +129,10 @@ def verify_user_permissions(map_id, user, permission) -> bool:
     if user == map_dict["owner"]:
         return True
      
+    for user in map_dict["users"]:
+        if user["usersub"] == user:
+            if permission in user["permissions"] or if permission == "view":
+                return True
 
     # check if user has permission
     if user in map_dict["users"]:
