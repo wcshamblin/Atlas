@@ -131,7 +131,7 @@ def verify_user_permissions(map_id, user, permission) -> bool:
      
     for user in map_dict["users"]:
         if user["usersub"] == user:
-            if permission in user["permissions"] or if permission == "view":
+            if permission in user["permissions"] or permission == "view":
                 return True
 
     # check if user has permission
