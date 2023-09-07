@@ -153,7 +153,8 @@ def add_map(map) -> str:
     return db.collection(u'maps').add(map)
 
 def delete_map_by_id(id) -> str:
-    return db.collection(u'maps').where(u'id', u'==', id).delete()
+    map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
+    return map_obj.reference.delete()
 
 
 def update_map_name(id, name, editor) -> str:
