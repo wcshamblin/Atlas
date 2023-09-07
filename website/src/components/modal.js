@@ -44,9 +44,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 newMapCats = JSON.parse(JSON.stringify(map.categories));
                 newMapIcons = JSON.parse(JSON.stringify(map.icons));
                 newMapColors = JSON.parse(JSON.stringify(map.colors));
-                Object.keys(map.users).forEach(user => {
-                    if (map.users[user].permissions)
-                        newMapUsers[user] = map.users[user].permissions.join(",");
+                map.users.forEach(user => {
+                    if (user.permissions)
+                        newMapUsers.push({ usersub: user.usersub, permissions: Object.keys(user.permissions).join(",") });
                 });
             }
             if (point) {
@@ -306,6 +306,30 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     </div>
                 ))}
                 <br />
+                <div>
+                    <label className="modal-form-content-label">User Permissions</label>
+                    <button className="modal-form-list-button" onClick={() => {
+                        mapUsers.push({ usersub: "", permissions: "" })
+                        setMapUsers([...mapUsers]);
+                    }}>+</button><br />
+                </div>
+                {mapUsers.sort(user => user.usersub).map((val, idx) => (
+                    <div>
+                        <input type="text" value={val.usersub} onChange={e => {
+                            mapUsers[idx].usersub = e.target.value;
+                            setMapUsers([ ...mapUsers ]);
+                        }} />
+                        <input type="text" value={val.permissions} onChange={e => {
+                            mapUsers[idx].permissions = e.target.value;
+                            setMapUsers([ ...mapUsers ]);
+                        }} />
+                        <button className="modal-form-list-button" onClick={() => {
+                            setMapUsers([ ...mapUsers.toSpliced(idx, 1) ]);
+                        }}>-</button>
+                        <br />
+                    </div>
+                ))}
+                <br />
                 <button id="modal-form-submit-button" onClick={() => submitMap(true)}>Submit</button>
             </div>
         );
@@ -389,27 +413,35 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                     </div>
                 ))}
                 <br />
-                {/*(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
+                {(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) ?
                     <>
                         <div>
                             <label className="modal-form-content-label">User Permissions</label>
                             <button className="modal-form-list-button" onClick={() => {
-                                mapIcons[`temp-id-${Math.random() * 10000}`] = { "name": "", "icon": "" };
-                                setMapIcons({ ...mapIcons });
+                                mapUsers.push({ usersub: "", permissions: "" })
+                                setMapUsers([ ...mapUsers ]);
                             }}>+</button><br />
                         </div>
-                        {Object.entries(mapUsers).map(([userId, userPermissions]) => (
+                        {mapUsers.sort(user => user.usersub).map((val, idx) => (
                             <div>
-                                <input type="text" value={userId} onChange={e => updateMapUserId(e.target.value, userId)} />
-                                <input type="text" value={userPermissions} onChange={e => updateMapUserPermissionString(e.target.value, userId)} />
-                                <button className="modal-form-list-button" onClick={() => removeMapUser(userId)}>-</button>
+                                <input type="text" value={val.usersub} onChange={e => {
+                                    mapUsers[idx].usersub = e.target.value;
+                                    setMapUsers([ ...mapUsers ]);
+                                }} />
+                                <input type="text" value={val.permissions} onChange={e => {
+                                    mapUsers[idx].permissions = e.target.value;
+                                    setMapUsers([ ...mapUsers ]);
+                                }} />
+                                <button className="modal-form-list-button" onClick={() => {
+                                    setMapUsers([ ...mapUsers.toSpliced(idx, 1) ]);
+                                }}>-</button>
                                 <br />
                             </div>
                         ))}
                         <br />
                     </>
                     : ""
-                */}
+                }
                 <div className="modal-form-control-buttons">
                     <button id="modal-form-submit-button" onClick={() => submitMap(false)}>Submit</button>
                     <button id="modal-form-delete-button" onClick={() => delMap()}>Delete</button>
@@ -569,22 +601,58 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                         console.log("Error deleting icons: " + error);
                     });
             }
-            if(false && map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) {
-                Object.keys(mapUsers).forEach(async (userId) => {
-                    if (mapUsers[userId] != '') {
-                        let permissionsObj = { "edit": false, "admin": false, "view": false };
-                        mapUsers[userId].split(",").forEach(val => {
-                            permissionsObj[val] = true;
-                        });
-                        await putMapUserPermissions(token, map.id, userId, permissionsObj).then((data) => {
+
+            const getPermissionObj = perms => {
+                let defaultPerms = {
+                    "add": false,
+                    "edit": false,
+                    "admin": false,
+                }
+                perms.split(",").forEach(perm => {
+                    if(perm in defaultPerms) defaultPerms[perm] = true;
+                });
+                return defaultPerms;
+            }
+
+            if(map.my_permissions.includes("owner") || map.my_permissions.includes("admin")) {
+                let users = mapUsers;
+                let oldUsers = [];
+                map.users.forEach(user => {
+                    if (user.permissions)
+                        oldUsers.push({ usersub: user.usersub, permissions: Object.keys(user.permissions).join(",") });
+                });
+                if (users.length > 0) {
+                    let newUsers = users.filter(user => !oldUsers.some(oldUser => user.usersub == oldUser.usersub)).map(user => { return { usersub: user.usersub, permissions: getPermissionObj(user.permissions) } });
+                    if (newUsers.length > 0)
+                        await editMapInfo(token, "POST", map.id, "users", { users: newUsers }).then((data) => {
                             if (data) {
-                                console.log("user permissions updated for user: " + userId);
+                                console.log("added users");
+                                console.log(data);
                             }
                         }).catch((error) => {
-                            console.log("Error updating user permissions: " + error);
+                            console.log("Error adding users: " + error);
                         });
-                    }
-                })
+                    let changedUsers = users.filter(user => !newUsers.some(newUser => newUser.usersub == user.usersub) && JSON.stringify(oldUsers.filter(oldUser => oldUser.usersub == user.usersub)[0]) != JSON.stringify(user)).map(user => { return { usersub: user.usersub, permissions: getPermissionObj(user.permissions) } });
+                    if (changedUsers.length > 0)
+                        await editMapInfo(token, "PUT", map.id, "users", { users: changedUsers }).then((data) => {
+                            if (data) {
+                                console.log("editing users");
+                                console.log(data);
+                            }
+                        }).catch((error) => {
+                            console.log("Error editing users: " + error);
+                        });
+                    let deletedUsers = oldUsers.filter(oldUser => !users.some(user => user.usersub == oldUser.usersub)).map(user => user.usersub);
+                    if (deletedUsers.length > 0)
+                        await editMapInfo(token, "DELETE", map.id, "users", { users: deletedUsers }).then((data) => {
+                            if (data) {
+                                console.log("deleted users");
+                                console.log(data);
+                            }
+                        }).catch((error) => {
+                            console.log("Error deleting users: " + error);
+                        });
+                }
             }
         }
         getMaps();
