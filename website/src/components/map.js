@@ -1163,7 +1163,9 @@ function Map() {
                 if (newPoints.features[i].properties.id === pointId) {
                     newPoints.features[i].properties = pointData;
                     let currentMap = customMaps.maps.filter(map => map.id == mapId)[0];
-                    newPoints.features[i].properties.color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
+                    let color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
+                    newPoints.features[i].properties.color = color;
+                    newPoints.features[i].properties.icon = color == "none" ? newPoints.features[i].properties.icon : newPoints.features[i].properties.icon + "-sdf";
                     break;
                 }
             }
@@ -1216,8 +1218,9 @@ function Map() {
         for (let i = 0; i < customMaps.maps.length; i++) {
             if (customMaps.maps[i].id === mapId) {
                 geoJsonData.category = pointData.category;
-                geoJsonData.icon = pointData.icon;
-                geoJsonData.color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
+                let color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
+                geoJsonData.color = color;
+                geoJsonData.icon = color == "none" ? pointData.icon : pointData.icon + "-sdf";
                 break;
             }
         }
@@ -1747,7 +1750,10 @@ function Map() {
                 let pointsData = data.data.points;
                 pointsData.features = pointsData.features.map(feature => {
                     let newFeature = feature;
-                    newFeature.properties.color = currentMap?.colors.filter(color => color.id == feature.properties.color)[0]?.hex;
+                    let color = currentMap?.colors.filter(color => color.id == feature.properties.color)[0]?.hex;
+                    newFeature.properties.color = color;
+                    newFeature.properties.icon = color == "none" ? newFeature.properties.icon : newFeature.properties.icon + "-sdf";
+                    
                     return newFeature;
                 })
                 
@@ -1776,7 +1782,8 @@ function Map() {
                             console.log("Error loading image with url:", icon.url, "and error:", error);
                             return;
                         }
-                        mapbox.current.addImage(icon.id, image, { sdf: true });
+                        mapbox.current.addImage(icon.id + "-sdf", image, { sdf: true });
+                        mapbox.current.addImage(icon.id, image, { sdf: false });
                     });
                 });
 
