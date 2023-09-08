@@ -30,14 +30,6 @@ export const HeroBanner = () => {
         >
             Join our Discord
         </a>
-        <a
-            id="donate-button"
-            rel="noopener noreferrer"
-            href="https://www.paypal.com/donate/?business=88NRLKRHJX5T2&no_recurring=0&currency_code=USD"
-            className="button button--donate"
-        >
-            Donate
-        </a>
         </div>
     </div>
   );
