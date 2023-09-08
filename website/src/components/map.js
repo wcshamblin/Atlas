@@ -4,10 +4,18 @@ import ReactDOM from 'react-dom/client';
 import Sidebar from '../components/sidebar';
 
 import mapboxgl from 'mapbox-gl';
+
+/* eslint-disable import/first */
+// eslint-disable-next-line import/no-webpack-loader-syntax
+mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
+
+
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
+
 
 import DateTimePicker from 'react-datetime-picker'
 
@@ -810,7 +818,7 @@ function Map() {
                 }}
                     // if newPointMap is not empty, set the default value to the map that was selected
                         defaultValue={newPointMap}>
-                >
+                {/* > */}
                     <option value={""}>Select a map</option>
                     {customMaps.maps.map((map) => {
                         return <option value={map.id}>{map.name}</option>
