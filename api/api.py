@@ -747,8 +747,6 @@ async def post_map_user(response: Response, map_id: str, users: UserPut, token: 
 
     current_map["users"].extend(new_users)
 
-    current_map["users"].append(user.to_dict())
-
     update_map_users(map_id, current_map["users"], result["sub"])
      
     return {"status": "success", "message": "User added to map"}
