@@ -14,7 +14,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels, settings, updateSettings }) => {
-    const [selectedPart, setSelectedPart] = useState("weather");
+    const [selectedPart, setSelectedPart] = useState("layers");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
     const [currentModal, setCurrentModal] = useState("");
 
