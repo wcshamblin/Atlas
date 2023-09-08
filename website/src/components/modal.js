@@ -80,9 +80,6 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
     }, [modalOpen])
 
     const renderModalInfo = () => {
-        console.log("modalinfo");
-        console.log(map);
-        console.log(point);
         switch (modalType) {
             case "editPoint":
                 if(map && point) {

@@ -288,7 +288,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 {val.points.filter(point => point.name.toLowerCase().includes(pointsSearchValue.toLowerCase())).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => { flyTo(point.lat, point.lng); setCurrentSelectedCustomMapPoint({ "pointId": point.id, "layerId": mapId }) }} id={point.id}>
                                         <div className="custom-map-point-container">
-                                            <img className="custom-map-point-icon" src={point.icon} />
+                                            <img className="custom-map-point-icon" src={val.icons.filter(icon => icon.id == point.icon)[0].url} />
                                             <div className="custom-map-point-text-container">
                                                 <span className="custom-map-point-text" style={{ color: point.color }}>{point.name}</span>
                                                 <span className="custom-map-point-text-desc">{point.description}</span>
