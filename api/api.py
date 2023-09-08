@@ -130,11 +130,6 @@ class UserPut(BaseModel):
 class UserDelete(BaseModel):
     users: List[str] # of usersubs
 
-class UserPermissions(BaseModel):
-    edit: bool
-    add: bool
-    admin: bool
-
 
 @app.get("/")
 async def root():
@@ -781,8 +776,8 @@ async def delete_map_user(response: Response, map_id: str, users: UserDelete, to
     return {"status": "success", "message": "User removed from map"}
 
 # edit user permissions
-@app.put("/maps/{map_id}/users/{user_id}")
-async def put_map_user_permissions(response: Response, map_id: str, user_id: str, permissions: UserPermissions, token: str = Depends(token_auth_scheme)):
+@app.put("/maps/{map_id}/users")
+async def put_map_user_permissions(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -800,9 +795,11 @@ async def put_map_user_permissions(response: Response, map_id: str, user_id: str
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    for current in current_map["users"]:
-        if current["usersub"] == user_id:
-            current["permissions"] = MapPermissions(edit=permissions.edit, add=permissions.add, admin=permissions.admin).to_dict()
+    for user in users.users:
+        for current in current_map["users"]:
+            if current["usersub"] == user["usersub"]:
+                current_map["users"].pop(current_map["users"].index(current))
+                current_map["users"].append(MapUser(usersub=user["usersub"], permissions=MapPermissions(edit=user["permissions"]["edit"], add=user["permissions"]["add"], admin=user["permissions"]["admin"]).to_dict()).to_dict())
 
     update_map_users(map_id, current_map["users"], result["sub"])
 
