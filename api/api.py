@@ -125,8 +125,10 @@ class DeleteMapIcons(BaseModel):
 
 
 class UserPut(BaseModel):
-    usersub: str
+    users: List[Dict] # of user objects
 
+class UserDelete(BaseModel):
+    users: List[str] # of usersubs
 
 class UserPermissions(BaseModel):
     edit: bool
@@ -718,7 +720,7 @@ async def delete_map(response: Response, map_id: str, token: str = Depends(token
 
 # add a user to the map
 @app.post("/maps/{map_id}/users")
-async def post_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
+async def post_map_user(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -736,7 +738,14 @@ async def post_map_user(response: Response, map_id: str, user: UserPut, token: s
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    user = MapUser(usersub=user.user, permissions=MapPermissions(edit=False, add=False, admin=False).to_dict())
+
+    new_users = []
+    
+    # { usersub: usersub, permissions: permissionsobj }
+    for user in users.users:
+        new_users.append(MapUser(usersub=user["usersub"], permissions=MapPermissions(edit=user["permissions"]["edit"], add=user["permissions"]["add"], admin=user["permissions"]["admin"]).to_dict()).to_dict())
+
+    current_map["users"].extend(new_users)
 
     current_map["users"].append(user.to_dict())
 
@@ -746,7 +755,7 @@ async def post_map_user(response: Response, map_id: str, user: UserPut, token: s
 
 # remove a user from the map
 @app.delete("/maps/{map_id}/users")
-async def delete_map_user(response: Response, map_id: str, user: UserPut, token: str = Depends(token_auth_scheme)):
+async def delete_map_user(response: Response, map_id: str, users: UserDelete, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -764,9 +773,10 @@ async def delete_map_user(response: Response, map_id: str, user: UserPut, token:
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to edit this map"}
 
-    for current in current_map["users"]:
-        if current["usersub"] == user.user:
-            current_map["users"].pop(current_map["users"].index(current))
+    for usersub in users.users:
+        for current in current_map["users"]:
+            if current["usersub"] == usersub:
+                current_map["users"].pop(current_map["users"].index(current))
         
     update_map_users(map_id, current_map["users"], result["sub"])
 
