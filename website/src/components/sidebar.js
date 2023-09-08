@@ -382,6 +382,15 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                     <h1 style={{ "margin": "5px 0px" }}>SETTINGS</h1>
                                     <span>Show low power antennas (information may not be accurate): </span>
                                     <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
+                                    <span>Isochrone minutes (how far to show the isochrone): </span>
+                                    <input type="number" value={settings["isoMinutes"]} min="5" max="240" onChange={e => updateSettings("isoMinutes", e.target.value)} />
+                                    <span>Isochrone commute type: </span>
+                                    <select value={settings["isoProfile"]} onChange={(e) => updateSettings("isoProfile", e.target.value)}>
+                                        <option value="driving">Driving</option>
+                                        <option value="walking">Walking</option>
+                                        <option value="transit">Transit</option>
+                                        <option value="truck">Semitruck</option>
+                                    </select>
                                 </div>
                             )
                         default:
