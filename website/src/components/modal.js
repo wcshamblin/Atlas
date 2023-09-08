@@ -46,7 +46,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                 newMapColors = JSON.parse(JSON.stringify(map.colors));
                 map.users.forEach(user => {
                     if (user.permissions)
-                        newMapUsers.push({ usersub: user.usersub, permissions: Object.keys(user.permissions).join(",") });
+                        newMapUsers.push({ usersub: user.usersub, permissions: Object.entries(user.permissions).filter(([name, perm]) => perm).map(([name, perm]) => name).join(",") });
                 });
 
                 newPointCat = newMapCats[0].id;
