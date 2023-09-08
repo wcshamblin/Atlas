@@ -108,13 +108,17 @@ def get_maps_for_user(usersub) -> List[dict]:
     return my_maps + shared_maps
 
 
-def update_map_users(map_id, users) -> str:
+def update_map_users(map_id, users, editor) -> str:
     # find map
     map_obj = db.collection(u'maps').where(u'id', u'==', map_id).get()[0]
     map_dict = map_obj.to_dict()
 
     # update map
     map_dict["users"] = users
+    
+    # set editor and edit_date
+    map_dict["editor"] = editor
+    map_dict["edit_date"] = datetime.now()
 
     # update map
     return map_obj.reference.update(map_dict)
