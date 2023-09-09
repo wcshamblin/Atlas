@@ -36,7 +36,8 @@ import {
     faInfo,
     faMapMarkerAlt,
     faPenToSquare,
-    faRoute
+    faRoute,
+    faTrash
 } from '@fortawesome/free-solid-svg-icons'
 
 
@@ -48,7 +49,7 @@ import {
     retrieveHome,
     retrieveTowers,
     retrieveAntennas,
-    fetchMaps, retrieveCustomMapPoints, putPoint, postPoint
+    fetchMaps, retrieveCustomMapPoints, putPoint, postPoint, deletePoint
 } from "../services/message.service";
 
 import { useAuth0 } from "@auth0/auth0-react";
@@ -966,7 +967,7 @@ function Map() {
 
                 <div id='custompopupselects'>
 
-                    <select id='custompopupcategory' defaultValue={properties.category}>
+                    <select id='custompopupcategory' defaultValue={properties.categories.filter(cat => cat.id == properties.category)[0]?.id}>
                         {properties.categories.map(category => {
                             return <option value={category.id}>{category.name}</option>
                         })}
@@ -979,7 +980,7 @@ function Map() {
                         }
                     </select><br />
 
-                    <select id='custompopupicon' defaultValue={properties.icon}>
+                    <select id='custompopupicon' defaultValue={properties.icons.filter(icon => icon.id == properties.icon)[0]?.id}>
                         {properties.icons.map(icon => {
                             return <option value={icon.id}>{icon.name}</option>
                         })
@@ -1008,6 +1009,16 @@ function Map() {
                         setShowCustomMapPopup(false);
                     }}><FontAwesomeIcon icon={faFloppyDisk} />
                     </button>
+                    
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        // close the popup
+                        setShowCustomMapPopup(false);
+
+                        // now delete
+                        removePoint(properties.mapId, properties.id);
+                    }}><FontAwesomeIcon icon={faTrash} />
+                    </button>
+
                     <button id="rightclickpopupbutton" onClick={() => {
                         setCustomMapPopupState("default");
                     }}><FontAwesomeIcon icon={faArrowLeft} />
@@ -1172,9 +1183,7 @@ function Map() {
                 if (newPoints.features[i].properties.id === pointId) {
                     newPoints.features[i].properties = pointData;
                     let currentMap = customMaps.maps.filter(map => map.id == mapId)[0];
-                    let color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
-                    newPoints.features[i].properties.color = color;
-                    newPoints.features[i].properties.icon = color == "none" ? newPoints.features[i].properties.icon : newPoints.features[i].properties.icon + "-sdf";
+                    newPoints.features[i].properties.color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
                     break;
                 }
             }
@@ -1205,6 +1214,7 @@ function Map() {
             });
         });
     }
+    
 
     async function saveNewPoint(mapId, pointData) {
         // if category or icon or color or mapId is null, return
@@ -1227,9 +1237,8 @@ function Map() {
         for (let i = 0; i < customMaps.maps.length; i++) {
             if (customMaps.maps[i].id === mapId) {
                 geoJsonData.category = pointData.category;
-                let color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
-                geoJsonData.color = color;
-                geoJsonData.icon = color == "none" ? pointData.icon : pointData.icon + "-sdf";
+                geoJsonData.icon = pointData.icon;
+                geoJsonData.color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
                 break;
             }
         }
@@ -1273,6 +1282,47 @@ function Map() {
         }).catch((error) => {
             console.log("Error saving point");
             console.log(error);
+        });
+    }
+
+    async function removePoint(mapId, pointId) {
+        const accessToken = await getAccessTokenSilently();
+
+        // modify our local data
+        // setCustomMapPoints
+        // custommappoints is {mapId: points}
+
+        // setPoints([...points.filter(p => p.id != deletedId)])
+
+        setCustomMapPoints((prev) => {
+            let newPoints = prev[mapId];
+            newPoints.features = newPoints.features.filter(p => p.properties.id != pointId);
+
+            return {
+                ...prev,
+                [mapId]: newPoints
+            };
+        });
+
+        // accessToken, map_id, point_id, point
+        // Put point and if successful, update the map
+        
+        // catch data and error from the api call
+        await deletePoint(accessToken, mapId, pointId).then((data) => {
+            console.log("point deleted");
+            console.log(data);
+            // if the point was saved, update the map
+        }).catch((error) => {
+            console.log("Error deleting point... trying to revert");
+            // reset the map to the true state
+            getCustomMapPoints(mapId).then((data) => {
+                if (data) {
+                    // update the map
+                    mapbox.current.getSource(mapId).setData(data.data.points);
+                }
+            }).catch((error) => {
+                console.log(error);
+            });
         });
     }
 
@@ -1743,9 +1793,7 @@ function Map() {
                 let pointsData = data.data.points;
                 pointsData.features = pointsData.features.map(feature => {
                     let newFeature = feature;
-                    let color = currentMap?.colors.filter(color => color.id == feature.properties.color)[0]?.hex;
-                    newFeature.properties.color = color;
-                    newFeature.properties.icon = color == "none" ? newFeature.properties.icon : newFeature.properties.icon + "-sdf";
+                    newFeature.properties.color = currentMap?.colors.filter(color => color.id == feature.properties.color)[0]?.hex;
 
                     return newFeature;
                 })
@@ -1775,8 +1823,7 @@ function Map() {
                             console.log("Error loading image with url:", icon.url, "and error:", error);
                             return;
                         }
-                        mapbox.current.addImage(icon.id + "-sdf", image, { sdf: true });
-                        mapbox.current.addImage(icon.id, image, { sdf: false });
+                        mapbox.current.addImage(icon.id, image, { sdf: true });
                     });
                 });
 
