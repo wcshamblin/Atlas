@@ -1174,45 +1174,16 @@ function Map() {
 
         const accessToken = await getAccessTokenSilently();
 
-        // modify our local data
-        // setCustomMapPoints
-        // custommappoints is {mapId: points}
-        setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId];
-            for (let i = 0; i < newPoints.features.length; i++) {
-                if (newPoints.features[i].properties.id === pointId) {
-                    newPoints.features[i].properties = pointData;
-                    let currentMap = customMaps.maps.filter(map => map.id == mapId)[0];
-                    newPoints.features[i].properties.color = currentMap?.colors.filter(color => color.id == pointData.color)[0]?.hex;
-                    break;
-                }
-            }
-            return {
-                ...prev,
-                [mapId]: newPoints
-            };
-        });
-
-
-        // accessToken, map_id, point_id, point
-        // Put point and if successful, update the map
-        // catch data and error from the api call
         await putPoint(accessToken, mapId, pointId, pointData).then((data) => {
             console.log("point saved");
             console.log(data);
-            // if the point was saved, update the map
-        }).catch((error) => {
-            console.log("Error saving point... trying to revert");
-            // reset the map to the true state
-            getCustomMapPoints(mapId).then((data) => {
-                if (data) {
-                    // update the map
-                    mapbox.current.getSource(mapId).setData(data.data.points);
-                }
-            }).catch((error) => {
-                console.log(error);
-            });
-        });
+            getMaps();
+        }
+        ).catch((error) => {
+            console.log("Error saving point: " + error);
+            getMaps();
+        }
+        );
     }
     
 
@@ -1222,110 +1193,37 @@ function Map() {
             return;
         }
 
-        // set an id for the point
-        pointData.id = uuid();
-
         const accessToken = await getAccessTokenSilently();
 
-        let geoJsonData = {};
-
-        geoJsonData.lat = pointData.lat;
-        geoJsonData.lng = pointData.lng;
-        geoJsonData.name = pointData.name;
-        geoJsonData.description = pointData.description;
-
-        for (let i = 0; i < customMaps.maps.length; i++) {
-            if (customMaps.maps[i].id === mapId) {
-                geoJsonData.category = pointData.category;
-                geoJsonData.icon = pointData.icon;
-                geoJsonData.color = customMaps.maps[i].colors.filter(color => color.id == pointData.color)[0]?.hex;
-                break;
-            }
-        }
         console.log("Saving with point data", pointData);
 
         console.log(mapId);
         console.log(customMapPoints);
 
-        setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId];
-            newPoints.features.push({ "type": "Feature", "properties": geoJsonData, "geometry": { "type": "Point", "coordinates": [geoJsonData.lng, geoJsonData.lat] } });
-            console.log("After push", newPoints);
-            return {
-                ...prev,
-                [mapId]: newPoints
-            };
-        });
 
-        // accessToken, map_id, point_id, point
-        // Put point and if successful, update the map
-        // catch data and error from the api call
         await postPoint(accessToken, mapId, pointData).then((data) => {
-            console.log("point saved");
+            console.log("point added");
             console.log(data);
-            // modify the point and set the ID that the backend gave us
-            console.log("Trying to set ID as", data.data.point.id);
-            setCustomMapPoints((prev) => {
-                let newPoints = prev[mapId];
-                for (let i = 0; i < newPoints.features.length; i++) {
-                    if (newPoints.features[i].properties.id === pointData.id) {
-                        console.log("Found point to update");
-                        newPoints.features[i].properties.id = data.data.point.id;
-                        break;
-                    }
-                }
-                return {
-                    ...prev,
-                    [mapId]: newPoints
-                };
-            });
+            getMaps();
         }).catch((error) => {
-            console.log("Error saving point");
-            console.log(error);
+            console.log("Error saving point: " + error);
+            getMaps();
         });
     }
 
     async function removePoint(mapId, pointId) {
         const accessToken = await getAccessTokenSilently();
-
-        // modify our local data
-        // setCustomMapPoints
-        // custommappoints is {mapId: points}
-
-        // setPoints([...points.filter(p => p.id != deletedId)])
-
-        setCustomMapPoints((prev) => {
-            let newPoints = prev[mapId];
-            newPoints.features = newPoints.features.filter(p => p.properties.id != pointId);
-
-            return {
-                ...prev,
-                [mapId]: newPoints
-            };
-        });
-
-        // accessToken, map_id, point_id, point
-        // Put point and if successful, update the map
         
         // catch data and error from the api call
         await deletePoint(accessToken, mapId, pointId).then((data) => {
             console.log("point deleted");
             console.log(data);
-            // if the point was saved, update the map
+            getMaps();
         }).catch((error) => {
-            console.log("Error deleting point... trying to revert");
-            // reset the map to the true state
-            getCustomMapPoints(mapId).then((data) => {
-                if (data) {
-                    // update the map
-                    mapbox.current.getSource(mapId).setData(data.data.points);
-                }
-            }).catch((error) => {
-                console.log(error);
-            });
+            console.log("Error deleting point: " + error);
+            getMaps();
         });
     }
-
 
 
     const getStreetView = () => {
