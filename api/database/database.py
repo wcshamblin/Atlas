@@ -139,24 +139,17 @@ def verify_user_permissions(map_id, user, permission) -> bool:
                 return True
 
     # check if user has permission
-    if user["usersub"] in map_dict["users"]:
-        # if checking for view permissions, we can return true
-        if permission == "view":
-            return True
-        
-        try:
-            if map_dict["users"][user["usersub"]]["permissions"][permission]:
+    # map_dict["users"] looks like [{'permissions': {'edit': True, 'admin': True, 'add': True}, 'usersub': 'auth0|64fa9d0ee2c29ce3479d77a4'}]
+    print("User trying to access map: " + user["usersub"] + " Permission: " + permission + " Map users: ", map_dict["users"])
+    
+    for userdict in map_dict["users"]:
+        if user["usersub"] == userdict["usersub"]:
+            if permission == "view": 
                 return True
-            else:
-                return False
-        except KeyError:
-            return False
-            
-        
-        else:
-            return False
-    else:
-        return False
+            elif userdict["permissions"][permission]:
+                return True
+
+    return False
     
 
 def add_map(map) -> str:
