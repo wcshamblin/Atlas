@@ -457,7 +457,7 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
         if(isNew) {
             let mapData = {};
             mapData.categories = mapCategories.map(cat => cat.name);
-            mapData.icons = mapIcons.map(icon => { return {"name": icon.name, "icon": icon.icon} });
+            mapData.icons = mapIcons.map(icon => { return {"name": icon.name, "url": icon.url} });
             mapData.colors = mapColors.map(color => { return { "name": color.name, "color": color.hex } });
             mapData.name = mapName;
             mapData.description = mapDesc;
