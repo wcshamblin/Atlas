@@ -139,13 +139,19 @@ def verify_user_permissions(map_id, user, permission) -> bool:
                 return True
 
     # check if user has permission
-    if user in map_dict["users"]:
+    if user["usersub"] in map_dict["users"]:
         # if checking for view permissions, we can return true
         if permission == "view":
             return True
         
-        if permission in map_dict["users"][user]["permissions"]:
-            return True
+        try:
+            if map_dict["users"][user["usersub"]]["permissions"][permission]:
+                return True
+            else:
+                return False
+        except KeyError:
+            return False
+            
         
         else:
             return False
