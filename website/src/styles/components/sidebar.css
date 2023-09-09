@@ -207,6 +207,7 @@
     font-size: 12px;
     margin-bottom: 5px;
     overflow-wrap: break-word;
+    white-space: pre-line;
 }
 
 .custom-map-show-points-button {
