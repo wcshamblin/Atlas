@@ -280,7 +280,7 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
     # make icons into icon objects
     icons = []
     for icon in map.icons:
-        icons.append(Icon(name=icon["name"], url=icon["icon"]).to_dict())
+        icons.append(Icon(name=icon["name"], url=icon["url"]).to_dict())
 
     
     new_map = Map(owner=result["sub"],
