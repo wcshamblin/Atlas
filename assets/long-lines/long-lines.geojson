@@ -81,6 +81,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-116.330400",
+                    "33.263207",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Borrego Springs",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-122.794076",
                     "38.147954",
                     0
@@ -3687,7 +3702,7 @@
                 ]
             },
             "properties": {
-                "name": "Trifuno Pass Earth Station",
+                "name": "Triunfo Pass Earth Station",
                 "description": ""
             }
         },
@@ -3793,6 +3808,21 @@
             },
             "properties": {
                 "name": "University > Julian",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-120.271414",
+                    "40.440764",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Unknown",
                 "description": ""
             }
         },
@@ -4243,6 +4273,21 @@
             },
             "properties": {
                 "name": "Arcola",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-96.970872",
+                    "32.613609",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Cedar Hill Earth Station TX",
                 "description": ""
             }
         },
@@ -5706,6 +5751,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-102.38221272826198",
+                    "34.74997865887833",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Hereford tower",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-98.24110413",
                     "26.10616684",
                     0
@@ -6906,6 +6966,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-100.626296",
+                    "32.601254",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Pyron",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-100.706221012347",
                     "32.5632505386822",
                     0
@@ -7888,6 +7963,21 @@
             },
             "properties": {
                 "name": "Andytown South",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-82.568100",
+                    "29.504396",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Archer",
                 "description": ""
             }
         },
@@ -11061,6 +11151,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-73.867255",
+                    "42.400696",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Hass Hill / West Coxsackie",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-76.15611267",
                     "43.34555435",
                     0
@@ -12793,6 +12898,21 @@
             },
             "properties": {
                 "name": "DILLSBURG PA2",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-79.895798",
+                    "40.580093",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Dorseyville/Indianola",
                 "description": ""
             }
         },
@@ -14563,6 +14683,21 @@
             },
             "properties": {
                 "name": "ASHTON IL",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-88.243372",
+                    "38.835888",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Wakefield IL L3I (Power Feed)",
                 "description": ""
             }
         },
@@ -16701,6 +16836,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-82.668509",
+                    "38.894875",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Oak Hill OH \"L3I\" Power Feed",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-84.26583099",
                     "41.19638824",
                     0
@@ -18261,21 +18411,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-82.2094135058644",
-                    "40.9585411585571",
-                    0
-                ]
-            },
-            "properties": {
-                "name": "Polk",
-                "description": ""
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     "-82.2124939",
                     "40.95777893",
                     0
@@ -19048,6 +19183,21 @@
             },
             "properties": {
                 "name": "Clyattville",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "84.66619W",
+                    "33.95048 N",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Cobb",
                 "description": ""
             }
         },
@@ -20038,6 +20188,21 @@
             },
             "properties": {
                 "name": "Norman Park",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-83.6521936",
+                    "31.2513836",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Norman Park at&t long line tower",
                 "description": ""
             }
         },
@@ -24171,6 +24336,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-74.4969935",
+                    "41.1780334",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Mountain Creek",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-74.88238889",
                     "40.38510556",
                     0
@@ -27486,6 +27666,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-122.334423",
+                    "47.613079",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Seattle CO #3",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-122.30990579423218",
                     "47.61440274794048",
                     0
@@ -28483,6 +28678,21 @@
             },
             "properties": {
                 "name": "Aquila",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-111.543102",
+                    "35.289256",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Flagstaff AZ L3I Main Station",
                 "description": ""
             }
         },
@@ -29991,6 +30201,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-86.354655",
+                    "38.674832",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Orleans IN L3I (Power Feed)",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-86.02449036",
                     "41.30276489",
                     0
@@ -30261,6 +30486,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-86.0240989855746",
+                    "41.30284181443628",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Etna Green",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-87.5704847030765",
                     "37.9739466248487",
                     0
@@ -30366,8 +30606,8 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-87.3416834050769",
-                    "41.5976843513064",
+                    "-87.299525",
+                    "41.591733",
                     0
                 ]
             },
@@ -32031,6 +32271,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-86.800799",
+                    "35.904705",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Franklin",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-85.6319947",
                     "36.3116272",
                     0
@@ -32136,8 +32391,8 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-86.7930831896451",
-                    "36.3486847010728",
+                    "-86.783883",
+                    "36.351737",
                     0
                 ]
             },
@@ -35256,6 +35511,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-88.408401",
+                    "44.262649",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Appleton CO",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-90.88195934",
                     "46.59145064",
                     0
@@ -36433,21 +36703,6 @@
             },
             "properties": {
                 "name": "Waunakee short haul??",
-                "description": ""
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    "-94.124218",
-                    "45.236462",
-                    0
-                ]
-            },
-            "properties": {
-                "name": "ANNANDALE",
                 "description": ""
             }
         },
@@ -37813,6 +38068,21 @@
             },
             "properties": {
                 "name": "Aspen Jct",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-104.186556",
+                    "38.414946",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Boone RS Colorado  (Coaxial Station)",
                 "description": ""
             }
         },
@@ -45081,6 +45351,21 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-82.664298",
+                    "38.491110",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Providence Hill",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-83.8163802868649",
                     "38.1912724668499",
                     0
@@ -47023,21 +47308,6 @@
             },
             "properties": {
                 "name": "Salem",
-                "description": ""
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    "-122.334423",
-                    "47.613079",
-                    0
-                ]
-            },
-            "properties": {
-                "name": "Seattle CO #3",
                 "description": ""
             }
         },
@@ -51763,6 +52033,21 @@
             },
             "properties": {
                 "name": "Olive Branch",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-89.5444781",
+                    "34.3441835",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "oxford",
                 "description": ""
             }
         },
@@ -59706,8 +59991,8 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-97.50516667",
-                    "42.0539",
+                    "-97.318498",
+                    "42.019102",
                     0
                 ]
             },
@@ -60096,6 +60381,51 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
+                    "-79.57909499325217",
+                    "39.56865223806398",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Lenox Earth Station WV",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-79.155386",
+                    "39.323516",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Mt Storm L3I (Power Feed)",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-80.957476",
+                    "39.276046",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Pennsboro WV L3I (Power Feed)",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
                     "-79.805543",
                     "39.479013",
                     0
@@ -60298,6 +60628,21 @@
             },
             "properties": {
                 "name": "GLEN WV",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-80.309832",
+                    "37.784347",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Greenbrier \"Casper\" Bunker",
                 "description": ""
             }
         },
@@ -61318,6 +61663,21 @@
             },
             "properties": {
                 "name": "Mountain Home",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-115.855796",
+                    "43.043708",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "Mountain Home AFB",
                 "description": ""
             }
         },
@@ -62811,7 +63171,7 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-110.807105607846",
+                    "-114.11146",
                     "45.655363970867",
                     0
                 ]
@@ -62887,7 +63247,7 @@
                 "type": "Point",
                 "coordinates": [
                     "-114.076916072668",
-                    "46.6402290646087",
+                    "46.66952",
                     0
                 ]
             },
@@ -64011,13 +64371,13 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-113.513771855458",
-                    "48.2221424203428",
+                    "-113.9887878",
+                    "46.8876947",
                     0
                 ]
             },
             "properties": {
-                "name": "Mount Furlong",
+                "name": "Missoula PR",
                 "description": ""
             }
         },
@@ -64026,13 +64386,13 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    "-115.855796",
-                    "43.043708",
+                    "-113.513771855458",
+                    "48.2221424203428",
                     0
                 ]
             },
             "properties": {
-                "name": "Mountain Home AFB",
+                "name": "Mount Furlong",
                 "description": ""
             }
         },
@@ -69793,6 +70153,21 @@
             },
             "properties": {
                 "name": "Arlington",
+                "description": ""
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    "-105.204867",
+                    "41.883079",
+                    0
+                ]
+            },
+            "properties": {
+                "name": "AT&T Wheatland (Platte) WI",
                 "description": ""
             }
         },
