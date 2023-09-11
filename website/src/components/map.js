@@ -289,6 +289,24 @@ function Map() {
             }
         });
 
+        // add long lines 
+        let long_lines = require('./long-lines.geojson');
+        mapbox.current.addSource('Long Lines', {
+            'type': 'geojson',
+            'data': long_lines
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Long Lines',
+            'type': 'circle',
+            'source': 'Long Lines',
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': '#28b5e0',
+            }
+        });
+
+
         // add decom towers from file assets/geojson/decoms.geojson
         let decoms = require('./decoms.geojson');
         mapbox.current.addSource('Decommissioned Towers', {
@@ -610,6 +628,30 @@ function Map() {
             mapbox.current.setPaintProperty('Routing', 'line-width', 10);
         });
 
+        mapbox.current.on('click', 'Long Lines', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            const description = e.features[0].properties.description;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>Long Lines: " + name + "</text>" +
+                    // "<text id='towerpopupstat'>height:</text>" +
+                    "<text id='towerpopuptext'>" + description + "</text>" +
+                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+
+        mapbox.current.on('mouseenter', 'Long Lines', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'Long Lines', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
+
         mapbox.current.on('click', 'Decommissioned Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const name = e.features[0].properties.name;
@@ -626,6 +668,12 @@ function Map() {
                     // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
+        });
+        mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
+            mapbox.current.getCanvas().style.cursor = '';
         });
 
         mapbox.current.on('click', 'All Towers', (e) => {
@@ -648,6 +696,13 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
+        mapbox.current.on('mouseenter', 'All Towers', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'All Towers', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
 
         mapbox.current.on('click', 'Antennas', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
@@ -709,7 +764,12 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
-
+        mapbox.current.on('mouseenter', 'Antennas', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'Antennas', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
 
         // on left click
         mapbox.current.on('click', (e) => {
