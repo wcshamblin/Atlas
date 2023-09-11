@@ -26,13 +26,14 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     });
 
     const layerCategories = {
-        "Towers": ["All Towers", "All Tower Extrusions"],
-        "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
-        "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"],
+        "OpenRailwayMap": ["OpenRailwayMap"],
         "Google Streetview": ["Google StreetView"],
         "3D Buildings": ["3D Buildings"],
         "Shade Map": ["Shade Map"],
+        "Towers": ["All Towers", "All Tower Extrusions"],
         "Antennas": ["Antennas"],
+        "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
+        "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"],
         "Isochrone": ["Isochrone"]
     }
 
@@ -48,6 +49,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Shade Map": { "visible": false },
         "Antennas": { "visible": false },
         "Isochrone": { "visible": false },
+        "OpenRailwayMap": { "visible": false },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});

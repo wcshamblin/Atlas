@@ -398,6 +398,29 @@ function Map() {
             },
         );
 
+        // openRailwayMap source
+        mapbox.current.addSource('OpenRailwayMap', {
+            'type': 'raster',
+            'tiles': [
+                'https://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+                'https://b.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+                'https://c.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
+            ],
+            //server returns 512px img for 256 tiles
+            'tileSize': 512,
+            'tilePixelRatio': 2
+        });
+
+
+        // openRailwayMap layer
+        mapbox.current.addLayer(
+            {
+                'id': 'OpenRailwayMap',
+                'type': 'raster',
+                'source': 'OpenRailwayMap',
+                'paint': {}
+            },
+        );
 
         // isochrone source
         mapbox.current.addSource('Isochrone', {
@@ -470,6 +493,7 @@ function Map() {
         mapbox.current.moveLayer('All Towers');
         mapbox.current.moveLayer('Antennas');
         mapbox.current.moveLayer('Routing');
+        mapbox.current.moveLayer('OpenRailwayMap');
     }
 
     // get maps from api
