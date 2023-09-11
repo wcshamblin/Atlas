@@ -30,6 +30,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Google Streetview": ["Google StreetView"],
         "3D Buildings": ["3D Buildings"],
         "Shade Map": ["Shade Map"],
+        "Long Lines": ["Long Lines"],
         "Towers": ["All Towers", "All Tower Extrusions"],
         "Antennas": ["Antennas"],
         "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
@@ -50,6 +51,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Antennas": { "visible": false },
         "Isochrone": { "visible": false },
         "OpenRailwayMap": { "visible": false },
+        "Long Lines": { "visible": false }
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
