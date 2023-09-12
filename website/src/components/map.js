@@ -58,7 +58,7 @@ import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@r
 import Modal from './modal';
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
-mapboxgl.accessToken = "pk.eyJ1Ijoid2NzaGFtYmxpbiIsImEiOiJjbGZ6bHhjdWIxMmNnM2RwNmZidGx3bmF6In0.Lj_dbKJfWQ6v9RxSC-twHw";
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
 
 const shadeMap = new ShadeMap({
     date: new Date(),    // display shadows for current date
