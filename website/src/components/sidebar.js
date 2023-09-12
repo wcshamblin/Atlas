@@ -33,6 +33,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Long Lines": ["Long Lines"],
         "Towers": ["All Towers", "All Tower Extrusions"],
         "Antennas": ["Antennas"],
+        "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
         "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
         "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"],
         "Isochrone": ["Isochrone"]
@@ -51,7 +52,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Antennas": { "visible": false },
         "Isochrone": { "visible": false },
         "OpenRailwayMap": { "visible": false },
-        "Long Lines": { "visible": false }
+        "Long Lines": { "visible": false },
+        "FLYGHINDER 2023": { "visible": false },
+        "FLYGHINDER 2023 Extrusions": { "visible": false },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
