@@ -4,3 +4,4 @@ node_modules/
 .idea/
 assets/placestoexplore/
 access.log
+api/database/atlas-firestore-credentials.json
