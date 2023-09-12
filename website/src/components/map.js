@@ -306,6 +306,43 @@ function Map() {
             }
         });
 
+        // add FLYGHINDER
+        let flyghinder = require('./flyghinder.geojson');
+        mapbox.current.addSource('FLYGHINDER 2023', {
+            'type': 'geojson',
+            'data': flyghinder
+        });
+
+        mapbox.current.addLayer({
+            'id': 'FLYGHINDER 2023',
+            'type': 'circle',
+            'source': 'FLYGHINDER 2023',
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': '#62b031',
+            }
+        });
+        
+        // add FLYGHINDER extrusions
+        let flyghinder_extrusions = require('./flyghinder_polygons.geojson');
+        mapbox.current.addSource('FLYGHINDER 2023 Extrusions', {
+            'type': 'geojson',
+            'data': flyghinder_extrusions
+        });
+
+        mapbox.current.addLayer({
+            'id': 'FLYGHINDER 2023 Extrusions',
+            'type': 'fill-extrusion',
+            'source': 'FLYGHINDER 2023 Extrusions',
+            'minzoom': 12,
+            'paint': {
+                'fill-extrusion-color': "#62b031",
+                'fill-extrusion-height': ['get', 'height_meters'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
+        });
+
 
         // add decom towers from file assets/geojson/decoms.geojson
         let decoms = require('./decoms.geojson');
@@ -354,7 +391,7 @@ function Map() {
             'id': 'Decommissioned Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'Decommissioned Tower Extrusions',
-            'minzoom': 14,
+            'minzoom': 12,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'height'],
@@ -374,7 +411,7 @@ function Map() {
             'id': 'Safe Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'Safe Tower Extrusions',
-            'minzoom': 14,
+            'minzoom': 12,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'height'],
@@ -540,7 +577,7 @@ function Map() {
             style: style,
             projection: 'globe',
             center: [-74.5, 40],
-            zoom: 4
+            zoom: 2
         });
 
         mapbox.current.on('style.load', () => {
@@ -627,6 +664,37 @@ function Map() {
         mapbox.current.on('mouseleave', 'Routing', () => {
             mapbox.current.setPaintProperty('Routing', 'line-width', 10);
         });
+
+        mapbox.current.on('click', 'FLYGHINDER 2023', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            // round to 6 decimal places
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
+            const name = e.features[0].properties.designation;
+            const number = e.features[0].properties.number;
+            const height_feet = e.features[0].properties.height_feet;
+            const height_meters = e.features[0].properties.height_meters;
+            const elevation_feet = e.features[0].properties.elevation_feet;
+            const elevation_meters = e.features[0].properties.elevation_meters;
+            const types_of_obstacles = e.features[0].properties.types_of_obstacles;
+            
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML("<text id='towerpopuptitle'>" + name + " n:" + number + "</text>" +
+                    "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
+                    "Elevation: " + elevation_meters + "m (" + elevation_feet + "ft)<br>" +
+                    "Types of obstacles: " + types_of_obstacles + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+        mapbox.current.on('mouseenter', 'FLYGHINDER 2023', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'FLYGHINDER 2023', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+        
 
         mapbox.current.on('click', 'Long Lines', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
