@@ -212,7 +212,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         return (
                             <>
                                 <div className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
-                                    <input type="radio" checked={subLayers.some(layerName => layers[layerName].visible)}></input>
+                                    <input type="radio" defaultChecked={subLayers.some(layerName => layers[layerName].visible)}></input>
                                     <span>{catName}</span>
 
                                     {/*<p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
@@ -222,7 +222,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 </div>
                                 {subLayers.some(layerName => layers[layerName].visible) ? subLayers.map(layerName =>
                                     <div className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
-                                        <input type="radio" checked={layers[layerName].visible}></input>
+                                        <input type="radio" defaultChecked={layers[layerName].visible}></input>
                                         <span>{layerName}</span>
                                     </div>
                                 ) : ""}
@@ -231,7 +231,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     else
                         return (
                             <div className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
-                                <input type="radio" checked={layers[subLayers[0]].visible}></input>
+                                <input type="radio" defaultChecked={layers[subLayers[0]].visible}></input>
                                 <span>{catName}</span>
                                 {/*<p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>*/}
                             </div>
@@ -388,7 +388,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 <div className="settings-container">
                                     <h1 style={{ "margin": "5px 0px" }}>SETTINGS</h1>
                                     <span>Show low power antennas (information may not be accurate): </span>
-                                    <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
+                                    <input type="checkbox" defaultChecked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
                                     <br/><br/>
                                     <span>Isochrone minutes (how far to show the isochrone): </span>
                                     <input type="number" value={settings["isoMinutes"]} min="5" max="120" onChange={e => updateSettings("isoMinutes", e.target.value)} />
@@ -400,9 +400,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                         <option value="transit">Transit</option>
                                         <option value="truck">Semitruck</option>
                                     </select>
-                                    <br/><br/>
-                                    <span>Dark mode: </span>
-                                    <input type="checkbox" checked={settings["darkMode"]} onChange={e => updateSettings("darkMode", e.target.checked)}/>
+                                    {/*<br/><br/>*/}
+                                    {/*<span>Dark mode: </span>*/}
+                                    {/*<input type="checkbox" defaultChecked={settings["darkMode"]} onChange={e => updateSettings("darkMode", e.target.checked)}/>*/}
                                 </div>
                             )
                         default:

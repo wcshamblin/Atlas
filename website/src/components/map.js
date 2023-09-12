@@ -1604,7 +1604,7 @@ function Map() {
             mapbox.current.setLayoutProperty('Isochrone', 'visibility', 'visible');
             mapbox.current.getSource('Isochrone').setData(data);
         });
-    }, [homeMarkerPosition, settings, showIso]);
+    }, [homeMarkerPosition, settings["isoMinutes"], settings["isoProfile"], showIso]);
 
 
 
@@ -2014,46 +2014,45 @@ function Map() {
     // // dark mode useEffect
     // useEffect(() => {
     //     if (!mapbox.current) return; // wait for map to initialize
-
+    //
+    //     console.log("Dark mode changed: ", settings["darkMode"]);
+    //
     //     // if map style is not loaded yet, then don't do anything
-    //     mapbox.current.on('idle', () => {
-    //         if (settings["darkMode"]) {
-    //             // set style
-    //             mapbox.current.setStyle('mapbox://styles/mapbox/dark-v10');
-    
-    //             // set fog
-    //             mapbox.current.setFog(
-    //                 {
-    //                     'range': [5, 6],
-    //                     'horizon-blend': 0.3,
-    //                     'color': '#242B4B',
-    //                     'high-color': '#161B36',
-    //                     'space-color': '#0B1026',
-    //                     'star-intensity': .95
-    //                 }
-    //             )
-    
-    //         } else {
-    //             // set style
-    //             mapbox.current.setStyle('mapbox://styles/mapbox/light-v10');
-    
-    //             // set fog
-    //             mapbox.current.setFog(
-    //                 {
-    //                     'range': [5, 6],
-    //                     'horizon-blend': 0.3,
-    //                     'color': 'white',
-    //                     'high-color': '#add8e6',
-    //                     'space-color': '#d8f2ff',
-    //                     'star-intensity': 0.0
-    //                 })
-    //             }
-    
-    //     });
-    // }, [settings["darkMode"]]);
-    
-            
-
+    //     // use .isStyleLoaded() to check
+    //     if (!mapbox.current.isStyleLoaded()) return;
+    //
+    //     if (settings["darkMode"]) {
+    //         // set style
+    //         mapbox.current.setStyle('mapbox://styles/mapbox/dark-v10');
+    //
+    //         // set fog
+    //         // mapbox.current.setFog(
+    //         //     {
+    //         //         'range': [5, 6],
+    //         //         'horizon-blend': 0.3,
+    //         //         'color': '#242B4B',
+    //         //         'high-color': '#161B36',
+    //         //         'space-color': '#0B1026',
+    //         //         'star-intensity': .95
+    //         //     }
+    //         // )
+    //
+    //     } else {
+    //         // set style
+    //         mapbox.current.setStyle('mapbox://styles/mapbox/light-v10');
+    //
+    //         // set fog
+    //         // mapbox.current.setFog(
+    //         //     {
+    //         //         'range': [5, 6],
+    //         //         'horizon-blend': 0.3,
+    //         //         'color': 'white',
+    //         //         'high-color': '#add8e6',
+    //         //         'space-color': '#d8f2ff',
+    //         //         'star-intensity': 0.0
+    //         //     })
+    //         }
+    //     }, [settings["darkMode"]]);
 
     // sunburst home info - update on home change or map datetime change
     useEffect(() => {
