@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from json import dumps, load
 
-def init(path="database/atlas-50a45-firebase-adminsdk-wvx8v-06724e2f8c.json"):
+def init(path="database/atlas-firestore-credentials.json"):
     cred = credentials.Certificate(path)
     firebase_admin.initialize_app(cred)
     return firestore.client()
