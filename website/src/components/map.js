@@ -143,9 +143,6 @@ function Map() {
     const settingsRef = useRef({});
     const [settings, setSettings] = useState({});
 
-    // determine if the user's local time is between 6pm and 6am
-    const isNight = new Date().getHours() > 18 || new Date().getHours() < 6;
-
     const addSources = () => {
         mapbox.current.addSource('00', {
             'type': 'raster',
@@ -569,7 +566,7 @@ function Map() {
 
         // initialize map
         let style = 'mapbox://styles/mapbox/streets-v11';
-        if (isNight) {
+        if (new Date().getHours() > 18 || new Date().getHours() < 6) {
             style = 'mapbox://styles/mapbox/dark-v10';
         }
         mapbox.current = new mapboxgl.Map({
@@ -581,7 +578,7 @@ function Map() {
         });
 
         mapbox.current.on('style.load', () => {
-            if (isNight) {
+            if (new Date().getHours() > 18 || new Date().getHours() < 6) {
                 mapbox.current.setFog(
                     {
                         'range': [5, 6],
@@ -931,7 +928,7 @@ function Map() {
     useEffect(() => {
         if (localStorage.getItem('settings'))
             setSettings(JSON.parse(localStorage.getItem('settings')));
-        else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving" });
+        else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving", "darkMode": false});
     }, []);
 
     const renderRightClickPopup = (state) => {
@@ -2013,6 +2010,49 @@ function Map() {
             window.removeEventListener('keydown', handleKeydown);
         }
     }, [displaySidebar, displayStreetView, openModal]);
+
+    // // dark mode useEffect
+    // useEffect(() => {
+    //     if (!mapbox.current) return; // wait for map to initialize
+
+    //     // if map style is not loaded yet, then don't do anything
+    //     mapbox.current.on('idle', () => {
+    //         if (settings["darkMode"]) {
+    //             // set style
+    //             mapbox.current.setStyle('mapbox://styles/mapbox/dark-v10');
+    
+    //             // set fog
+    //             mapbox.current.setFog(
+    //                 {
+    //                     'range': [5, 6],
+    //                     'horizon-blend': 0.3,
+    //                     'color': '#242B4B',
+    //                     'high-color': '#161B36',
+    //                     'space-color': '#0B1026',
+    //                     'star-intensity': .95
+    //                 }
+    //             )
+    
+    //         } else {
+    //             // set style
+    //             mapbox.current.setStyle('mapbox://styles/mapbox/light-v10');
+    
+    //             // set fog
+    //             mapbox.current.setFog(
+    //                 {
+    //                     'range': [5, 6],
+    //                     'horizon-blend': 0.3,
+    //                     'color': 'white',
+    //                     'high-color': '#add8e6',
+    //                     'space-color': '#d8f2ff',
+    //                     'star-intensity': 0.0
+    //                 })
+    //             }
+    
+    //     });
+    // }, [settings["darkMode"]]);
+    
+            
 
 
     // sunburst home info - update on home change or map datetime change

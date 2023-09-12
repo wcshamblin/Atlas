@@ -400,6 +400,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                         <option value="transit">Transit</option>
                                         <option value="truck">Semitruck</option>
                                     </select>
+                                    <br/><br/>
+                                    <span>Dark mode: </span>
+                                    <input type="checkbox" checked={settings["darkMode"]} onChange={e => updateSettings("darkMode", e.target.checked)}/>
                                 </div>
                             )
                         default:
