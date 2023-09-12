@@ -578,7 +578,20 @@ function Map() {
         });
 
         mapbox.current.on('style.load', () => {
-            if (new Date().getHours() > 18 || new Date().getHours() < 6) {
+            let darkMode = false;
+            if (localStorage.getItem('settings')) {
+                const settings = JSON.parse(localStorage.getItem('settings'));
+                if (settings.darkMode) {
+                    darkMode = true;
+                }
+            } else {
+                // no settings so just used time based dark mode
+                if (new Date().getHours() > 18 || new Date().getHours() < 6) {
+                    darkMode = true;
+                }
+            }
+
+            if (darkMode) {
                 mapbox.current.setFog(
                     {
                         'range': [5, 6],
