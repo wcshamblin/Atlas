@@ -921,13 +921,13 @@ function Map() {
         }), 'top-left');
 
         // draw control
-        mapbox.current.addControl(new MapboxDraw({
-            displayControlsDefault: true,
-            controls: {
-                polygon: true,
-                trash: true
-            }
-        }), 'top-left');
+        // mapbox.current.addControl(new MapboxDraw({
+        //     displayControlsDefault: true,
+        //     controls: {
+        //         polygon: true,
+        //         trash: true
+        //     }
+        // }), 'top-left');
 
     }, [mapRef]);
 
