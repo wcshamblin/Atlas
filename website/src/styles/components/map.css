@@ -34,7 +34,7 @@ div#map {
     left: 10%;
     position: absolute;
 
-  z-index: 999;
+  z-index: 1001;
   /*display: block;*/
 }
 

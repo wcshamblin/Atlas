@@ -1434,37 +1434,43 @@ function Map() {
         let lng = streetViewPosition[1];
 
         return (
-            <div id="streetview" style={{ display: "block" }}>
-                <GoogleMap
-                    mapContainerStyle={{ height: "100%", width: "100%" }}
-                    center={{ lat: lat, lng: lng }}
-                    zoom={14}
-                >
-                    <StreetViewPanorama
-                        position={{ lat: lat, lng: lng }}
-                        visible={displayStreetView}
-                        // turn off all controls
-                        options={{
-                            addressControl: false,
-                            fullscreenControl: false,
-                            linksControl: false,
-                            motionTrackingControl: false,
-                            motionTrackingControlOptions: false,
-                            panControl: true,
-                            zoomControl: false,
-                            enableCloseButton: false
-                        }}
-                        // heading and pitch
-                        pov={{
-                            heading: 0,
-                            pitch: 0
-                        }}
-                    />
-                </GoogleMap>
-                <button id="closestreetview" onClick={() => { setDisplayStreetView(false)
-                    setStreetViewPosition([])
-                    setStreetViewPresent(false)}}>X</button>
-            </div>
+            <>
+                <div id="modal-background"></div>
+                <div id="streetview" style={{ display: "block" }}>
+                    <GoogleMap
+                        mapContainerStyle={{ height: "100%", width: "100%" }}
+                        center={{ lat: lat, lng: lng }}
+                        zoom={14}
+                    >
+                        <StreetViewPanorama
+                            position={{ lat: lat, lng: lng }}
+                            visible={displayStreetView}
+                            // turn off all controls
+                            options={{
+                                addressControl: false,
+                                fullscreenControl: false,
+                                linksControl: false,
+                                motionTrackingControl: false,
+                                motionTrackingControlOptions: false,
+                                panControl: true,
+                                zoomControl: false,
+                                enableCloseButton: false
+                            }}
+                            // heading and pitch
+                            pov={{
+                                heading: 0,
+                                pitch: 0
+                            }}
+                        />
+                    </GoogleMap>
+                    <button id="closestreetview" onClick={() => {
+                        setDisplayStreetView(false)
+                        setStreetViewPosition([])
+                        setStreetViewPresent(false)
+                    }}>X</button>
+                </div>
+            </>
+            
         )
     }
 
