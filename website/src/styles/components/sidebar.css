@@ -197,6 +197,10 @@
     flex-direction: column;
 }
 
+.custom-map-container-points select {
+    font-size: 13px;
+}
+
 .custom-map-display-toggle {
     width: 25px;
     margin-left: 5px;

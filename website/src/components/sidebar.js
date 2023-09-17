@@ -16,6 +16,9 @@ import {
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels, settings, updateSettings }) => {
     const [selectedPart, setSelectedPart] = useState("layers");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
+    const [pointsSearchCategory, setPointsSearchCategory] = useState("");
+    const [pointsSearchColor, setPointsSearchColor] = useState("");
+    const [pointsSearchIcon, setPointsSearchIcon] = useState("");
     const [isoMinutesLive, setIsoMinutesLive] = useState(null);
 
     useEffect(() => {
@@ -303,8 +306,20 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         {val.collapsed ? "" :
                             <div className="custom-map-container-points">
                                 <label style={{fontSize: "13px"}}>Points Search:</label>
-                                <input type="text" value={pointsSearchValue} onChange={e => setPointsSearchValue(e.target.value)}></input>
-                                {val.points.filter(point => point.name.toLowerCase().includes(pointsSearchValue.toLowerCase())).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
+                                <input type="text" value={pointsSearchValue} style={{fontSize: "13px"}} placeholder="Point Name" onChange={e => setPointsSearchValue(e.target.value)}></input>
+                                <select value={pointsSearchCategory} onChange={e => setPointsSearchCategory(e.target.value)}>
+                                    <option value="">(No Category Filter)</option>
+                                    {val.categories.sort(cat => cat.id).map(cat => (<option value={cat.id}>{cat.name}</option>))}
+                                </select>
+                                <select value={pointsSearchColor} onChange={e => setPointsSearchColor(e.target.value)}>
+                                    <option value="">(No Color Filter)</option>
+                                    {val.colors.sort(color => color.id).map(color => (<option value={color.id}>{color.name}</option>))}
+                                </select>
+                                <select value={pointsSearchIcon} onChange={e => setPointsSearchIcon(e.target.value)}>
+                                    <option value="">(No Icon Filter)</option>
+                                    {val.icons.sort(icon => icon.id).map(icon => (<option value={icon.id}>{icon.name}</option>))}
+                                </select><br />
+                                {val.points.filter(point => point.name.toLowerCase().includes(pointsSearchValue.toLowerCase()) && (pointsSearchCategory != "" ? point.category == pointsSearchCategory : true) && (pointsSearchColor != "" ? point.color == pointsSearchColor : true) && (pointsSearchIcon != "" ? point.icon == pointsSearchIcon : true)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => { flyTo(point.lat, point.lng); setCurrentSelectedCustomMapPoint({ "pointId": point.id, "layerId": mapId }) }} id={point.id}>
                                         <div className="custom-map-point-container">
                                             <img className="custom-map-point-icon" src={val.icons.filter(icon => icon.id == point.icon)[0].url} />
