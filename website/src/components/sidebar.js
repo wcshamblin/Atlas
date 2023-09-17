@@ -16,7 +16,19 @@ import {
 const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, getLayoutProperty, showShadeMap, setShowShadeMap, showIsochrone, setShowIsochrone, customMapsData, flyTo, currentSelectedCustomMapPoint, setCurrentSelectedCustomMapPoint, processCustomMapPointClick, setOpenModal, setModalType, setModalSelectedCustomMapId, setModalSelectedCustomMapPointId, displayLabels, settings, updateSettings }) => {
     const [selectedPart, setSelectedPart] = useState("layers");
     const [pointsSearchValue, setPointsSearchValue] = useState("");
-    const [currentModal, setCurrentModal] = useState("");
+    const [isoMinutesLive, setIsoMinutesLive] = useState(null);
+
+    useEffect(() => {
+        if(isoMinutesLive == null) {
+            setIsoMinutesLive(settings["isoMinutes"]);
+        } else {
+            const timer = setTimeout(() => {
+                updateSettings("isoMinutes", isoMinutesLive)
+            }, 500)
+
+            return () => clearTimeout(timer)
+        }
+    }, [isoMinutesLive]);
 
     const [baseLayers, setBaseLayers] = useState({
         "Google Hybrid": { "visible": true },
@@ -391,7 +403,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                     <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
                                     <br/><br/>
                                     <span>Isochrone minutes (how far to show the isochrone): </span>
-                                    <input type="number" value={settings["isoMinutes"]} min="5" max="120" onChange={e => updateSettings("isoMinutes", e.target.value)} />
+                                    <input type="range" value={isoMinutesLive} min="5" max="240" onChange={e => setIsoMinutesLive(e.target.value)} />
+                                    <span> {isoMinutesLive} minutes</span>
                                     <br/><br/>
                                     <span>Isochrone commute type: </span>
                                     <select value={settings["isoProfile"]} onChange={(e) => updateSettings("isoProfile", e.target.value)}>
