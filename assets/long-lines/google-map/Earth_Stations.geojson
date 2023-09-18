@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "Earth Stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Name": "Trifuno Pass Earth Station" }, "geometry": { "type": "Point", "coordinates": [ -118.8967985, 34.0815335 ] } },
+{ "type": "Feature", "properties": { "Name": "Roaring Creek Earth Station" }, "geometry": { "type": "Point", "coordinates": [ -76.4401248, 40.8948376 ] } }
+]
+}

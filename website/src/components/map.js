@@ -299,7 +299,7 @@ function Map() {
             'source': 'Long Lines',
             'paint': {
                 'circle-radius': 6,
-                'circle-color': '#28b5e0',
+                'circle-color': ['get', 'color'],
             }
         });
 
