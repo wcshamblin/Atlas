@@ -708,7 +708,10 @@ function Map() {
 
         mapbox.current.on('click', 'Long Lines', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            const name = e.features[0].properties.name;
+            // round to 6 decimal places
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
+            const name = e.features[0].properties.Name;
             const description = e.features[0].properties.description;
 
             new mapboxgl.Popup()
