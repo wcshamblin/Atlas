@@ -13,7 +13,11 @@ long_lines_geojsons = {
 }
 
 def long_lines_geojson_join():
-    geojson_out = {
+    geojson_points_out = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+    geojson_lines_out = {
         "type": "FeatureCollection",
         "features": []
     }
@@ -22,11 +26,19 @@ def long_lines_geojson_join():
         with open(geojson, "r") as f:
             geojson_in = load(f)
             for feature in geojson_in["features"]:
-                feature["properties"]["color"] = color
-                geojson_out["features"].append(feature)
+                if feature["geometry"]["type"] == "Point":
+                    feature["properties"]["color"] = color
+                    geojson_points_out["features"].append(feature)
+
+                elif feature["geometry"]["type"] == "LineString":
+                    feature["properties"]["color"] = color
+                    geojson_lines_out["features"].append(feature)
         
-    with open("assets/long-lines/google-map/long-lines.geojson", "w") as f:
-        dump(geojson_out, f)
+    with open("assets/long-lines/long-lines.geojson", "w") as f:
+        dump(geojson_points_out, f, indent=4)
+
+    with open("assets/long-lines/long-lines-linestrings.geojson", "w") as f:
+        dump(geojson_lines_out, f, indent=4)
 
 if __name__ == "__main__":
     long_lines_geojson_join()
