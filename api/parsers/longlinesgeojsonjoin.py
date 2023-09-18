@@ -12,6 +12,7 @@ long_lines_geojsons = {
     "assets/long-lines/google-map/WA_OR_ID_MT_WY_UT_NV_CA_AZ_NM.geojson": "#1da7d1"
 }
 
+
 def long_lines_geojson_join():
     geojson_points_out = {
         "type": "FeatureCollection",
