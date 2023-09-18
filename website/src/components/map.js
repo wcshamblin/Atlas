@@ -713,6 +713,7 @@ function Map() {
             coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.Name;
             const description = e.features[0].properties.description;
+            const type = e.features[0].properties.type;
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
@@ -720,6 +721,7 @@ function Map() {
                     "<text id='towerpopuptitle'>Long Lines: " + name + "</text>" +
                     // "<text id='towerpopupstat'>height:</text>" +
                     "<text id='towerpopuptext'>" + description + "</text>" +
+                    "<text id='towerpopupstat'>Type: " + type + "</text>" +
                     // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
