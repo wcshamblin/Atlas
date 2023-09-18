@@ -27,6 +27,8 @@ def long_lines_geojson_join():
         with open(geojson, "r") as f:
             geojson_in = load(f)
             for feature in geojson_in["features"]:
+                if "description" not in feature["properties"] or feature["properties"]["description"] is None:
+                    feature["properties"]["description"] = ""
                 if feature["geometry"]["type"] == "Point":
                     feature["properties"]["color"] = color
                     geojson_points_out["features"].append(feature)
@@ -34,7 +36,7 @@ def long_lines_geojson_join():
                 elif feature["geometry"]["type"] == "LineString":
                     feature["properties"]["color"] = color
                     geojson_lines_out["features"].append(feature)
-        
+            # if description isn't present or null, use an empty string
     with open("assets/long-lines/long-lines.geojson", "w") as f:
         dump(geojson_points_out, f, indent=4)
 
