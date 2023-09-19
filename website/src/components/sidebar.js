@@ -37,6 +37,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "Google Hybrid": { "visible": true },
         "Bing Hybrid": { "visible": false },
         "ESRI": { "visible": false },
+        "NAIP": { "visible": false },
+        "VFR": { "visible": false },
         "OpenStreetMap": { "visible": false },
     });
 

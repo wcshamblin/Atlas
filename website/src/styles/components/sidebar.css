@@ -109,6 +109,14 @@
     background-image: url('../images/openstreetmap.png');
 }
 
+.base-layer-naip {
+    background-image: url('../images/naip.png');
+}
+
+.base-layer-vfr {
+    background-image: url('../images/vfr.png');
+}
+
 #regular-layer-container {
     margin-left: 10px;
     width: 300px;
