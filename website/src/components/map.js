@@ -144,7 +144,7 @@ function Map() {
     const [settings, setSettings] = useState({});
 
     const addSources = () => {
-        mapbox.current.addSource('00', {
+        mapbox.current.addSource('Google Hybrid', {
             'type': 'raster',
             'tiles': [
                 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
@@ -153,7 +153,7 @@ function Map() {
             ],
             'tileSize': 256
         });
-        mapbox.current.addSource('01', {
+        mapbox.current.addSource('Bing Hybrid', {
             'type': 'raster',
             'tiles': [
                 'https://ecn.t0.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z',
@@ -164,7 +164,7 @@ function Map() {
             'tileSize': 256
         });
 
-        mapbox.current.addSource('02', {
+        mapbox.current.addSource('ESRI', {
             'type': 'raster',
             'tiles': [
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -174,12 +174,28 @@ function Map() {
             'tileSize': 256
         });
 
-        mapbox.current.addSource('03', {
+        mapbox.current.addSource('OpenStreetMap', {
             'type': 'raster',
             'tiles': [
                 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            'tileSize': 256
+        });
+
+        mapbox.current.addSource('NAIP', {
+            'type': 'raster',
+            'tiles': [
+                'https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/USDA_CONUS_PRIME/ImageServer/tile/{z}/{y}/{x}'
+            ],
+            'tileSize': 256
+        });
+
+        mapbox.current.addSource('VFR', {
+            'type': 'raster',
+            'tiles': [
+                'http://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{y}.png?origin=nw'
             ],
             'tileSize': 256
         });
@@ -495,7 +511,7 @@ function Map() {
             {
                 'id': 'Google Hybrid',
                 'type': 'raster',
-                'source': '00',
+                'source': 'Google Hybrid',
                 'paint': {}
             },
         );
@@ -504,7 +520,7 @@ function Map() {
             {
                 'id': 'Bing Hybrid',
                 'type': 'raster',
-                'source': '01',
+                'source': 'Bing Hybrid',
                 'paint': {}
             },
         );
@@ -513,7 +529,7 @@ function Map() {
             {
                 'id': 'ESRI',
                 'type': 'raster',
-                'source': '02',
+                'source': 'ESRI',
                 'paint': {}
             },
         );
@@ -522,7 +538,25 @@ function Map() {
             {
                 'id': 'OpenStreetMap',
                 'type': 'raster',
-                'source': '03',
+                'source': 'OpenStreetMap',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'NAIP',
+                'type': 'raster',
+                'source': 'NAIP',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'VFR',
+                'type': 'raster',
+                'source': 'VFR',
                 'paint': {}
             },
         );
