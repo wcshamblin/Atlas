@@ -1,4 +1,4 @@
-# [Atlas](https://octet.llc/)
+# [Atlas](https://atlas2.org/)
 
 A map designed for exploration and photography, driven by React and FastAPI.
 
