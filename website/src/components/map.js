@@ -195,7 +195,7 @@ function Map() {
         mapbox.current.addSource('VFR', {
             'type': 'raster',
             'tiles': [
-                'http://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{y}.png?origin=nw'
+                'https://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{y}.png?origin=nw'
             ],
             'tileSize': 256
         });
