@@ -200,6 +200,14 @@ function Map() {
             'tileSize': 256
         });
 
+        mapbox.current.addSource('MAXAR', {
+            'type': 'raster',
+            'tiles': [
+                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + process.env.REACT_APP_HERE_API_KEY
+            ],
+            'tileSize': 512
+        });
+
         // all towers source
         mapbox.current.addSource('All Towers', {
             'type': 'geojson',
@@ -557,6 +565,15 @@ function Map() {
                 'id': 'VFR',
                 'type': 'raster',
                 'source': 'VFR',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'MAXAR',
+                'type': 'raster',
+                'source': 'MAXAR',
                 'paint': {}
             },
         );
