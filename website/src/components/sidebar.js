@@ -89,11 +89,13 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                 // add layer to custom maps layers
                 //     setCustomMapsLayers({ ...customMapsLayers, [mapData.name]: { "visible": false, "collapsed": true, ...mapData } })
                 let collapsed = true;
+                let visible = false;
                 let oldRecord = customMapsLayers[mapData.id];
                 if (oldRecord) collapsed = oldRecord.collapsed;
+                if (oldRecord) visible = oldRecord.visible;
                 setCustomMapsLayers(prevState => ({
                     ...prevState,
-                    [mapData.id]: { "visible": false, "collapsed": collapsed, ...mapData }
+                    [mapData.id]: { "visible": visible, "collapsed": collapsed, ...mapData }
                 }))
             })
         }
