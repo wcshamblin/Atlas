@@ -117,6 +117,10 @@
     background-image: url('../images/vfr.png');
 }
 
+.base-layer-maxar {
+    background-image: url('../images/maxar.png');
+}
+
 #regular-layer-container {
     margin-left: 10px;
     width: 300px;
