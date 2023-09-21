@@ -859,7 +859,7 @@ function Map() {
                     "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
                     "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
                     "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
-                    "RabbitEars: " + "<a href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
+                    "RabbitEars: " + "<a id='rabbitearslink' target=_blank href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
                     "Last updated: " + last_update;
             } else if (transmitter_type === "FM") {
                 description = "Transmitter type: " + transmitter_type + "<br>" +

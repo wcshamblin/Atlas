@@ -19,6 +19,13 @@ div#map {
   display: inline;
 }
 
+#rabbitearslink {
+  color: #000000;
+  z-index: 999;
+  text-decoration: underline;
+  display: inline;
+}
+
 #towerpopuptitle {
   font-size: small;
   color: #000000;
