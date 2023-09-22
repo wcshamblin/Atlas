@@ -171,7 +171,8 @@ function Map() {
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
-            'tileSize': 256
+            'tileSize': 256,
+            'maxzoom': 18
         });
 
         mapbox.current.addSource('OpenStreetMap', {
