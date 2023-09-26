@@ -40,6 +40,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         "NAIP": { "visible": false },
         "MAXAR": { "visible": false },
         "VFR": { "visible": false },
+        "USGS Topo": { "visible": false },
         "OpenStreetMap": { "visible": false },
     });
 
