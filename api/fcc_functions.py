@@ -275,7 +275,8 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
         })
 
     # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
+    # antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
+    # not needed at the moment because of antenna displacer
     return antennas_out
 
 def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
@@ -351,7 +352,8 @@ def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
         })
 
     # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
+    # antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
+    # not needed at the moment because of antenna displacer
     return antennas_out
 
 def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
