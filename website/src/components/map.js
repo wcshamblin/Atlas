@@ -208,6 +208,14 @@ function Map() {
             'tileSize': 512
         });
 
+        mapbox.current.addSource('USGS Topo', {
+            'type': 'raster',
+            'tiles': [
+                'https://caltopo.s3.amazonaws.com/topo/{z}/{x}/{y}.png'
+            ],
+            'tileSize': 256
+        });
+
         // all towers source
         mapbox.current.addSource('All Towers', {
             'type': 'geojson',
@@ -574,6 +582,15 @@ function Map() {
                 'id': 'MAXAR',
                 'type': 'raster',
                 'source': 'MAXAR',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'USGS Topo',
+                'type': 'raster',
+                'source': 'USGS Topo',
                 'paint': {}
             },
         );
