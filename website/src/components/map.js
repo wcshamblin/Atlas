@@ -138,6 +138,7 @@ function Map() {
     const [openModal, setOpenModal] = useState(false);
     const [modalType, setModalType] = useState("mapAdd");
 
+    const [pointFilters, setPointFilters] = useState({});
     const [newPointMap, setNewPointMap] = useState(null);
 
     const settingsRef = useRef({});
@@ -1925,6 +1926,12 @@ function Map() {
         // iterate through the custom maps, add the source and layer, and if the layer is enabled (localstorage), get the data and set it
         console.log("Setting custom maps: ", customMaps);
         customMaps.maps.forEach((customMap) => {
+            setPointFilters((customFilters) => {
+                return {
+                    ...customFilters,
+                    [customMap.id]: {"name": "", "category": "", "color": "", "icon": ""}
+                }
+            });
             console.log("Setting custom map: ", customMap);
             // get data
             getCustomMapPoints(customMap.id).then((data) => {
@@ -2057,10 +2064,22 @@ function Map() {
         console.log("Custom map points changed: ", customMapPoints)
 
         Object.keys(customMapPoints).forEach((mapId) => {
+            let newMapPoints = JSON.parse(JSON.stringify(customMapPoints[mapId]));
+            newMapPoints.features = newMapPoints.features.filter(feature => feature.properties.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase()) && (pointFilters[mapId].category != "" ? feature.properties.category == pointFilters[mapId].category : true) && (pointFilters[mapId].color != "" ? feature.properties.color == pointFilters[mapId].color : true) && (pointFilters[mapId].icon != "" ? feature.properties.icon == pointFilters[mapId].icon : true))
+
             console.log("Setting custom map points for ", mapId, ": ", customMapPoints[mapId]);
-            mapbox.current.getSource(mapId).setData(customMapPoints[mapId]);
+            mapbox.current.getSource(mapId).setData(newMapPoints);
         });
-    }, [customMapPoints]);
+    }, [customMapPoints, pointFilters]);
+
+    const updatePointFilters = (mapId, filterType, value) => {
+        setPointFilters((pointFilters) => {
+            return {
+                ...pointFilters,
+                [mapId]: { ...pointFilters[mapId], [filterType]: value }
+            }
+        });
+    }
 
     // escape key handling
     useEffect(() => {
@@ -2269,7 +2288,30 @@ function Map() {
     return (
         <>
             <div id="map" ref={mapRef}></div>
-            {<Sidebar mapStatus={!loading} expanded={displaySidebar && mapbox.current} setDisplaySidebar={setDisplaySidebar} setLayoutProperty={setLayoutProperty} getLayoutProperty={getLayoutProperty} showShadeMap={showShadeMap} setShowShadeMap={setShowShadeMap} showIsochrone={showIso} setShowIsochrone={setShowIso} customMapsData={customMaps} flyTo={flyTo} currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} setOpenModal={setOpenModal} setModalType={setModalType} setModalSelectedCustomMapId={setModalSelectedCustomMapId} setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} displayLabels={displayLabels} settings={settings} updateSettings={updateSettings} />}
+            <Sidebar 
+                mapStatus={!loading} 
+                expanded={displaySidebar && mapbox.current} 
+                setDisplaySidebar={setDisplaySidebar} 
+                setLayoutProperty={setLayoutProperty} 
+                getLayoutProperty={getLayoutProperty} 
+                showShadeMap={showShadeMap} 
+                setShowShadeMap={setShowShadeMap} 
+                showIsochrone={showIso} 
+                setShowIsochrone={setShowIso} 
+                customMapsData={customMaps} 
+                flyTo={flyTo} 
+                currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} 
+                setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} 
+                setOpenModal={setOpenModal} 
+                setModalType={setModalType} 
+                setModalSelectedCustomMapId={setModalSelectedCustomMapId} 
+                setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} 
+                displayLabels={displayLabels} 
+                settings={settings} 
+                updateSettings={updateSettings}
+                pointFilters={pointFilters}
+                updatePointFilters={updatePointFilters}
+            />
             <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0]?.points?.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} getMaps={getMaps} />
 
             {displayStreetView ? getStreetView() : ""}
