@@ -327,3 +327,8 @@
 .settings-container > input {
     vertical-align: middle;
 }
+
+.layers-container {
+    color: black;
+    font-size: 11px;
+}

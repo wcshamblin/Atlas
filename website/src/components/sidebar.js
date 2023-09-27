@@ -20,9 +20,10 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     const [pointsSearchColor, setPointsSearchColor] = useState("");
     const [pointsSearchIcon, setPointsSearchIcon] = useState("");
     const [isoMinutesLive, setIsoMinutesLive] = useState(null);
+    const [selectedCountry, setSelectedCountry] = useState("");
 
     useEffect(() => {
-        if(isoMinutesLive == null) {
+        if (isoMinutesLive == null) {
             setIsoMinutesLive(settings["isoMinutes"]);
         } else {
             const timer = setTimeout(() => {
@@ -34,14 +35,14 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     }, [isoMinutesLive]);
 
     const [baseLayers, setBaseLayers] = useState({
-        "Google Hybrid": { "visible": true },
-        "Bing Hybrid": { "visible": false },
-        "ESRI": { "visible": false },
-        "NAIP": { "visible": false },
-        "MAXAR": { "visible": false },
-        "VFR": { "visible": false },
-        "USGS Topo": { "visible": false },
-        "OpenStreetMap": { "visible": false },
+        "Google Hybrid": { "visible": true, "country": "all" },
+        "Bing Hybrid": { "visible": false, "country": "all" },
+        "ESRI": { "visible": false, "country": "all" },
+        "NAIP": { "visible": false, "country": "usa" },
+        "MAXAR": { "visible": false, "country": "all" },
+        "VFR": { "visible": false, "country": "usa" },
+        "USGS Topo": { "visible": false, "country": "usa" },
+        "OpenStreetMap": { "visible": false, "country": "all" },
     });
 
     const layerCategories = {
@@ -59,21 +60,21 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     }
 
     const [layers, setLayers] = useState({
-        "All Towers": { "visible": false },
-        "All Tower Extrusions": { "visible": false },
-        "Decommissioned Towers": { "visible": false },
-        "Decommissioned Tower Extrusions": { "visible": false },
-        "Safe Towers": { "visible": false },
-        "Safe Tower Extrusions": { "visible": false },
-        "Google StreetView": { "visible": false },
-        "3D Buildings": { "visible": false },
-        "Shade Map": { "visible": false },
-        "Antennas": { "visible": false },
-        "Isochrone": { "visible": false },
-        "OpenRailwayMap": { "visible": false },
-        "Long Lines": { "visible": false },
-        "FLYGHINDER 2023": { "visible": false },
-        "FLYGHINDER 2023 Extrusions": { "visible": false },
+        "All Towers": { "visible": false, "country": "usa" },
+        "All Tower Extrusions": { "visible": false, "country": "usa" },
+        "Decommissioned Towers": { "visible": false, "country": "usa" },
+        "Decommissioned Tower Extrusions": { "visible": false, "country": "usa" },
+        "Safe Towers": { "visible": false, "country": "usa" },
+        "Safe Tower Extrusions": { "visible": false, "country": "usa" },
+        "Google StreetView": { "visible": false, "country": "all" },
+        "3D Buildings": { "visible": false, "country": "all" },
+        "Shade Map": { "visible": false, "country": "all" },
+        "Antennas": { "visible": false, "country": "usa" },
+        "Isochrone": { "visible": false, "country": "all" },
+        "OpenRailwayMap": { "visible": false, "country": "all" },
+        "Long Lines": { "visible": false, "country": "usa" },
+        "FLYGHINDER 2023": { "visible": false, "country": "eu" },
+        "FLYGHINDER 2023 Extrusions": { "visible": false, "country": "eu" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
@@ -123,6 +124,17 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         }
     }, [mapStatus]);
 
+    useEffect(() => {
+        if(selectedCountry != "")
+            localStorage.setItem('selected-country-filter', selectedCountry);
+    }, [selectedCountry]);
+
+    useEffect(() => {
+        if (localStorage.getItem('selected-country-filter'))
+            setSelectedCountry(localStorage.getItem('selected-country-filter'));
+        else setSelectedCountry("all");
+    }, [])
+
     // update custom map layers with local storage visibility when we know they're loaded
     useEffect(() => {
         if (mapStatus && customMapsLayersLoaded) {
@@ -140,7 +152,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
 
         if (customMapsLayers[currentSelectedCustomMapPoint.layerId] && !customMapsLayers[currentSelectedCustomMapPoint.layerId].collapsed) {
             let element = document.getElementById(currentSelectedCustomMapPoint.pointId);
-            if(element) element.scrollIntoView();
+            if (element) element.scrollIntoView();
         }
     }, [currentSelectedCustomMapPoint]);
 
@@ -151,7 +163,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         });
 
         displayLabels(!(name == "OpenStreetMap" || name == "Google Hybrid"));
-        
+
         localStorage.setItem('base-layer', name);
 
         setBaseLayers({ ...baseLayers });
@@ -207,11 +219,22 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         })
     }
 
+    const filterCountry = layer => {
+        switch (selectedCountry) {
+            case "all":
+                return true;
+            case "none":
+                return layer.country == "all";
+            default:
+                return layer.country == selectedCountry || layer.country == "all";
+        }
+    }
+
     const renderBaseLayers = () => {
         return (
             <div id="base-layer-container">
                 {
-                    Object.entries(baseLayers).map(([layerName, val]) => (
+                    Object.entries(baseLayers).filter(([, val]) => filterCountry(val)).map(([layerName, val]) => (
                         <div className={!val.visible ? "base-layer-item" : "base-layer-selected base-layer-item"} onClick={() => updateBaseLayers(layerName)}>
                             <div className={"base-layer-" + layerName.toLowerCase().replaceAll(" ", "") + " base-layer-img"}></div>
                             <span>{layerName}</span>
@@ -228,7 +251,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
     const renderRegularLayers = () => {
         return (
             <div id="regular-layer-container">
-                {Object.entries(layerCategories).map(([catName, subLayers]) => {
+                {Object.entries(layerCategories).filter(([, subLayers]) => subLayers.every(layerName => filterCountry(layers[layerName]))).map(([catName, subLayers]) => {
                     if (subLayers.length > 1)
                         return (
                             <>
@@ -294,10 +317,10 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     <div className="custom-map-container">
                         <div className="custom-map-container-header">
                             <div>
-                                <FontAwesomeIcon className="custom-map-display-toggle" icon={val.visible ? faEye : faEyeSlash} onClick={() => updateCustomMapsLayers(mapId, !val.visible)}/>
+                                <FontAwesomeIcon className="custom-map-display-toggle" icon={val.visible ? faEye : faEyeSlash} onClick={() => updateCustomMapsLayers(mapId, !val.visible)} />
                                 <span className="custom-map-container-title">{val.name}</span>
                             </div>
-                            <FontAwesomeIcon icon={faPenToSquare} className="custom-map-edit-button" onClick={() => openMapEditModal(val.id)}/>
+                            <FontAwesomeIcon icon={faPenToSquare} className="custom-map-edit-button" onClick={() => openMapEditModal(val.id)} />
                         </div>
                         <div className="custom-map-container-main">
                             <span>Description:</span>
@@ -311,8 +334,8 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                         </div>
                         {val.collapsed ? "" :
                             <div className="custom-map-container-points">
-                                <label style={{fontSize: "13px"}}>Points Search:</label>
-                                <input type="text" value={pointsSearchValue} style={{fontSize: "13px"}} placeholder="Point Name" onChange={e => setPointsSearchValue(e.target.value)}></input>
+                                <label style={{ fontSize: "13px" }}>Points Search:</label>
+                                <input type="text" value={pointsSearchValue} style={{ fontSize: "13px" }} placeholder="Point Name" onChange={e => setPointsSearchValue(e.target.value)}></input>
                                 <select value={pointsSearchCategory} onChange={e => setPointsSearchCategory(e.target.value)}>
                                     <option value="">(No Category Filter)</option>
                                     {val.categories.sort(cat => cat.id).map(cat => (<option value={cat.id}>{cat.name}</option>))}
@@ -335,7 +358,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                                 <span>{point.lat},{point.lng}</span>
                                             </div>
                                         </div>
-                                        <FontAwesomeIcon icon={faPenToSquare} className="custom-map-point-edit-button" onClick={() => openPointEditModal(val.id, point.id)}/>
+                                        <FontAwesomeIcon icon={faPenToSquare} className="custom-map-point-edit-button" onClick={() => openPointEditModal(val.id, point.id)} />
                                     </div>
                                 )}
                             </div>}
@@ -378,10 +401,10 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
         <div id="sidebar">
             <div id="sidebar-header">
                 <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')}/>
+                    <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')} />
                 </div>
                 <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('layers')}/>
+                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('layers')} />
                 </div>
                 <div class="sidebar-link">
                     <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
@@ -390,7 +413,7 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                     <FontAwesomeIcon icon={faGear} class="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
                 </div>
                 <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faBars} class="sidebar-link-button" onClick={e => setDisplaySidebar(false)}/>
+                    <FontAwesomeIcon icon={faBars} class="sidebar-link-button" onClick={e => setDisplaySidebar(false)} />
                 </div>
             </div>
 
@@ -401,8 +424,15 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                             return <h1>WEATHER</h1>
                         case 'layers':
                             return (
-                                <div>
+                                <div className="layers-container">
                                     <h1 style={{ "margin": "5px 0px" }}>LAYERS</h1>
+                                    <span>Country Specific Filter: </span>
+                                    <select value={selectedCountry} onChange={e => setSelectedCountry(e.target.value)}>
+                                        <option value="all">All Country Layers</option>
+                                        <option value="none">No Country Specific Layers</option>
+                                        <option value="usa">United States Only</option>
+                                        <option value="eu">EU Only</option>
+                                    </select>
                                     <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
                                     {renderBaseLayers()}
                                     <h3>Regular Layers</h3>
@@ -421,12 +451,12 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                 <div className="settings-container">
                                     <h1 style={{ "margin": "5px 0px" }}>SETTINGS</h1>
                                     <span>Show low power antennas (information may not be accurate): </span>
-                                    <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)}/>
-                                    <br/><br/>
+                                    <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)} />
+                                    <br /><br />
                                     <span>Isochrone minutes (how far to show the isochrone): </span>
                                     <input type="range" value={isoMinutesLive} min="5" max="240" onChange={e => setIsoMinutesLive(e.target.value)} />
                                     <span> {isoMinutesLive} minutes</span>
-                                    <br/><br/>
+                                    <br /><br />
                                     <span>Isochrone commute type: </span>
                                     <select value={settings["isoProfile"]} onChange={(e) => updateSettings("isoProfile", e.target.value)}>
                                         <option value="driving">Driving</option>
@@ -434,9 +464,9 @@ const Sidebar = ({ mapStatus, expanded, setDisplaySidebar, setLayoutProperty, ge
                                         <option value="transit">Transit</option>
                                         <option value="truck">Semitruck</option>
                                     </select>
-                                    <br/><br/>
+                                    <br /><br />
                                     <span>Dark mode (requires reload!): </span>
-                                    <input type="checkbox" checked={settings["darkMode"]} onChange={e => updateSettings("darkMode", e.target.checked)}/>
+                                    <input type="checkbox" checked={settings["darkMode"]} onChange={e => updateSettings("darkMode", e.target.checked)} />
                                 </div>
                             )
                         default:
