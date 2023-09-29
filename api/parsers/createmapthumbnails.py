@@ -1,8 +1,8 @@
 from PIL import Image
 from sys import argv
 
-left = 2025
-top = 776
+left = 2330
+top = 579
 right = left+60
 bottom = top+60
 

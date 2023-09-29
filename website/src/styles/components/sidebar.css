@@ -121,6 +121,10 @@
     background-image: url('../images/maxar.png');
 }
 
+.base-layer-usgstopo {
+    background-image: url('../images/usgstopo.png');
+}
+
 #regular-layer-container {
     margin-left: 10px;
     width: 300px;
@@ -322,4 +326,9 @@
 
 .settings-container > input {
     vertical-align: middle;
+}
+
+.layers-container {
+    color: black;
+    font-size: 11px;
 }
