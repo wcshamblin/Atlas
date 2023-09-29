@@ -157,7 +157,11 @@ def add_map(map) -> str:
 
 def delete_map_by_id(id) -> str:
     map_obj = db.collection(u'maps').where(u'id', u'==', id).get()[0]
-    return map_obj.reference.delete()
+
+    # remove all users from the map (soft delete)
+    map_obj.reference.update({u'users': []})
+
+    return map_obj.reference.update({u'deleted': True})
 
 
 def update_map_name(id, name, editor) -> str:
