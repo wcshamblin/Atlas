@@ -160,6 +160,7 @@ def delete_map_by_id(id) -> str:
 
     # remove all users from the map (soft delete)
     map_obj.reference.update({u'users': []})
+    map_obj.reference.update({u'owner': ""})
 
     return map_obj.reference.update({u'deleted': True})
 
