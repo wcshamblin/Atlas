@@ -68,15 +68,15 @@ const Sidebar = ({
     const layerCategories = {
         "OpenRailwayMap": ["OpenRailwayMap"],
         "Google Streetview": ["Google StreetView"],
+        "Isochrone": ["Isochrone"],
         "3D Buildings": ["3D Buildings"],
         "Shade Map": ["Shade Map"],
-        "Long Lines": ["Long Lines"],
         "Towers": ["All Towers", "All Tower Extrusions"],
         "Antennas": ["Antennas"],
+        "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
         "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
-        "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"],
-        "Isochrone": ["Isochrone"]
+        "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"]
     }
 
     const [layers, setLayers] = useState({
