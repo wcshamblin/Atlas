@@ -1,6 +1,8 @@
 div#rightclickpopup {
     padding: 0;
     margin: 0;
+    /* break and wrap text */
+    word-break: break-word;
 }
 
 div#right-click-popup-content {
