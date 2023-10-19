@@ -3,6 +3,7 @@ div#rightclickpopup {
     margin: 0;
     /* break and wrap text */
     word-break: break-word;
+    white-space: pre-line;
 }
 
 div#right-click-popup-content {
