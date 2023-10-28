@@ -5,11 +5,27 @@ export const HeroBanner = () => {
   const backgroundImages = [
       "https://i.imgur.com/hMv2K6i.jpg",
       "https://i.imgur.com/IzqqYe6.jpg",
-      "https://i.imgur.com/ycXV6uV.jpg",
       "https://i.imgur.com/6KT153J.jpg",
       "https://i.imgur.com/grhtqA2.jpg",
-      "https://i.imgur.com/iwa5T7D.jpg",
       "https://i.imgur.com/z4C3Rs3.jpg",
+      "https://i.imgur.com/eXBtbs2.jpeg",
+      "https://i.imgur.com/2hmNQqR.jpg",
+      "https://i.imgur.com/VGSxCxd.jpg",
+      "https://i.imgur.com/D6JFFO1.jpg",
+      "https://i.imgur.com/Y6yAgOi.jpg",
+      "https://i.imgur.com/McthapQ.jpg",
+      "https://i.imgur.com/pe3GX1X.jpg",
+      "https://i.imgur.com/ikKC9Qk.jpg",
+      "https://i.imgur.com/2PPSZUf.jpg",
+      "https://i.imgur.com/mj7Bc6o.jpg",
+      "https://i.imgur.com/Ahtn25W.jpg",
+      "https://i.imgur.com/CpwTfBv.jpg",
+      "https://i.imgur.com/mYsVovH.jpg",
+      "https://i.imgur.com/SpTE6pv.jpg",
+      "https://i.imgur.com/JO8nDsJ.jpg",
+      "https://i.imgur.com/pOMlubf.jpg",
+      "https://i.imgur.com/tGWStHm.jpg",
+      "https://i.imgur.com/Fbhs6Ze.jpg"
   ]
     const randomBackgroundImage = backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
 
