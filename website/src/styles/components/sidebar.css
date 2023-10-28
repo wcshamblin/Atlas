@@ -60,6 +60,70 @@
     overflow-x: hidden;
 }
 
+#sidebar-content h1, #sidebar-content h2, #sidebar-content h3 {
+    margin-left: 5px;
+    margin-top: 0px;
+    margin-bottom: 3px;
+}
+
+#sunburst-sunrise-sunset {
+    font-size: 20px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+#sunrise-sunset-metrics {
+    margin-left: 20px;
+}
+
+#sunrise-sunset-metrics #regular {
+    font-size: 16px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#sunrise-sunset-metrics #times {
+    font-size: 14px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#sunburst-quality-info-button-hover {
+    font-size: 14px;
+    color: black;
+    margin-left: 5px;
+}
+
+#sunburst-quality-info-button-hover span {
+    display: inline-block;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.sunburst-sunrise-sunset-icon {
+    width: 25px;
+    height: 25px;
+    margin-left: 5px;
+    margin-bottom: 3px;
+    stroke: #ef6c00;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.sunburst-clock-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 3px;
+    stroke: #000000;
+    vertical-align: middle;
+    display: inline-block;
+    margin-top: 3px;
+}
+
 #base-layer-container {
     margin-left: 10px;
     display: grid;

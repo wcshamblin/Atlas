@@ -10,8 +10,12 @@ import {
     faLayerGroup,
     faBars,
     faGear,
-    faCloud,
+    faCircleQuestion,
 } from '@fortawesome/free-solid-svg-icons'
+
+import { ReactComponent as SunriseIcon } from '../styles/images/sunrise_icon.svg';
+import { ReactComponent as SunsetIcon } from '../styles/images/sunset_icon.svg';
+import { ReactComponent as Clock } from '../styles/images/clock.svg';
 
 const Sidebar = ({ 
     mapStatus,
@@ -19,12 +23,14 @@ const Sidebar = ({
     setDisplaySidebar, 
     setLayoutProperty, 
     getLayoutProperty, 
-    showShadeMap, 
+    showShadeMap,
     setShowShadeMap, 
     showIsochrone, 
     setShowIsochrone, 
-    customMapsData, 
-    flyTo, 
+    customMapsData,
+    sunburstHomeInfo,
+    flyTo,
+    homeIsSet,
     currentSelectedCustomMapPoint, 
     setCurrentSelectedCustomMapPoint, 
     processCustomMapPointClick, 
@@ -176,6 +182,94 @@ const Sidebar = ({
         }
     }, [currentSelectedCustomMapPoint]);
 
+    const SunburstQualityInfoButton = () => {
+        const [hover, setHover] = useState(false);
+
+    return (
+        <span id="sunburst-quality-info-button" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+            <FontAwesomeIcon icon={faCircleQuestion} style={{ "marginLeft": "5px", color: hover ? "black" : "grey" }} />
+            {hover ? (
+                <div id="sunburst-quality-info-button-hover">
+                    <span><text style={{ color: "red", marginLeft: "0px"}}>Poor (0-25%)</text>  Little to no color, with precipitation or a thick cloud layer often blocking a direct view of the sun.</span>
+                    <br/>
+                    <span><text style={{ color: "orange", marginLeft: "0px"}}>Fair (25-50%)</text>  Some color for a short time, with conditions ranging from mostly cloudy, or hazy, to clear, with little to no clouds at all levels.</span>
+                    <br/>
+                    <span><text style={{ color: "gold", marginLeft: "0px"}}>Good (50-75%)</text>  A fair amount of color, often multi-colored, lasting a considerable amount of time. Often caused by scattered clouds at multiple levels.</span>
+                    <br/>
+                    <span><text style={{ color: "green", marginLeft: "0px"}}>Great (75-100%)</text>  Extremely vibrant color lasting 30 minutes or more. Often caused by multiple arrangements of clouds at multiple levels, transitioning through multiple stages of vivid color.</span>
+                </div>
+            ) : ""}
+        </span>
+    )
+    }
+
+
+    const renderSunburstInfo = () => {
+        try {
+            let type = sunburstHomeInfo["features"][0]["properties"]["type"];
+            let twilight;
+            if (type === "Sunrise") {
+                twilight = "dawn";
+            } else {
+                twilight = "dusk";
+            }
+            let quality = sunburstHomeInfo["features"][0]["properties"]["quality"];
+            let quality_percent = sunburstHomeInfo["features"][0]["properties"]["quality_percent"];
+
+            let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
+            let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
+            let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
+
+            let quality_color;
+            if (quality_percent >= 75) {
+                quality_color = "green";
+            }
+            else if (quality_percent >= 50) {
+                quality_color = "gold";
+            }
+            else if (quality_percent >= 25) {
+                quality_color = "orange";
+            }
+            else {
+                quality_color = "red";
+            }
+
+            let SunriseSunsetIcon;
+            if (type === "Sunrise") {
+                SunriseSunsetIcon = <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+            }
+            else {
+                SunriseSunsetIcon = <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+            }
+
+            return (
+                <div id="sunburst-segment">
+                    <text id="sunburst-sunrise-sunset">{SunriseSunsetIcon} {type}</text><br/>
+                    <div id="sunrise-sunset-metrics">
+                        <text id="regular">Quality: <span style={{ color: quality_color }}>{quality} ({quality_percent}%)</span></text>
+                        <SunburstQualityInfoButton/>
+                        <br/>
+                        <Clock className="sunburst-clock-icon"/><text id="times">Times:</text><br/>
+                        <div style={{ marginLeft: "20px" }}>
+                            <text id="times">Astronomical: {astro_time}</text><br/>
+                            <text id="times">Nautical: {nautical_time}</text><br/>
+                            <text id="times">Civil: {civil_time}</text>
+                        </div>
+                    </div>
+                </div>
+            )
+        } catch (e) {
+            console.log("Error rendering sunburst info: " + e);
+            return (
+                <div id="sunburst-segment">
+                    <div id="sunrise-sunset-metrics">
+                        <text id="sunburst-sunrise-sunset">No sunrise/sunset data available - check console for details.</text>
+                    </div>
+                </div>
+            )
+        }
+    }
+
     const updateBaseLayers = name => {
         Object.keys(baseLayers).forEach(layer => {
             setLayoutProperty(layer, 'visibility', layer === name ? 'visible' : 'none');
@@ -275,8 +369,11 @@ const Sidebar = ({
                     if (subLayers.length > 1)
                         return (
                             <>
-                                <div className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
-                                    <input type="radio" checked={subLayers.some(layerName => layers[layerName].visible)}></input>
+                                <div
+                                    className={!subLayers.some(layerName => layers[layerName].visible) ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}
+                                    onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>
+                                    <input type="radio"
+                                           checked={subLayers.some(layerName => layers[layerName].visible)}></input>
                                     <span>{catName}</span>
 
                                     {/*<p className={subLayers.some(layerName => !layers[layerName].visible) ? "black" : "selected black"} onClick={() => updateCategory(catName, subLayers.some(layerName => !layers[layerName].visible))}>{catName}</p>
@@ -285,7 +382,9 @@ const Sidebar = ({
                                 )}*/}
                                 </div>
                                 {subLayers.some(layerName => layers[layerName].visible) ? subLayers.map(layerName =>
-                                    <div className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"} onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
+                                    <div
+                                        className={!layers[layerName].visible ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"}
+                                        onClick={() => updateLayers(layerName, !layers[layerName].visible)}>
                                         <input type="radio" checked={layers[layerName].visible}></input>
                                         <span>{layerName}</span>
                                     </div>
@@ -294,7 +393,9 @@ const Sidebar = ({
                         )
                     else
                         return (
-                            <div className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
+                            <div
+                                className={!layers[subLayers[0]].visible ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}
+                                onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>
                                 <input type="radio" checked={layers[subLayers[0]].visible}></input>
                                 <span>{catName}</span>
                                 {/*<p className={!layers[subLayers[0]].visible ? "black" : "selected black"} onClick={() => updateLayers(subLayers[0], !layers[subLayers[0]].visible)}>{catName}</p>*/}
@@ -441,12 +542,26 @@ const Sidebar = ({
                 {(() => {
                     switch (selectedPart) {
                         case 'weather':
-                            return <h1>WEATHER</h1>
+                            return (
+                                <div className="weather-container">
+                                    <h1>WEATHER</h1>
+
+                                    {/*<h3 style={{ "marginBottom": "2px" }}>At home</h3>*!/*/}
+                                    {/*{sunburstHomeInfo ? renderSunburstInfo() : "Loading..."}
+                                    {/* if there is no home don't display this segment */}
+                                    {homeIsSet ? (
+                                        <>
+                                            <h3 style={{ "marginBottom": "2px" }}>At home</h3>
+                                            {sunburstHomeInfo ? renderSunburstInfo() : "Loading..."}
+                                        </>
+                                    ) : ""}
+                                </div>
+                            )
                         case 'layers':
                             return (
                                 <div className="layers-container">
-                                    <h1 style={{ "margin": "5px 0px" }}>LAYERS</h1>
-                                    <span>Country Specific Filter: </span>
+                                    <h1>LAYERS</h1>
+                                    <span style={{"marginLeft": "5px"}}>Country Specific Filter: </span>
                                     <select value={selectedCountry} onChange={e => setSelectedCountry(e.target.value)}>
                                         <option value="all">All Country Layers</option>
                                         <option value="none">No Country Specific Layers</option>
@@ -462,14 +577,14 @@ const Sidebar = ({
                         case 'customMaps':
                             return (
                                 <div>
-                                    <h1 style={{ "margin": "5px 0px" }}>CUSTOM MAPS</h1>
+                                    <h1>CUSTOM MAPS</h1>
                                     {renderCustomMaps()}
                                 </div>
                             )
                         case 'settings':
                             return (
                                 <div className="settings-container">
-                                    <h1 style={{ "margin": "5px 0px" }}>SETTINGS</h1>
+                                    <h1>SETTINGS</h1>
                                     <span>Show low power antennas (information may not be accurate): </span>
                                     <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)} />
                                     <br /><br />

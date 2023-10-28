@@ -119,6 +119,7 @@ function Map() {
     const [customMapPopupProperties, setCustomMapPopupProperties] = useState(null);
 
     const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
+    const [sunburstToken, setSunburstToken] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
     const [allTowersPoints, setAllTowersPoints] = useState(null);
@@ -1878,17 +1879,6 @@ function Map() {
         await setHome(accessToken, lat, lng);
     }
 
-    const getHomeMetrics = () => {
-        return (
-            <div id="home-metrics">
-                <h4>At home:</h4>
-                <text id="sidebar-content-header">Home:</text>
-
-                {sunburstHomeInfo ? getSunburstSegment() : ""}
-            </div>
-        );
-    }
-
     // all towers useEffect
     useEffect(() => {
         // if the all towers data changes then update the all towers and the all tower extrusions
@@ -2176,6 +2166,11 @@ function Map() {
         // if we don't have a home marker position, then don't do anything
         if (homeMarkerPosition.length < 2) return;
 
+        if (!sunburstToken) {
+            retrieveSunburstToken();
+            return;
+        }
+
         // if map datetime is more than 4 days in the future, we don't have sunburst data, so unset it
         if (mapDatetime > new Date().getTime() + 4 * 24 * 60 * 60 * 1000) {
             setSunburstHomeInfo(null);
@@ -2183,10 +2178,10 @@ function Map() {
         }
 
         // get sunburst data
-        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0], mapDatetime.toISOString()).then((data) => {
+        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0], mapDatetime.toISOString(), sunburstToken).then((data) => {
             setSunburstHomeInfo(data);
         });
-    }, [homeMarkerPosition, mapDatetime]);
+    }, [homeMarkerPosition, mapDatetime, sunburstToken]);
 
     const displayLabels = display => {
         if (!mapbox.current) return;
@@ -2196,17 +2191,30 @@ function Map() {
         });
     }
 
-    // sunburst API fetch
-    const getSunburstData = async (lat, lng, after) => {
-        let sunburstToken = process.env.REACT_APP_SUNBURST_API_TOKEN;
-        console.log("Using Sunburst token: ", sunburstToken);
+    async function retrieveSunburstToken() {
+        const query = await fetch(
+            `https://sunburst.sunsetwx.com/v1/login`,
+            {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Basic ${btoa(`${process.env.REACT_APP_SUNBURST_API_EMAIL}:${process.env.REACT_APP_SUNBURST_API_PASSWORD}`)}`
+                },
+                body: "grant_type=password&type=access"
+            });
 
+        const data = await query.json();
+        setSunburstToken(data.access_token);
+    }
+
+    // sunburst API fetch
+    const getSunburstData = async (lat, lng, after, token) => {
         const query = await fetch(
             `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}&after=${after}`,
             {
                 method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${sunburstToken}`
+                    "Authorization": `Bearer ${token}`
                 }
             }
         );
@@ -2214,37 +2222,6 @@ function Map() {
         const data = await query.json();
         console.log("Sunburst retrieved data: ", data);
         return data;
-    }
-
-    const getSunburstSegment = () => {
-        // this will break if rendered before the API call is finished, so this should only be called after sunburstHomeInfo is set
-        let type = sunburstHomeInfo["features"][0]["properties"]["type"];
-        let twilight;
-        if (type === "Sunrise") {
-            twilight = "dawn";
-        } else {
-            twilight = "dusk";
-        }
-        let quality = sunburstHomeInfo["features"][0]["properties"]["quality"];
-        let quality_percent = sunburstHomeInfo["features"][0]["properties"]["quality_percent"];
-
-        let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
-        let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
-        let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
-
-        return (
-            <div id="sunburst-segment">
-                <div id="sunrise-sunset-metrics">
-                    <text id="sunburst-sunrise-sunset">Type: {type}
-                        Quality: {quality} ({quality_percent}%)
-                        Times:
-                        Astronomical: {astro_time}
-                        Nautical: {nautical_time}
-                        Civil: {civil_time}
-                    </text>
-                </div>
-            </div>
-        )
     }
 
     const getCustomMapPoints = async (mapID) => {
@@ -2293,13 +2270,15 @@ function Map() {
                 expanded={displaySidebar && mapbox.current} 
                 setDisplaySidebar={setDisplaySidebar} 
                 setLayoutProperty={setLayoutProperty} 
-                getLayoutProperty={getLayoutProperty} 
+                getLayoutProperty={getLayoutProperty}
                 showShadeMap={showShadeMap} 
                 setShowShadeMap={setShowShadeMap} 
                 showIsochrone={showIso} 
                 setShowIsochrone={setShowIso} 
-                customMapsData={customMaps} 
-                flyTo={flyTo} 
+                customMapsData={customMaps}
+                sunburstHomeInfo={sunburstHomeInfo}
+                flyTo={flyTo}
+                homeIsSet={homeIsSet}
                 currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} 
                 setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} 
                 setOpenModal={setOpenModal} 
