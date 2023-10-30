@@ -131,6 +131,7 @@
     gap: 2%;
     width: 300px;
     user-select: none;
+    margin-bottom: 30px;
 }
 
 .base-layer-item {
