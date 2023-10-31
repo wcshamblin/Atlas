@@ -15,7 +15,25 @@ import {
 
 import { ReactComponent as SunriseIcon } from '../styles/images/sunrise_icon.svg';
 import { ReactComponent as SunsetIcon } from '../styles/images/sunset_icon.svg';
-import { ReactComponent as Clock } from '../styles/images/clock.svg';
+import { ReactComponent as SunnyIcon } from '../styles/images/sunny.svg';
+import { ReactComponent as ClockIcon } from '../styles/images/clock.svg';
+import { ReactComponent as PollingIcon } from '../styles/images/polling_center.svg';
+import { ReactComponent as ClockForwardIcon } from '../styles/images/clock_forward.svg';
+import { ReactComponent as QuestionMarkIcon } from '../styles/images/question_mark.svg';
+
+import {ReactComponent as FullMoonIcon} from '../styles/images/full_moon.svg';
+import {ReactComponent as WaningGibbousIcon} from '../styles/images/waning_gibbous.svg';
+import {ReactComponent as LastQuarterIcon} from '../styles/images/last_quarter.svg';
+import {ReactComponent as WaningCrescentIcon} from '../styles/images/waning_crescent.svg';
+import {ReactComponent as NewMoonIcon} from '../styles/images/new_moon.svg';
+import {ReactComponent as WaxingCrescentIcon} from '../styles/images/waxing_crescent.svg';
+import {ReactComponent as FirstQuarterIcon} from '../styles/images/first_quarter.svg';
+import {ReactComponent as WaxingGibbousIcon} from '../styles/images/waxing_gibbous.svg';
+import {ReactComponent as MoonriseIcon} from '../styles/images/moonrise.svg';
+import {ReactComponent as MoonsetIcon} from '../styles/images/moonset.svg';
+import {ReactComponent as MoonNoonIcon} from '../styles/images/moon_noon.svg';
+
+import moment from 'moment';
 
 const Sidebar = ({ 
     mapStatus,
@@ -28,9 +46,14 @@ const Sidebar = ({
     showIsochrone, 
     setShowIsochrone, 
     customMapsData,
-    sunburstHomeInfo,
+    sunburstInfo,
     flyTo,
-    homeIsSet,
+    map,
+    pollingPosition,
+    setPollingPosition,
+    mapDatetime,
+    setMapDatetime,
+    astronomyInfo,
     currentSelectedCustomMapPoint, 
     setCurrentSelectedCustomMapPoint, 
     processCustomMapPointClick, 
@@ -185,50 +208,267 @@ const Sidebar = ({
     const SunburstQualityInfoButton = () => {
         const [hover, setHover] = useState(false);
 
-    return (
-        <span id="sunburst-quality-info-button" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-            <FontAwesomeIcon icon={faCircleQuestion} style={{ "marginLeft": "5px", color: hover ? "black" : "grey" }} />
-            {hover ? (
-                <div id="sunburst-quality-info-button-hover">
-                    <span><text style={{ color: "red", marginLeft: "0px"}}>Poor (0-25%)</text>  Little to no color, with precipitation or a thick cloud layer often blocking a direct view of the sun.</span>
-                    <br/>
-                    <span><text style={{ color: "orange", marginLeft: "0px"}}>Fair (25-50%)</text>  Some color for a short time, with conditions ranging from mostly cloudy, or hazy, to clear, with little to no clouds at all levels.</span>
-                    <br/>
-                    <span><text style={{ color: "gold", marginLeft: "0px"}}>Good (50-75%)</text>  A fair amount of color, often multi-colored, lasting a considerable amount of time. Often caused by scattered clouds at multiple levels.</span>
-                    <br/>
-                    <span><text style={{ color: "green", marginLeft: "0px"}}>Great (75-100%)</text>  Extremely vibrant color lasting 30 minutes or more. Often caused by multiple arrangements of clouds at multiple levels, transitioning through multiple stages of vivid color.</span>
-                </div>
+        return (
+            <div>
+                <span id="sunburst-quality-info-button" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+                    <QuestionMarkIcon className="sunburst-quality-info-button-icon" style={{ color: hover ? "black" : "grey" }} />
+                </span>
+                {hover ? (
+                    <div id="sunburst-quality-info-button-hover">
+                        <span><text style={{ color: "red", marginLeft: "0px"}}>Poor (0-25%)</text>  Little to no color, with precipitation or a thick cloud layer often blocking a direct view of the sun.</span>
+                        <br/>
+                        <span><text style={{ color: "#da9f00", marginLeft: "0px"}}>Fair (25-50%)</text>  Some color for a short time, with conditions ranging from mostly cloudy, or hazy, to clear, with little to no clouds at all levels.</span>
+                        <br/>
+                        <span><text style={{ color: "green", marginLeft: "0px"}}>Good (50-75%)</text>  A fair amount of color, often multi-colored, lasting a considerable amount of time. Often caused by scattered clouds at multiple levels.</span>
+                        <br/>
+                        <span><text style={{ color: "blue", marginLeft: "0px"}}>Great (75-100%)</text>  Extremely vibrant color lasting 30 minutes or more. Often caused by multiple arrangements of clouds at multiple levels, transitioning through multiple stages of vivid color.</span>
+                    </div>
             ) : ""}
-        </span>
+        </div>
     )
     }
 
+    const changeDatetimeElement = () => {
+        return (
+            <div id="change-datetime-element">
+                <input
+                    type="datetime-local"
+                    id="datetime-input"
+                    name="datetime-input"
+                    required
+                    value={moment(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
+                    onChange={e => {
+                        // if it was cleared, or if the date is invalid, then don't update the map datetime
+                        if (e.target.value === "") return;
+                        setMapDatetime(new Date(e.target.value));
+                    }
+                    }
+                />
+            </div>
+        )
+    }
+
+    const setDatetimeToNowButton = () => {
+        return (
+            <div id="set-datetime-to-now-button">
+                <ClockForwardIcon className="clock-forward-icon" onClick={() => setMapDatetime(new Date())} />
+                <span>Set to now</span>
+            </div>
+        )
+    }
+
+    const changePollingPositionButton = () => {
+        return (
+            <div id="change-polling-position-button">
+                <PollingIcon className="polling-icon" onClick={() => setPollingPositionAsCenter()} />
+                <span>Set polling position</span>
+            </div>
+        )
+    }
+
+    const setPollingPositionAsCenter = () => {
+        // check to see if the new polling position even warrants re polling data
+        // if it is, then update the polling position
+        if (Math.abs(map.getCenter().lng - pollingPosition[0]) > .05 || Math.abs(map.getCenter().lat - pollingPosition[1]) > .05) {
+            setPollingPosition([map.getCenter().lng, map.getCenter().lat]);
+        }
+        // If the map is zoomed out too far to make sense to poll data, then zoom in
+        if (map.getZoom() < 8.8) {
+            map.flyTo({ center: map.getCenter(), zoom: 8.8 });
+        }
+    }
+
+    // const convertUTCtoLocal = (hours, minutes) => {
+    //     let local_datetime = new Date(Date.UTC(mapDatetime.getFullYear(), mapDatetime.getMonth(), mapDatetime.getDate(), hours, minutes));
+    //     return local_datetime.toLocaleTimeString();
+    // }
+
+    const renderAstronomyInfo = () => {
+        try {
+            // sun info
+            let sun_phenomena = astronomyInfo["properties"]["data"]["sundata"];
+            let sunrise_utc = sun_phenomena.find(phen => phen["phen"] === "Begin Civil Twilight");
+            let sunset_utc = sun_phenomena.find(phen => phen["phen"] === "End Civil Twilight");
+            let solar_noon_utc = sun_phenomena.find(phen => phen["phen"] === "Upper Transit");
+
+            let sunrise_local = sunrise_utc["time"];
+            let sunset_local = sunset_utc["time"];
+            let solar_noon_local = solar_noon_utc["time"];
+
+
+            // moon info
+            let current_phase = astronomyInfo["properties"]["data"]["curphase"];
+
+            // ["properties"]["data"]["closestphase"] = {'day': 28, 'month': 10, 'phase': 'Full Moon', 'time': '20:24', 'year': 2023}
+            // if closestphase is on the same date as map datetime, then use the current phase
+            if (mapDatetime.getDate() === astronomyInfo["properties"]["data"]["closestphase"]["day"] && mapDatetime.getMonth()+1 === astronomyInfo["properties"]["data"]["closestphase"]["month"] && mapDatetime.getFullYear() === astronomyInfo["properties"]["data"]["closestphase"]["year"]) {
+                current_phase = astronomyInfo["properties"]["data"]["closestphase"]["phase"];
+            }
+
+            let illumination = astronomyInfo["properties"]["data"]["fracillum"];
+
+            let moon_phenomena = astronomyInfo["properties"]["data"]["moondata"];
+
+            // any of the following may not exit within data
+            let moonset = moon_phenomena.find(phen => phen["phen"] === "Set");
+            let moonrise = moon_phenomena.find(phen => phen["phen"] === "Rise");
+            let moonnoon = moon_phenomena.find(phen => phen["phen"] === "Upper Transit");
+
+            let moonrise_local = moonrise["time"];
+            let moonset_local = moonset["time"];
+            let moonnoon_local = moonnoon["time"];
+
+            let current_phase_icon;
+
+            switch (current_phase) {
+                case "New Moon":
+                    current_phase_icon = <NewMoonIcon className="moon-phase-icon" />
+                    break;
+                case "Waxing Crescent":
+                    current_phase_icon = <WaxingCrescentIcon className="moon-phase-icon" />
+                    break;
+                case "First Quarter":
+                    current_phase_icon = <FirstQuarterIcon className="moon-phase-icon" />
+                    break;
+                case "Waxing Gibbous":
+                    current_phase_icon = <WaxingGibbousIcon className="moon-phase-icon" />
+                    break;
+                case "Full Moon":
+                    current_phase_icon = <FullMoonIcon className="moon-phase-icon" />
+                    break;
+                case "Waning Gibbous":
+                    current_phase_icon = <WaningGibbousIcon className="moon-phase-icon" />
+                    break;
+                case "Last Quarter":
+                    current_phase_icon = <LastQuarterIcon className="moon-phase-icon" />
+                    break;
+                case "Waning Crescent":
+                    current_phase_icon = <WaningCrescentIcon className="moon-phase-icon" />
+                    break;
+                default:
+                    current_phase_icon = <text id="moon-phase-error">Error retrieving moon phase data - check console for details.</text>
+            }
+
+            return (
+                <div id="astronomy-segment">
+                    <div id="sunrise-sunset-metrics">
+                        <span>Sunrise/Sunset</span><br />
+                        {renderSunsetSunriseInfo(sunrise_local, sunset_local, solar_noon_local)}
+                    </div>
+
+                    <div id="moon-phase-metrics">
+                        <span>Moon Phase</span><br />
+                        {current_phase_icon}<text id="moon-phase">{current_phase} ({illumination})</text><br />
+                        <MoonriseIcon className="sunburst-sunrise-sunset-icon" /><text>Moonrise: {moonrise_local}</text><br />
+                        <MoonNoonIcon className="sunburst-sunrise-sunset-icon" /><text>Moon Noon: {moonnoon_local}</text><br />
+                        <MoonsetIcon className="sunburst-sunrise-sunset-icon" /><text>Moonset: {moonset_local}</text><br />
+                    </div>
+                </div>
+            )
+        } catch (e) {
+            console.log("Error rendering moon info: " + e);
+            return (
+                <div id="moon-segment">
+                    <div id="moon-phase-metrics">
+                        <text id="moon-phase-error">Error retrieving moon phase data - check console for details.</text>
+                    </div>
+                </div>
+            )
+        }
+    }
+
+    const renderSunsetSunriseInfo = (sunrise_local, sunset_local, solar_noon_local) => {
+        try {
+            // if sunburst info is for sunset
+            if (sunburstInfo["features"][0]["properties"]["type"] === "Sunset") {
+                return (
+                    <div id="sunrise-sunset-metrics">
+                        <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Sunrise: {sunrise_local}</text>
+                        <br/>
+                        <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Solar Noon: {solar_noon_local}</text>
+                        <br/>
+                        <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Sunset: {sunset_local}</text>
+                        {renderSunburstInfo()}
+                        <br/>
+                    </div>
+                )
+            } else {
+                return (
+                    <div id="sunrise-sunset-metrics">
+                        <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Sunrise: {sunrise_local}</text>
+                        <br/>
+                        {renderSunburstInfo()}
+                        <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Solar Noon: {solar_noon_local}</text>
+                        <br/>
+                        <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                        <text>Sunset: {sunset_local}</text>
+                        <br/>
+                    </div>
+                )
+            }
+        } catch (e) {
+            console.log("Error rendering sunburst info: " + e);
+            return (
+                <div id="sunburst-segment">
+                    <span>Sunrise/Sunset</span><br/>
+                    <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                    <text>Sunrise: {sunrise_local}</text>
+                    <br/>
+                    <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                    <text>Solar Noon: {solar_noon_local}</text>
+                    <br/>
+                    <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                    <text>Sunset: {sunset_local}</text>
+                    <br/>
+                    <text id="sunburst-sunrise-sunset-error">No sunburst data available - check console for details.</text>
+                </div>
+            )
+        }
+    }
 
     const renderSunburstInfo = () => {
+        console.log("Sunburst info: " + JSON.stringify(sunburstInfo));
+
+        // if the map datetime is more than 4 days in the future, or more than 1 day in the past, then don't render sunburst info
+        if (mapDatetime > new Date(Date.now() + 4 * 24 * 60 * 60 * 1000) || mapDatetime < new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)) {
+            return (
+                <div id="astronomy-segment">
+                    <div id="sunburst-metrics">
+                        <text id="sunburst-sunrise-sunset-error">Sunburst data not available for this datetime.</text>
+                    </div>
+                </div>
+            )
+        }
+
         try {
-            let type = sunburstHomeInfo["features"][0]["properties"]["type"];
+            let type = sunburstInfo["features"][0]["properties"]["type"];
             let twilight;
             if (type === "Sunrise") {
                 twilight = "dawn";
             } else {
                 twilight = "dusk";
             }
-            let quality = sunburstHomeInfo["features"][0]["properties"]["quality"];
-            let quality_percent = sunburstHomeInfo["features"][0]["properties"]["quality_percent"];
+            let quality = sunburstInfo["features"][0]["properties"]["quality"];
+            let quality_percent = sunburstInfo["features"][0]["properties"]["quality_percent"];
 
-            let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
-            let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
-            let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
+            let astro_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
+            let nautical_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
+            let civil_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
 
             let quality_color;
             if (quality_percent >= 75) {
-                quality_color = "green";
+                quality_color = "blue";
             }
             else if (quality_percent >= 50) {
-                quality_color = "gold";
+                quality_color = "green";
             }
             else if (quality_percent >= 25) {
-                quality_color = "orange";
+                quality_color = "#da9f00";
             }
             else {
                 quality_color = "red";
@@ -243,32 +483,29 @@ const Sidebar = ({
             }
 
             return (
-                <div id="sunburst-segment">
-                    <text id="sunburst-sunrise-sunset">{SunriseSunsetIcon} {type}</text><br/>
-                    <div id="sunrise-sunset-metrics">
-                        <text id="regular">Quality: <span style={{ color: quality_color }}>{quality} ({quality_percent}%)</span></text>
-                        <SunburstQualityInfoButton/>
+                    <div id="sunburst-metrics">
+                        {/*<text id="regular">Quality: </text><span style={{ color: quality_color }}>{quality} ({quality_percent}%)</span>*/}
+                        <text id="sunburstquality">Quality:</text><text style={{ color: quality_color }}>{quality} ({quality_percent}%)</text>
                         <br/>
-                        <Clock className="sunburst-clock-icon"/><text id="times">Times:</text><br/>
+                        <ClockIcon className="sunburst-clock-icon"/><text>{twilight.charAt(0).toUpperCase() + twilight.slice(1)}: </text><br/>
                         <div style={{ marginLeft: "20px" }}>
-                            <text id="times">Astronomical: {astro_time}</text><br/>
-                            <text id="times">Nautical: {nautical_time}</text><br/>
-                            <text id="times">Civil: {civil_time}</text>
+                            <text>Astronomical: {astro_time}</text><br/>
+                            <text>Nautical: {nautical_time}</text><br/>
                         </div>
                     </div>
-                </div>
             )
         } catch (e) {
             console.log("Error rendering sunburst info: " + e);
             return (
                 <div id="sunburst-segment">
-                    <div id="sunrise-sunset-metrics">
-                        <text id="sunburst-sunrise-sunset">No sunrise/sunset data available - check console for details.</text>
+                    <div id="sunburst-metrics">
+                        <text id="sunburst-sunrise-sunset-error">No sunburst data available - check console for details.</text>
                     </div>
                 </div>
             )
         }
     }
+
 
     const updateBaseLayers = name => {
         Object.keys(baseLayers).forEach(layer => {
@@ -546,13 +783,15 @@ const Sidebar = ({
                                 <div className="weather-container">
                                     <h1>WEATHER</h1>
 
-                                    {/*<h3 style={{ "marginBottom": "2px" }}>At home</h3>*!/*/}
-                                    {/*{sunburstHomeInfo ? renderSunburstInfo() : "Loading..."}
-                                    {/* if there is no home don't display this segment */}
-                                    {homeIsSet ? (
+                                    <div id="weather-controls">
+                                        {changeDatetimeElement()}
+                                        {setDatetimeToNowButton()}
+                                        {changePollingPositionButton()}
+                                    </div>
+
+                                    {pollingPosition ? (
                                         <>
-                                            <h3 style={{ "marginBottom": "2px" }}>At home</h3>
-                                            {sunburstHomeInfo ? renderSunburstInfo() : "Loading..."}
+                                            {astronomyInfo ? renderAstronomyInfo() : ""}
                                         </>
                                     ) : ""}
                                 </div>
@@ -608,14 +847,6 @@ const Sidebar = ({
                             return ""
                     }
                 })()}
-
-                {/* {homeIsSet ? getHomeMetrics() : ""}
-
-                <h4>Map date time selector</h4>
-                <DateTimePicker
-                    onChange={setMapDatetime}
-                    value={mapDatetime}
-                /> */}
             </div>
         </div>
     ) : <FontAwesomeIcon icon={faBars} class="sidebar-link-button sidebar-hidden" onClick={e => setDisplaySidebar(true)} />
