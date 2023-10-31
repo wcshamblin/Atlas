@@ -376,3 +376,22 @@ export const editMapInfo = async (accessToken, method, mapId, infoType, data) =>
         error,
     };
 }
+
+// no auth
+export const retrieveAstronomyData = async (tzdiff, date, lat, lng) => {
+    const config = {
+        url: `${apiServerUrl}/astronomy/${tzdiff}/${date}/${lat}/${lng}`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+    console.log("astronomy", data);
+
+    return {
+        data: data || null,
+        error,
+    }
+}
