@@ -1,23 +1,13 @@
-import React, { useState, useEffect, createRef, useRef } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
 import Sidebar from '../components/sidebar';
 
 import mapboxgl from 'mapbox-gl';
 
-/* eslint-disable import/first */
-// eslint-disable-next-line import/no-webpack-loader-syntax
-mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
-
-
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
-
-
-import DateTimePicker from 'react-datetime-picker'
 
 // css
 import '../styles/components/map.css';
@@ -28,10 +18,10 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {
     faArrowLeft,
-    faCoffee, faFloppyDisk,
+    faFloppyDisk,
     faHome,
     faInfo,
     faMapMarkerAlt,
@@ -40,22 +30,29 @@ import {
     faTrash
 } from '@fortawesome/free-solid-svg-icons'
 
-
-import { v4 as uuid } from 'uuid';
-
 // api imports
 import {
-    setHome,
+    deletePoint,
+    fetchMaps,
+    postPoint,
+    putPoint,
+    retrieveAntennas, retrieveAstronomyData,
+    retrieveCustomMapPoints,
     retrieveHome,
     retrieveTowers,
-    retrieveAntennas,
-    fetchMaps, retrieveCustomMapPoints, putPoint, postPoint, deletePoint
+    setHome
 } from "../services/message.service";
 
-import { useAuth0 } from "@auth0/auth0-react";
+import {useAuth0} from "@auth0/auth0-react";
 
-import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@react-google-maps/api';
+import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
 import Modal from './modal';
+
+/* eslint-disable import/first */
+// eslint-disable-next-line import/no-webpack-loader-syntax
+mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
+
+
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
@@ -99,7 +96,6 @@ function Map() {
     const [homeMarkerPosition, setHomeMarkerPosition] = useState([]);
 
     const [isoProfile, setIsoProfile] = useState("driving");
-    const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
 
     const [routingLine, setRoutingLine] = useState(null);
@@ -118,7 +114,8 @@ function Map() {
     const [customMapPopupState, setCustomMapPopupState] = useState(null);
     const [customMapPopupProperties, setCustomMapPopupProperties] = useState(null);
 
-    const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
+    const [astronomyInfo, setAstronomyInfo] = useState(null);
+    const [sunburstInfo, setSunburstInfo] = useState(null);
     const [sunburstToken, setSunburstToken] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
@@ -128,6 +125,8 @@ function Map() {
     const [antennaPoints, setAntennaPoints] = useState(null);
 
     const [mapDatetime, setMapDatetime] = useState(new Date());
+
+    const [pollingPosition, setPollingPosition] = useState([]);
 
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
 
@@ -1863,7 +1862,15 @@ function Map() {
                     .setLngLat([homeMarkerPosition[0], homeMarkerPosition[1]])
                     .addTo(mapbox.current));
             }
-            console.log("Home marker set, setting homeIsSet to true");
+            console.log("Home marker set, setting homeIsSet to true, and centering map");
+            setPollingPosition([homeMarkerPosition[0], homeMarkerPosition[1]]);
+
+            // fly to the home marker
+            mapbox.current.flyTo({
+                center: [homeMarkerPosition[0], homeMarkerPosition[1]],
+                zoom: 11.6
+            });
+
             setHomeIsSet(true);
         }
         , [homeMarkerPosition]);
@@ -2113,75 +2120,40 @@ function Map() {
         }
     }, [displaySidebar, displayStreetView, openModal]);
 
-    // // dark mode useEffect
-    // useEffect(() => {
-    //     if (!mapbox.current) return; // wait for map to initialize
-    //
-    //     console.log("Dark mode changed: ", settings["darkMode"]);
-    //
-    //     // if map style is not loaded yet, then don't do anything
-    //     // use .isStyleLoaded() to check
-    //     if (!mapbox.current.isStyleLoaded()) return;
-    //
-    //     if (settings["darkMode"]) {
-    //         // set style
-    //         mapbox.current.setStyle('mapbox://styles/mapbox/dark-v10');
-    //
-    //         // set fog
-    //         // mapbox.current.setFog(
-    //         //     {
-    //         //         'range': [5, 6],
-    //         //         'horizon-blend': 0.3,
-    //         //         'color': '#242B4B',
-    //         //         'high-color': '#161B36',
-    //         //         'space-color': '#0B1026',
-    //         //         'star-intensity': .95
-    //         //     }
-    //         // )
-    //
-    //     } else {
-    //         // set style
-    //         mapbox.current.setStyle('mapbox://styles/mapbox/light-v10');
-    //
-    //         // set fog
-    //         // mapbox.current.setFog(
-    //         //     {
-    //         //         'range': [5, 6],
-    //         //         'horizon-blend': 0.3,
-    //         //         'color': 'white',
-    //         //         'high-color': '#add8e6',
-    //         //         'space-color': '#d8f2ff',
-    //         //         'star-intensity': 0.0
-    //         //     })
-    //         }
-    //     }, [settings["darkMode"]]);
+    // sunburst home info - update on polling position change or map datetime change
+    useEffect(() => {
+        console.log("useEffect for sunburst home info: ", pollingPosition, mapDatetime, sunburstToken);
+        if (!mapbox.current) return; // wait for map to initialize
 
-    // sunburst home info - update on home change or map datetime change
+        if (!sunburstToken) {
+            retrieveSunburstToken().then(() => {
+                console.log("Sunburst token retrieved: ", sunburstToken);
+            });
+            return;
+        }
+
+        if (!pollingPosition.length) return;
+
+        getSunburstData(pollingPosition[1], pollingPosition[0], mapDatetime.toISOString(), sunburstToken).then((data) => {
+            setSunburstInfo(data);
+        });
+    }, [pollingPosition, mapDatetime, sunburstToken]);
+
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
 
-        // if we don't have a home, then don't do anything
-        if (!homeIsSet) return;
+        // make sure polling position is set
+        if (!pollingPosition.length) return;
 
-        // if we don't have a home marker position, then don't do anything
-        if (homeMarkerPosition.length < 2) return;
+        let date = mapDatetime.toISOString().split("T")[0]
 
-        if (!sunburstToken) {
-            retrieveSunburstToken();
-            return;
-        }
+        let utcdifference = -(mapDatetime.getTimezoneOffset() / 60)
 
-        // if map datetime is more than 4 days in the future, we don't have sunburst data, so unset it
-        if (mapDatetime > new Date().getTime() + 4 * 24 * 60 * 60 * 1000) {
-            setSunburstHomeInfo(null);
-            return;
-        }
 
-        // get sunburst data
-        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0], mapDatetime.toISOString(), sunburstToken).then((data) => {
-            setSunburstHomeInfo(data);
+        retrieveAstronomyData(utcdifference, date, pollingPosition[1], pollingPosition[0]).then((data) => {
+            setAstronomyInfo(data.data);
         });
-    }, [homeMarkerPosition, mapDatetime, sunburstToken]);
+    }, [pollingPosition, mapDatetime]);
 
     const displayLabels = display => {
         if (!mapbox.current) return;
@@ -2234,7 +2206,6 @@ function Map() {
 
     const getWeatherInfo = async (lat, lng, datetime) => {
         let weatherToken = process.env.REACT_APP_WEATHER_API_TOKEN;
-        console.log("Using Weather token: ", weatherToken);
 
         let query = await fetch(
             `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,
@@ -2276,9 +2247,14 @@ function Map() {
                 showIsochrone={showIso} 
                 setShowIsochrone={setShowIso} 
                 customMapsData={customMaps}
-                sunburstHomeInfo={sunburstHomeInfo}
+                sunburstInfo={sunburstInfo}
                 flyTo={flyTo}
-                homeIsSet={homeIsSet}
+                map={mapbox.current}
+                pollingPosition={pollingPosition}
+                setPollingPosition={setPollingPosition}
+                mapDatetime={mapDatetime}
+                setMapDatetime={setMapDatetime}
+                astronomyInfo={astronomyInfo}
                 currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} 
                 setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} 
                 setOpenModal={setOpenModal} 
