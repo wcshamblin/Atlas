@@ -1112,10 +1112,6 @@ function Map() {
                             lng: rightClickPopupPosition[0]
                         });
 
-                        // close popup
-                        setRightClickPopupState("default");
-                        setShowRightClickPopup(false);
-
                     }}><FontAwesomeIcon icon={faFloppyDisk} />
                     </button>
                     <button id="rightclickpopupbutton" onClick={() => {
@@ -1429,6 +1425,10 @@ function Map() {
         if (!pointData.category || !pointData.icon || !pointData.color || !mapId) {
             return;
         }
+
+        // close popup
+        setRightClickPopupState("default");
+        setShowRightClickPopup(false);
 
         const accessToken = await getAccessTokenSilently();
 
