@@ -714,7 +714,13 @@ const Sidebar = ({
                                     <option value="">(No Icon Filter)</option>
                                     {val.icons.sort(icon => icon.id).map(icon => (<option value={icon.id}>{icon.name}</option>))}
                                 </select><br />
-                                {val.points.filter(point => point.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase()) && (pointFilters[mapId].category != "" ? point.category == pointFilters[mapId].category : true) && (pointFilters[mapId].color != "" ? point.color == pointFilters[mapId].color : true) && (pointFilters[mapId].icon != "" ? point.icon == pointFilters[mapId].icon : true)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
+                                {val.points.filter(point =>
+                                    // filter by name and description if description is not null
+                                    (point.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())
+                                        || (point.description && point.description.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())))
+                                    && (pointFilters[mapId].category != "" ? point.category == pointFilters[mapId].category : true)
+                                    && (pointFilters[mapId].color != "" ? point.color == pointFilters[mapId].color : true)
+                                    && (pointFilters[mapId].icon != "" ? point.icon == pointFilters[mapId].icon : true)).sort((point1, point2) => new Date(point2.creation_date) - new Date(point1.creation_date)).map(point =>
                                     <div className={point.id == currentSelectedCustomMapPoint.pointId ? "custom-map-point custom-map-point-selected" : "custom-map-point"} onClick={() => { flyTo(point.lat, point.lng); setCurrentSelectedCustomMapPoint({ "pointId": point.id, "layerId": mapId }) }} id={point.id}>
                                         <div className="custom-map-point-container">
                                             <img className="custom-map-point-icon" src={val.icons.filter(icon => icon.id == point.icon)[0]?.url} />

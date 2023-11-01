@@ -2062,7 +2062,12 @@ function Map() {
 
         Object.keys(customMapPoints).forEach((mapId) => {
             let newMapPoints = JSON.parse(JSON.stringify(customMapPoints[mapId]));
-            newMapPoints.features = newMapPoints.features.filter(feature => feature.properties.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase()) && (pointFilters[mapId].category != "" ? feature.properties.category == pointFilters[mapId].category : true) && (pointFilters[mapId].color != "" ? feature.properties.color == pointFilters[mapId].color : true) && (pointFilters[mapId].icon != "" ? feature.properties.icon == pointFilters[mapId].icon : true))
+
+            newMapPoints.features = newMapPoints.features.filter(feature => (feature.properties.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())
+                    || (feature.properties.description && feature.properties.description.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())))
+                && (pointFilters[mapId].category !== "" ? feature.properties.category === pointFilters[mapId].category : true)
+                && (pointFilters[mapId].color !== "" ? feature.properties.color === pointFilters[mapId].color : true)
+                && (pointFilters[mapId].icon !== "" ? feature.properties.icon === pointFilters[mapId].icon : true))
 
             console.log("Setting custom map points for ", mapId, ": ", customMapPoints[mapId]);
             mapbox.current.getSource(mapId).setData(newMapPoints);
