@@ -275,9 +275,14 @@ const Sidebar = ({
     }
 
     const setPollingPositionAsCenter = () => {
-        // check to see if the new polling position even warrants re polling data
+        console.log("Current polling position: " + pollingPosition + " - setting to map center: " + map.getCenter());
+        // if the polling position is ALREADY SET, check to see if the new polling position even warrants re polling data
         // if it is, then update the polling position
-        if (Math.abs(map.getCenter().lng - pollingPosition[0]) > .05 || Math.abs(map.getCenter().lat - pollingPosition[1]) > .05) {
+        if (pollingPosition[0] != null && pollingPosition[1] != null) {
+            if (Math.abs(map.getCenter().lng - pollingPosition[0]) > .05 || Math.abs(map.getCenter().lat - pollingPosition[1]) > .05) {
+                setPollingPosition([map.getCenter().lng, map.getCenter().lat]);
+            }
+        } else {
             setPollingPosition([map.getCenter().lng, map.getCenter().lat]);
         }
         // If the map is zoomed out too far to make sense to poll data, then zoom in
