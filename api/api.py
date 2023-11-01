@@ -17,6 +17,7 @@ from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
 from math import sqrt, sin, cos
 from typing import Optional
+from requests import get
 
 
 from utils import VerifyToken
@@ -1006,6 +1007,13 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
+
+@app.get("/astronomy/{tzdiff}/{date}/{lat}/{lng}")
+# doesn't need auth
+async def get_astronomy_info(response: Response, lat: float, lng: float, date: str, tzdiff: int):  
+    astronomy_info = get(f"https://aa.usno.navy.mil/api/rstt/oneday?date={date}&coords={lat},{lng}&tz={tzdiff}").json()
+
+    return astronomy_info
 
 if __name__ == '__main__':
     import uvicorn
