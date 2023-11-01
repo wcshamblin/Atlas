@@ -248,10 +248,18 @@ const Sidebar = ({
         )
     }
 
+    const setDateTimeToNow = () => {
+        // if within 30 seconds, don't set to now
+        if (Math.abs((new Date()).getTime() - mapDatetime.getTime()) / 1000 < 30) {
+            return;
+        }
+        setMapDatetime(new Date());
+    }
+
     const setDatetimeToNowButton = () => {
         return (
             <div id="set-datetime-to-now-button">
-                <ClockForwardIcon className="clock-forward-icon" onClick={() => setMapDatetime(new Date())} />
+                <ClockForwardIcon className="clock-forward-icon" onClick={() => setDateTimeToNow()} />
                 <span>Set to now</span>
             </div>
         )
@@ -277,11 +285,6 @@ const Sidebar = ({
             map.flyTo({ center: map.getCenter(), zoom: 8.8 });
         }
     }
-
-    // const convertUTCtoLocal = (hours, minutes) => {
-    //     let local_datetime = new Date(Date.UTC(mapDatetime.getFullYear(), mapDatetime.getMonth(), mapDatetime.getDate(), hours, minutes));
-    //     return local_datetime.toLocaleTimeString();
-    // }
 
     const renderAstronomyInfo = () => {
         try {
