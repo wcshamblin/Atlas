@@ -299,9 +299,27 @@ const Sidebar = ({
             let sunset_utc = sun_phenomena.find(phen => phen["phen"] === "End Civil Twilight");
             let solar_noon_utc = sun_phenomena.find(phen => phen["phen"] === "Upper Transit");
 
-            let sunrise_local = sunrise_utc["time"];
-            let sunset_local = sunset_utc["time"];
-            let solar_noon_local = solar_noon_utc["time"];
+            let sunrise_local;
+            let sunset_local;
+            let solar_noon_local;
+
+            if (!sunrise_utc) {
+                sunrise_local = "N/A"
+            } else {
+                sunrise_local = sunrise_utc["time"];
+            }
+
+            if (!sunset_utc) {
+                sunset_local = "N/A"
+            } else {
+                sunset_local = sunset_utc["time"];
+            }
+
+            if (!solar_noon_utc) {
+                solar_noon_local = "N/A"
+            } else {
+                solar_noon_local = solar_noon_utc["time"];
+            }
 
 
             // moon info
@@ -322,9 +340,30 @@ const Sidebar = ({
             let moonrise = moon_phenomena.find(phen => phen["phen"] === "Rise");
             let moonnoon = moon_phenomena.find(phen => phen["phen"] === "Upper Transit");
 
-            let moonrise_local = moonrise["time"];
-            let moonset_local = moonset["time"];
-            let moonnoon_local = moonnoon["time"];
+            let moonset_local;
+            let moonrise_local;
+            let moonnoon_local;
+
+            if (!moonset) {
+                moonset_local = "N/A"
+            }
+            else {
+                moonset_local = moonset["time"];
+            }
+
+            if (!moonrise) {
+                moonrise_local = "N/A"
+            }
+            else {
+                moonrise_local = moonrise["time"];
+            }
+
+            if (!moonnoon) {
+                moonnoon_local = "N/A"
+            }
+            else {
+                moonnoon_local = moonnoon["time"];
+            }
 
             let current_phase_icon;
 
