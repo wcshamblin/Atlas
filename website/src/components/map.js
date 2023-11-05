@@ -1484,7 +1484,7 @@ function Map() {
         const onLoad = (streetViewService) => {
             streetViewService.getPanorama({
                 location: { lat: lat, lng: lng },
-                radius: 20,
+                radius: 10,
             }, (data, status) => {
                 if (status === "OK") {
                     console.log("streetview available");
