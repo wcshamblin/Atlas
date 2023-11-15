@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Response, Request, status
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+from faa_functions import retrieve_obstacles
 from database.classes import MapPermissions, MapUser, Point, Map, Category, Color, Icon
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
 from database.database import delete_map_by_id, get_home, get_point_by_id, \
@@ -1006,6 +1007,18 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
     antennas = retrieve_fcc_antenna_objects(lat, lng, radius, uls) #feet
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
+
+@app.get("/faa/obstacles/nearby/{lat}/{lng}/{radius}/{minheight}/{maxheight}")
+async def get_obstacles_nearby(response: Response, lat: float, lng: float, radius: float, minheight: float, maxheight: float, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    obstacles = retrieve_obstacles(lat, lng, radius, minheight, maxheight)
+
+    return {"status": "success", "message": "Obstacles retrieved", "obstacles": obstacles}
 
 
 @app.get("/astronomy/{tzdiff}/{date}/{lat}/{lng}")

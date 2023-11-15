@@ -247,6 +247,24 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     }
 }
 
+export const retrieveObstacles = async (accessToken, lat, lng, radius, minheight, maxheight) => {
+    const config = {
+        url: `${apiServerUrl}/faa/obstacles/nearby/${lat}/${lng}/${radius}/${minheight}/${maxheight}`,
+        method: "GET",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
 export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
     const config = {
         url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}/${uls}`,

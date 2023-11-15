@@ -40,6 +40,7 @@ import {
     retrieveCustomMapPoints,
     retrieveHome,
     retrieveTowers,
+    retrieveObstacles,
     setHome
 } from "../services/message.service";
 
@@ -123,6 +124,8 @@ function Map() {
     const [allTowerPolygons, setAllTowerPolygons] = useState(null);
 
     const [antennaPoints, setAntennaPoints] = useState(null);
+
+    const [obstaclePoints, setObstaclePoints] = useState(null);
 
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
@@ -277,7 +280,6 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
-
         mapbox.current.loadImage('https://i.imgur.com/s2Wgdgx.png', (error, image) => {
             if (error) throw error;
             mapbox.current.addImage('transmitter-icon', image, { sdf: true });
@@ -296,6 +298,28 @@ function Map() {
             'paint': {
                 'icon-color': ['get', 'color'],
             }
+        });
+
+        // obstacles source
+        mapbox.current.addSource('FAA Obstacles', {
+            'type': 'geojson',
+            'data': obstaclePoints
+        });
+
+        // obstacles layer
+        mapbox.current.addLayer({
+            'id': 'FAA Obstacles',
+            'type': 'circle',
+            'source': 'FAA Obstacles',
+            'minzoom': 14,
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': '#ff0000'
+            }
+        });
+
+        mapbox.current.on('mouseenter', 'FAA Obstacles', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
         });
 
         // routing source
@@ -954,8 +978,13 @@ function Map() {
                 }
 
                 if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
-                    // update decommissioned towers from the center of the map
                     updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                }
+            } else if (mapbox.current.getZoom() >= 10) {
+                if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
+                    updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    // print map bounds
+                    console.log("Bounds:", mapbox.current.getBounds());
                 }
             }
         });
@@ -1572,6 +1601,16 @@ function Map() {
         )
     }
 
+    const updateObstacles = async (lat, lng) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveObstacles(accessToken, lat, lng, 5000, -1, -1).then(
+            (response) => {
+                if (response.data)
+                    setObstaclePoints(response.data.obstacles);
+            }
+        )
+    }
+
     const updateSettings = (settingName, settingValue) => {
         settings[settingName] = settingValue;
         setSettings({ ...settings });
@@ -1915,6 +1954,17 @@ function Map() {
 
     }, [antennaPoints]);
 
+    // obstacles useEffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!obstaclePoints) return; // wait for obstacles data to be set
+
+        console.log("Setting obstacles points: ", obstaclePoints);
+        mapbox.current.getSource('Obstacles').setData(obstaclePoints);
+
+    }, [obstaclePoints]);
+
+
     // custom maps useeffect, update when custom maps change
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
@@ -1986,6 +2036,7 @@ function Map() {
                         'icon-color': ['get', 'color'],
                         'icon-halo-color': '#fff',
                         'icon-halo-width': 5,
+                        'icon-halo-blur': .1,
                     }
                 });
 

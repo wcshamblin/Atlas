@@ -101,6 +101,7 @@ const Sidebar = ({
         "3D Buildings": ["3D Buildings"],
         "Shade Map": ["Shade Map"],
         "Towers": ["All Towers", "All Tower Extrusions"],
+        "FAA Obstacles": ["FAA Obstacles"],
         "Antennas": ["Antennas"],
         "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
@@ -124,6 +125,7 @@ const Sidebar = ({
         "Long Lines": { "visible": false, "country": "usa" },
         "FLYGHINDER 2023": { "visible": false, "country": "eu" },
         "FLYGHINDER 2023 Extrusions": { "visible": false, "country": "eu" },
+        "FAA Obstacles": { "visible": false, "country": "usa" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
