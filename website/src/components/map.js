@@ -20,7 +20,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {
-    faArrowLeft,
+    faArrowLeft, faExternalLinkAlt,
     faFloppyDisk,
     faHome,
     faInfo,
@@ -227,18 +227,6 @@ function Map() {
             'data': allTowersPoints
         });
 
-        // all towers layer
-        mapbox.current.addLayer({
-            'id': 'All Towers',
-            'type': 'circle',
-            'source': 'All Towers',
-            'minzoom': 14,
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
         mapbox.current.on('mouseenter', 'All Towers', () => {
             mapbox.current.getCanvas().style.cursor = 'pointer';
         });
@@ -246,6 +234,25 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
+        mapbox.current.loadImage('https://i.imgur.com/qfS0mnq.png', (error, image) => {
+            if (error) throw error;
+            mapbox.current.addImage('tower-icon', image, { sdf: true });
+        });
+
+        // all towers layer
+        mapbox.current.addLayer({
+            'id': 'All Towers',
+            'type': 'symbol',
+            'layout': {
+                'icon-image': 'tower-icon',
+                'icon-size': 1,
+            },
+            'source': 'All Towers',
+            'minzoom': 14,
+            'paint': {
+                'icon-color': ['get', 'color'],
+            }
+        });
 
         // all towers extrusion source
         mapbox.current.addSource('All Tower Extrusions', {
@@ -307,19 +314,31 @@ function Map() {
         });
 
         // obstacles layer
+        mapbox.current.on('mouseenter', 'FAA Obstacles', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+
+        mapbox.current.on('mouseleave', 'FAA Obstacles', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
+        mapbox.current.loadImage('https://i.imgur.com/kFZOjAw.png', (error, image) => {
+            if (error) throw error;
+            mapbox.current.addImage('obstacle-icon', image, { sdf: true });
+        });
+
         mapbox.current.addLayer({
             'id': 'FAA Obstacles',
-            'type': 'circle',
+            'type': 'symbol',
+            'layout': {
+                'icon-image': 'obstacle-icon',
+                'icon-size': 1,
+            },
             'source': 'FAA Obstacles',
             'minzoom': 14,
             'paint': {
-                'circle-radius': 6,
-                'circle-color': '#ff0000'
+                'icon-color': '#000000',
             }
-        });
-
-        mapbox.current.on('mouseenter', 'FAA Obstacles', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
         });
 
         // routing source
@@ -732,6 +751,8 @@ function Map() {
         // on click on hovers
         mapbox.current.on('click', 'Safe Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const description = e.features[0].properties.description;
 
@@ -760,20 +781,11 @@ function Map() {
             setRoutingLine(null);
         });
 
-        // make the route thicker on hover
-        mapbox.current.on('mouseenter', 'Routing', (e) => {
-            mapbox.current.setPaintProperty('Routing', 'line-width', 20);
-
-        });
-        mapbox.current.on('mouseleave', 'Routing', () => {
-            mapbox.current.setPaintProperty('Routing', 'line-width', 10);
-        });
-
         mapbox.current.on('click', 'FLYGHINDER 2023', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.designation;
             const number = e.features[0].properties.number;
             const height_feet = e.features[0].properties.height_feet;
@@ -802,9 +814,8 @@ function Map() {
 
         mapbox.current.on('click', 'Long Lines', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.Name;
             const description = e.features[0].properties.description;
             const type = e.features[0].properties.type;
@@ -831,6 +842,8 @@ function Map() {
 
         mapbox.current.on('click', 'Decommissioned Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const description = e.features[0].properties.description;
             // convert to feet with 2 decimal places
@@ -855,6 +868,8 @@ function Map() {
 
         mapbox.current.on('click', 'All Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             // convert to feet with 2 decimal places
             const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
@@ -873,16 +888,12 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
-        mapbox.current.on('mouseenter', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
 
 
         mapbox.current.on('click', 'Antennas', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const transmitter_type = e.features[0].properties.transmitter_type;
             const facility_id = e.features[0].properties.facility_id;
@@ -941,11 +952,34 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
-        mapbox.current.on('mouseenter', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = '';
+
+        // oas_number, type_code, agl, amsl, lighting, marking, study, date
+        mapbox.current.on('click', 'FAA Obstacles', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
+            const oas_number = e.features[0].properties.oas_number;
+            const type_code = e.features[0].properties.type_code;
+            const agl = e.features[0].properties.agl;
+            const amsl = e.features[0].properties.amsl;
+            const lighting = e.features[0].properties.lighting;
+            const marking = e.features[0].properties.marking;
+            const study = e.features[0].properties.study;
+            const date = e.features[0].properties.date;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>FAA Obstacle: " + oas_number + "</text>" +
+                    "<text id='towerpopuptext'>Type: " + type_code + "<br>" +
+                    "AGL: " + agl + " ft" + "<br>" +
+                    "AMSL: " + amsl + " ft" + "<br>" +
+                    "Lighting: " + lighting + "<br>" +
+                    "Marking: " + marking + "<br>" +
+                    "Study: " + study + "<br>" +
+                    "Date: " + date + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
         });
 
         // on left click
@@ -971,7 +1005,8 @@ function Map() {
 
         // on move, if zoom is above 14, try to update towers and / or antennas
         mapbox.current.on('moveend', () => {
-            if (mapbox.current.getZoom() >= 14) {
+            let zoomlevel = mapbox.current.getZoom();
+            if (zoomlevel >= 14) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
@@ -980,11 +1015,9 @@ function Map() {
                 if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
                     updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
-            } else if (mapbox.current.getZoom() >= 10) {
+
                 if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
                     updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
-                    // print map bounds
-                    console.log("Bounds:", mapbox.current.getBounds());
                 }
             }
         });
@@ -1023,16 +1056,6 @@ function Map() {
             trackUserLocation: true,
             showUserHeading: true
         }), 'top-left');
-
-        // draw control
-        // mapbox.current.addControl(new MapboxDraw({
-        //     displayControlsDefault: true,
-        //     controls: {
-        //         polygon: true,
-        //         trash: true
-        //     }
-        // }), 'top-left');
-
     }, [mapRef]);
 
     useEffect(() => {
@@ -1048,12 +1071,28 @@ function Map() {
         else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving", "darkMode": false});
     }, []);
 
+    const renderCoordinatesSegment = (coordinates) => {
+        console.log("rendering coordinates segment with coordinates: ", coordinates);
+        let lat = coordinates[1].toFixed(5);
+        let lng = coordinates[0].toFixed(5);
+
+        return <button id="coordinatesbutton" onClick={() => {
+            navigator.clipboard.writeText(lat + ", " + lng);
+        }}><text id="popupcoords">{lat}, {lng}</text></button>
+    }
+
+    // const renderButtons = () => {
+
     const renderRightClickPopup = (state) => {
         const placeholder = document.createElement('div');
 
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("external");
+                    }}><FontAwesomeIcon icon={faExternalLinkAlt} />
+                    </button>
                     <button id="rightclickpopupbutton" onClick={() => {
                         console.log("setting home position to ", rightClickPopupPosition);
                         setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
@@ -1071,7 +1110,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faMapMarkerAlt} />
                     </button>}
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
 
 
@@ -1149,8 +1188,9 @@ function Map() {
                     </button>
 
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
+
         } if (state === "routing") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id="rightclickpopup-routing-state">Calculating...</text>
@@ -1160,7 +1200,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
         } if (state === "routing-complete") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
@@ -1174,7 +1214,33 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
+            </div>
+            );
+        } if (state === "external") {
+            // window.open("http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]);
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id="rightclickpopup-routing-state">External Maps</text><br />
+                <div id="rightclickpopupexternallinks">
+                {/* links */}
+                    <a href={"http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Maps
+                    </a><br/>
+                    <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=15.9&style=h"} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Bing Maps
+                    </a><br />
+                    <a href={"https://apps.sentinel-hub.com/sentinel-playground/?source=S2L2A&lat=" + rightClickPopupPosition[1] + "&lng=" + rightClickPopupPosition[0] + "&zoom=16&preset=1_TRUE_COLOR&layers=B01,B02,B03&maxcc=20&gain=1.0&gamma=1.0"} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Sentinel Playground
+                    </a><br />
+                </div>
+                    <div id="rightclickpopupbuttons">
+                        <button id="rightclickpopupbutton" onClick={() => {
+                            setRightClickPopupState("default");
+                            setRoutingLine(null);
+                        }}><FontAwesomeIcon icon={faArrowLeft} />
+                        </button>
+                    </div>
+                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>
             );
         }
@@ -1193,7 +1259,6 @@ function Map() {
         const placeholder = document.createElement('div');
 
         if (state === "default") {
-            console.log("rendering default custom map popup, home is set: ", homeIsSet);
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id='custompopupname'>{properties.name}</text><br />
                 <text id='custompopupdescription'>{properties.description}</text><br />
@@ -1218,7 +1283,7 @@ function Map() {
                     </button>
                     }
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1253,11 +1318,6 @@ function Map() {
                 <div id="rightclickpopupbuttons">
 
                     <button id="rightclickpopupbutton" onClick={() => {
-                        // save
-                        console.log("saving");
-                        console.log("name: ", document.getElementById("custompopupname").value);
-                        console.log("description: ", document.getElementById("custompopupdescription").value);
-
                         // call save function // should query API and then edit our local data if successful
                         savePoint(properties.mapId, properties.id, {
                             name: document.getElementById("custompopupname").value,
@@ -1286,7 +1346,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1330,7 +1390,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1343,7 +1403,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1359,7 +1419,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1603,7 +1663,7 @@ function Map() {
 
     const updateObstacles = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveObstacles(accessToken, lat, lng, 5000, -1, -1).then(
+        await retrieveObstacles(accessToken, lat, lng, 5000).then(
             (response) => {
                 if (response.data)
                     setObstaclePoints(response.data.obstacles);
@@ -1663,7 +1723,6 @@ function Map() {
     }, [routingDuration, routingDistance]);
 
     // show custom map popup useeffect
-    // show right click popup useeffect
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showCustomMapPopup) { // remove the popup if we don't want to show it
@@ -1959,8 +2018,7 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
         if (!obstaclePoints) return; // wait for obstacles data to be set
 
-        console.log("Setting obstacles points: ", obstaclePoints);
-        mapbox.current.getSource('Obstacles').setData(obstaclePoints);
+        mapbox.current.getSource('FAA Obstacles').setData(obstaclePoints);
 
     }, [obstaclePoints]);
 
@@ -2058,11 +2116,6 @@ function Map() {
 
                     console.log("Clicked on custom map: ", name, description, coordinates);
 
-                    // if the popup is already open, close it
-                    // if (!showCustomMapPopup) {
-                    //     customMapPopup.addTo(mapbox.current);
-                    // }
-
                     // see if we have edit permissions for this map
                     // this is a slow and inefficient way to do this! We should have a usestate for the permissions and update it when we get the custom maps
                     e.features[0].properties.editable = false;
@@ -2152,12 +2205,6 @@ function Map() {
                     return;
                 }
 
-                // then try to close sidebar, if we can then return
-                if (displaySidebar) {
-                    setDisplaySidebar(false);
-                    return;
-                }
-
                 if (rightClickPopup.isOpen()) {
                     rightClickPopup.remove();
                     return;
@@ -2168,6 +2215,12 @@ function Map() {
                     customMapPopup.remove();
                 }
 
+
+                // then try to close sidebar, if we can then return
+                if (displaySidebar) {
+                    setDisplaySidebar(false);
+                    return;
+                }
             }
         }
         window.addEventListener('keydown', handleKeydown);
