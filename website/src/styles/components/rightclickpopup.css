@@ -1,6 +1,5 @@
 div#rightclickpopup {
     padding: 0;
-    margin: 0;
     /* break and wrap text */
     word-break: break-word;
     white-space: pre-line;
@@ -16,6 +15,7 @@ text#rightclickpopup-routing-state {
     font-size: 18px;
     color: black;
     top: 4px;
+    margin-right: 50px;
 }
 
 text#custompopupname {
@@ -38,17 +38,34 @@ text#routing-information {
     color: black;
     position: absolute;
     font-size: 15px;
-    width: 70%;
+    width: 100%;
 }
+
+div#rightclickpopupexternallinks {
+    margin-top: 5px;
+}
+
+div#rightclickpopupexternallinks a {
+    font-size: 17px;
+    color: black;
+    margin-bottom: 10px;
+}
+
+div#rightclickpopupexternallinks text {
+    font-size: 15px;
+    color: black;
+    margin-bottom: 10px;
+    margin-right: 5px;
+}
+
 
 div#rightclickpopupbuttons {
 /*    align right*/
 /*    position: absolute;*/
-    margin-top: 10px;
+    margin-top: 20px;
     margin-left: 20px;
     margin-bottom: 5px;
     padding-bottom: 5px;
-
     z-index: 999;
 }
 
@@ -66,6 +83,16 @@ text#popupcoords {
     z-index: 999;
     text-align: center;
     display: block;
+}
+
+button#coordinatesbutton {
+    /*width: 100%;*/
+    line-height: 18px;
+    margin-top: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    z-index: 999;
 }
 
 
