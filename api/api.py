@@ -198,7 +198,6 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"status": "error", "message": "Home not found"}
 
-    print(home[0])
     return {"status": "success", "message": "Home retrieved", "home": home[0]}
 
 
@@ -858,7 +857,6 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
                         lng=point.lng)
 
     # verify Point data makes sense for the map
-    print(map["categories"], map["colors"], map["icons"])
     if next((x for x in map["categories"] if x["id"] is new_point.get_category()), None) is not None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
@@ -948,33 +946,48 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
         currentPoint["description"] = point.description
 
     if point.color is not None:
-        currentPoint["color"] = point.color
+        found = False
+        for colordict in map["colors"]:
+            if colordict["id"] == point.color:
+                currentPoint["color"] = colordict["id"]
+                found = True
+                break
+        
+        if not found:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {"status": "error", "message": "Color not allowed for this map"}
 
     if point.icon is not None:
-        currentPoint["icon"] = point.icon
+        found = False
+        for icondict in map["icons"]:
+            if icondict["id"] == point.icon:
+                currentPoint["icon"] = icondict["id"]
+                found = True
+                break
+        
+        if not found:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {"status": "error", "message": "Icon not allowed for this map"}
 
     if point.category is not None:
-        currentPoint["category"] = point.category
+        found = False
+        for categorydict in map["categories"]:
+            if categorydict["id"] == point.category:
+                currentPoint["category"] = categorydict["id"]
+                found = True
+                break
+        
+        if not found:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {"status": "error", "message": "Category not allowed for this map"}
+
 
     if point.lat is not None:
         currentPoint["lat"] = point.lat
 
     if point.lng is not None:
         currentPoint["lng"] = point.lng
-        
-    # verify Point data makes sense for the map
-    if next((x for x in map["categories"] if x["id"] is currentPoint["category"]), None) is not None:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"status": "error", "message": "Category not allowed for this map"}
-    
-    if next((x for x in map["colors"] if x["id"] is currentPoint["color"]), None) is not None:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"status": "error", "message": "Color not allowed for this map"}
-    
-    if next((x for x in map["icons"] if x["id"] is currentPoint["icon"]), None) is not None:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"status": "error", "message": "Icon not allowed for this map"}
-    
+            
     # update point in map
     update_point_in_map(map_id, point_id, currentPoint)
 
@@ -1008,15 +1021,15 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
 
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
-@app.get("/faa/obstacles/nearby/{lat}/{lng}/{radius}/{minheight}/{maxheight}")
-async def get_obstacles_nearby(response: Response, lat: float, lng: float, radius: float, minheight: float, maxheight: float, token: str = Depends(token_auth_scheme)):
+@app.get("/faa/obstacles/nearby/{lat}/{lng}/{radius}")
+async def get_obstacles_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
     
-    obstacles = retrieve_obstacles(lat, lng, radius, minheight, maxheight)
+    obstacles = retrieve_obstacles(lat, lng, radius)
 
     return {"status": "success", "message": "Obstacles retrieved", "obstacles": obstacles}
 
