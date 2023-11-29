@@ -332,7 +332,7 @@
     padding-left: 10px;
     color: black;
     font-size: 15px;
-    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .regular-layer-normal > span {
@@ -354,8 +354,8 @@
     padding-left: 9px;
     color: black;
     font-size: 12px;
-    margin-bottom: 15px;
-    margin-left: 20px;
+    margin-bottom: 10px;
+    margin-left: 10px;
 }
 
 .regular-layer-many > span {
