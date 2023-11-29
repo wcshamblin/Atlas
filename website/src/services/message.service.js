@@ -247,9 +247,9 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     }
 }
 
-export const retrieveObstacles = async (accessToken, lat, lng, radius, minheight, maxheight) => {
+export const retrieveObstacles = async (accessToken, lat, lng, radius) => {
     const config = {
-        url: `${apiServerUrl}/faa/obstacles/nearby/${lat}/${lng}/${radius}/${minheight}/${maxheight}`,
+        url: `${apiServerUrl}/faa/obstacles/nearby/${lat}/${lng}/${radius}`,
         method: "GET",
         headers: {
         "content-type": "application/json",
