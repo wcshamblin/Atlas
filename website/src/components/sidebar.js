@@ -105,6 +105,7 @@ const Sidebar = ({
         "Antennas": ["Antennas"],
         "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
+        "Germany Tall Structures": ["Germany Tall Structures"],
     }
 
     const [layers, setLayers] = useState({
@@ -120,6 +121,7 @@ const Sidebar = ({
         "FLYGHINDER 2023": { "visible": false, "country": "eu" },
         "FLYGHINDER 2023 Extrusions": { "visible": false, "country": "eu" },
         "FAA Obstacles": { "visible": false, "country": "usa" },
+        "Germany Tall Structures": { "visible": false, "country": "eu" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});

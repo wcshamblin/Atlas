@@ -417,6 +417,42 @@ function Map() {
             }
         });
 
+        // add germany tallest objects
+        let germany_tallest = require('./germany_tall_structures.geojson');
+        mapbox.current.addSource('Germany Tall Structures', {
+            'type': 'geojson',
+            'data': germany_tallest
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Germany Tall Structures',
+            'type': 'circle',
+            'source': 'Germany Tall Structures',
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': '#62b031',
+            }
+        });
+
+        // add germany tallest objects extrusions
+        let germany_tallest_extrusions = require('./germany_tall_structures_polygons.geojson');
+        mapbox.current.addSource('Germany Tall Structures Extrusions', {
+            'type': 'geojson',
+            'data': germany_tallest_extrusions
+        });
+
+        mapbox.current.addLayer({
+            'id': 'Germany Tall Structures Extrusions',
+            'type': 'fill-extrusion',
+            'source': 'Germany Tall Structures Extrusions',
+            'minzoom': 12,
+            'paint': {
+                'fill-extrusion-color': "#62b031",
+                'fill-extrusion-height': ['get', 'height_meters'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
+        });
 
         // google street view overlay should only be visible when zoom level is above 12
         mapbox.current.addSource('Google StreetView', {
@@ -711,6 +747,37 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = 'pointer';
         });
         mapbox.current.on('mouseleave', 'FLYGHINDER 2023', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
+        mapbox.current.on('click', 'Germany Tall Structures', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            // round to 6 decimal places
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
+            const name = e.features[0].properties.designation;
+            const height_feet = e.features[0].properties.height_feet;
+            const height_meters = e.features[0].properties.height_meters;
+            const year = e.features[0].properties.year;
+            const type = e.features[0].properties.type;
+            const regards = e.features[0].properties.regards;
+
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML("<text id='towerpopuptitle'>" + name + "</text>" +
+                    "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
+                    "Type: " + type + "<br>" +
+                    "Year: " + year + "<br>" +
+                    "Regards: " + regards + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+
+        mapbox.current.on('mouseenter', 'Germany Tall Structures', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+        mapbox.current.on('mouseleave', 'Germany Tall Structures', () => {
             mapbox.current.getCanvas().style.cursor = '';
         });
         
