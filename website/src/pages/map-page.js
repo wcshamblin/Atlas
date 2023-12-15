@@ -13,24 +13,6 @@ import { PageLoader } from "../components/page-loader";
 export const MapPage = () => {
     const { getAccessTokenSilently } = useAuth0();
     const [eulaAccepted, setEulaAccepted] = useState(null);
-    const [pageContent, setPageContent] = useState(null);
-
-    useEffect(() => {
-        // if it's null, it's not ready yet
-        if (eulaAccepted === null) {
-            setPageContent(<PageLoader />);
-        }
-
-        if (eulaAccepted === false) {
-            setPageContent(<Eula />);
-        }
-
-        // if it's true, it's accepted
-        if (eulaAccepted) {
-            setPageContent(<Map accessToken={getAccessTokenSilently} />);
-        }
-    }, [eulaAccepted]);
-
 
     const checkEulaAcceptance = async () => {
         const accessToken = await getAccessTokenSilently();
@@ -39,7 +21,9 @@ export const MapPage = () => {
             setEulaAccepted(eulaAccepted.data.accepted);
     }
 
-    checkEulaAcceptance().then(r => console.log(r));
+    useEffect(() => {
+        checkEulaAcceptance().then(r => console.log(r));
+    }, [])
 
     // redirect to root if not authenticated
     const { isAuthenticated } = useAuth0();
@@ -49,7 +33,15 @@ export const MapPage = () => {
 
     return (
         <PageLayout>
-            {pageContent}
+            {eulaAccepted === null && (
+                <PageLoader />
+            )}
+            {eulaAccepted === false && (
+                <Eula />
+            )}
+            {eulaAccepted && (
+                <Map accessToken={getAccessTokenSilently} />
+            )}
         </PageLayout>
     );
 };
