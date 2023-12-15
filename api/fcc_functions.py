@@ -220,8 +220,6 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
                     }})
         
     
-    print("Tower polygons:", towers_polygons)
-    print("Tower points:", towers_points)
     return towers_polygons, towers_points
 
 

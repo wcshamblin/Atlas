@@ -247,6 +247,24 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     }
 }
 
+export const retrieveObstacles = async (accessToken, lat, lng, radius) => {
+    const config = {
+        url: `${apiServerUrl}/faa/obstacles/nearby/${lat}/${lng}/${radius}`,
+        method: "GET",
+        headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
 export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
     const config = {
         url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}/${uls}`,
@@ -375,4 +393,23 @@ export const editMapInfo = async (accessToken, method, mapId, infoType, data) =>
         data: dataResponse || null,
         error,
     };
+}
+
+// no auth
+export const retrieveAstronomyData = async (tzdiff, date, lat, lng) => {
+    const config = {
+        url: `${apiServerUrl}/astronomy/${tzdiff}/${date}/${lat}/${lng}`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+    console.log("astronomy", data);
+
+    return {
+        data: data || null,
+        error,
+    }
 }

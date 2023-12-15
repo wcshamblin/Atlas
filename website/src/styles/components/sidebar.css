@@ -60,6 +60,194 @@
     overflow-x: hidden;
 }
 
+#sidebar-content h1, #sidebar-content h2, #sidebar-content h3 {
+    margin-left: 5px;
+    margin-top: 0px;
+    margin-bottom: 3px;
+}
+
+#datetime-input {
+    height: 30px;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin: 5px;
+    padding-left: 5px;
+    font-size: 15px;
+}
+
+#weather-controls {
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+    margin-right: 5px;
+}
+
+#astronomy-segment {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#sunburst-sunrise-sunset {
+    font-size: 20px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+#sunburst-sunrise-sunset-error {
+    font-size: 15px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+#sunrise-sunset-metrics {
+    margin-left: 5px;
+}
+
+#sunburst-metrics {
+    margin-left: 10px;
+}
+
+#sunburst-metrics text {
+    font-size: 14px !important;
+}
+
+#sunburstquality {
+    margin-right: 5px;
+    margin-bottom: 2px;
+}
+
+#sunrise-sunset-metrics text {
+    font-size: 16px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#sunrise-sunset-metrics span {
+    font-size: 20px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#moon-phase-metrics {
+    margin-left: 5px;
+}
+
+#moon-phase-metrics span {
+    font-size: 20px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#moon-phase-metrics text {
+    font-size: 16px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#sunburst-quality-info-button-hover {
+    font-size: 14px !important;
+    color: black;
+    margin-left: 5px;
+}
+
+#sunburst-quality-info-button-hover span {
+    display: inline-block;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.sunburst-quality-info-button-icon {
+    width: 12px;
+    height: 12px;
+    margin-left: 5px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+
+.sunburst-sunrise-sunset-icon {
+    width: 30px;
+    height: 30px;
+    margin-left: 0px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.sunburst-clock-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 3px;
+    stroke: #000000;
+    vertical-align: middle;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.moon-phase-icon {
+    width: 25px;
+    height: 25px;
+    margin-left: 2px;
+    margin-right: 3px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.polling-icon {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-right: 3px;
+    vertical-align: middle;
+    display: inline-block;
+    cursor: pointer;
+}
+.polling-icon:hover {
+    fill: #c0c0c0;
+}
+
+.clock-forward-icon {
+    width: 29px;
+    height: 29px;
+    margin-left: 5px;
+    margin-right: 3px;
+    stroke: #000000;
+    vertical-align: middle;
+    display: inline-block;
+}
+.clock-forward-icon:hover {
+    fill: #c0c0c0;
+    stroke: #c0c0c0;
+}
+
+#change-polling-position-button span {
+    font-size: 15px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#set-datetime-to-now-button {
+    margin-bottom: 5px;
+}
+
+#change-polling-position-button {
+    margin-bottom: 5px;
+}
+
+#set-datetime-to-now-button span {
+    font-size: 15px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
 #base-layer-container {
     margin-left: 10px;
     display: grid;
@@ -67,6 +255,7 @@
     gap: 2%;
     width: 300px;
     user-select: none;
+    margin-bottom: 30px;
 }
 
 .base-layer-item {
@@ -127,6 +316,7 @@
 
 #regular-layer-container {
     margin-left: 10px;
+    margin-bottom: 10px;
     width: 300px;
     user-select: none;
 }
@@ -142,7 +332,7 @@
     padding-left: 10px;
     color: black;
     font-size: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .regular-layer-normal > span {
@@ -164,8 +354,8 @@
     padding-left: 9px;
     color: black;
     font-size: 12px;
-    margin-bottom: 15px;
-    margin-left: 20px;
+    margin-bottom: 10px;
+    margin-left: 10px;
 }
 
 .regular-layer-many > span {
@@ -181,7 +371,7 @@
 }
 
 #custom-maps-main-container {
-    margin-top: 10px;
+    margin: 10px 5px;
 }
 
 .custom-map-container {

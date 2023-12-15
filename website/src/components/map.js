@@ -1,23 +1,13 @@
-import React, { useState, useEffect, createRef, useRef } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
 import Sidebar from '../components/sidebar';
 
 import mapboxgl from 'mapbox-gl';
 
-/* eslint-disable import/first */
-// eslint-disable-next-line import/no-webpack-loader-syntax
-mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
-
-
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
-
-
-import DateTimePicker from 'react-datetime-picker'
 
 // css
 import '../styles/components/map.css';
@@ -28,10 +18,10 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {
-    faArrowLeft,
-    faCoffee, faFloppyDisk,
+    faArrowLeft, faExternalLinkAlt,
+    faFloppyDisk,
     faHome,
     faInfo,
     faMapMarkerAlt,
@@ -40,22 +30,30 @@ import {
     faTrash
 } from '@fortawesome/free-solid-svg-icons'
 
-
-import { v4 as uuid } from 'uuid';
-
 // api imports
 import {
-    setHome,
+    deletePoint,
+    fetchMaps,
+    postPoint,
+    putPoint,
+    retrieveAntennas, retrieveAstronomyData,
+    retrieveCustomMapPoints,
     retrieveHome,
     retrieveTowers,
-    retrieveAntennas,
-    fetchMaps, retrieveCustomMapPoints, putPoint, postPoint, deletePoint
+    retrieveObstacles,
+    setHome
 } from "../services/message.service";
 
-import { useAuth0 } from "@auth0/auth0-react";
+import {useAuth0} from "@auth0/auth0-react";
 
-import { GoogleMap, LoadScript, StreetViewPanorama, StreetViewService } from '@react-google-maps/api';
+import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
 import Modal from './modal';
+
+/* eslint-disable import/first */
+// eslint-disable-next-line import/no-webpack-loader-syntax
+mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
+
+
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
@@ -99,7 +97,6 @@ function Map() {
     const [homeMarkerPosition, setHomeMarkerPosition] = useState([]);
 
     const [isoProfile, setIsoProfile] = useState("driving");
-    const [isoMinutes, setIsoMinutes] = useState("45");
     const [showIso, setShowIso] = useState(false);
 
     const [routingLine, setRoutingLine] = useState(null);
@@ -118,7 +115,9 @@ function Map() {
     const [customMapPopupState, setCustomMapPopupState] = useState(null);
     const [customMapPopupProperties, setCustomMapPopupProperties] = useState(null);
 
-    const [sunburstHomeInfo, setSunburstHomeInfo] = useState(null);
+    const [astronomyInfo, setAstronomyInfo] = useState(null);
+    const [sunburstInfo, setSunburstInfo] = useState(null);
+    const [sunburstToken, setSunburstToken] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
     const [allTowersPoints, setAllTowersPoints] = useState(null);
@@ -126,7 +125,11 @@ function Map() {
 
     const [antennaPoints, setAntennaPoints] = useState(null);
 
+    const [obstaclePoints, setObstaclePoints] = useState(null);
+
     const [mapDatetime, setMapDatetime] = useState(new Date());
+
+    const [pollingPosition, setPollingPosition] = useState([]);
 
     const [shadeMapObject, setShadeMapObject] = useState(shadeMap);
 
@@ -224,18 +227,6 @@ function Map() {
             'data': allTowersPoints
         });
 
-        // all towers layer
-        mapbox.current.addLayer({
-            'id': 'All Towers',
-            'type': 'circle',
-            'source': 'All Towers',
-            'minzoom': 14,
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
         mapbox.current.on('mouseenter', 'All Towers', () => {
             mapbox.current.getCanvas().style.cursor = 'pointer';
         });
@@ -243,6 +234,25 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
+        mapbox.current.loadImage('https://i.imgur.com/qfS0mnq.png', (error, image) => {
+            if (error) throw error;
+            mapbox.current.addImage('tower-icon', image, { sdf: true });
+        });
+
+        // all towers layer
+        mapbox.current.addLayer({
+            'id': 'All Towers',
+            'type': 'symbol',
+            'layout': {
+                'icon-image': 'tower-icon',
+                'icon-size': 1,
+            },
+            'source': 'All Towers',
+            'minzoom': 14,
+            'paint': {
+                'icon-color': ['get', 'color'],
+            }
+        });
 
         // all towers extrusion source
         mapbox.current.addSource('All Tower Extrusions', {
@@ -277,7 +287,6 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
-
         mapbox.current.loadImage('https://i.imgur.com/s2Wgdgx.png', (error, image) => {
             if (error) throw error;
             mapbox.current.addImage('transmitter-icon', image, { sdf: true });
@@ -295,6 +304,40 @@ function Map() {
             'minzoom': 14,
             'paint': {
                 'icon-color': ['get', 'color'],
+            }
+        });
+
+        // obstacles source
+        mapbox.current.addSource('FAA Obstacles', {
+            'type': 'geojson',
+            'data': obstaclePoints
+        });
+
+        // obstacles layer
+        mapbox.current.on('mouseenter', 'FAA Obstacles', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+
+        mapbox.current.on('mouseleave', 'FAA Obstacles', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
+        mapbox.current.loadImage('https://i.imgur.com/kFZOjAw.png', (error, image) => {
+            if (error) throw error;
+            mapbox.current.addImage('obstacle-icon', image, { sdf: true });
+        });
+
+        mapbox.current.addLayer({
+            'id': 'FAA Obstacles',
+            'type': 'symbol',
+            'layout': {
+                'icon-image': 'obstacle-icon',
+                'icon-size': 1,
+            },
+            'source': 'FAA Obstacles',
+            'minzoom': 14,
+            'paint': {
+                'icon-color': '#000000',
             }
         });
 
@@ -707,6 +750,8 @@ function Map() {
         // on click on hovers
         mapbox.current.on('click', 'Safe Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const description = e.features[0].properties.description;
 
@@ -735,20 +780,11 @@ function Map() {
             setRoutingLine(null);
         });
 
-        // make the route thicker on hover
-        mapbox.current.on('mouseenter', 'Routing', (e) => {
-            mapbox.current.setPaintProperty('Routing', 'line-width', 20);
-
-        });
-        mapbox.current.on('mouseleave', 'Routing', () => {
-            mapbox.current.setPaintProperty('Routing', 'line-width', 10);
-        });
-
         mapbox.current.on('click', 'FLYGHINDER 2023', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.designation;
             const number = e.features[0].properties.number;
             const height_feet = e.features[0].properties.height_feet;
@@ -777,9 +813,8 @@ function Map() {
 
         mapbox.current.on('click', 'Long Lines', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.Name;
             const description = e.features[0].properties.description;
             const type = e.features[0].properties.type;
@@ -806,6 +841,8 @@ function Map() {
 
         mapbox.current.on('click', 'Decommissioned Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const description = e.features[0].properties.description;
             // convert to feet with 2 decimal places
@@ -830,6 +867,8 @@ function Map() {
 
         mapbox.current.on('click', 'All Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             // convert to feet with 2 decimal places
             const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
@@ -848,16 +887,12 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
-        mapbox.current.on('mouseenter', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
 
 
         mapbox.current.on('click', 'Antennas', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
             const name = e.features[0].properties.name;
             const transmitter_type = e.features[0].properties.transmitter_type;
             const facility_id = e.features[0].properties.facility_id;
@@ -916,11 +951,34 @@ function Map() {
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
-        mapbox.current.on('mouseenter', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = '';
+
+        // oas_number, type_code, agl, amsl, lighting, marking, study, date
+        mapbox.current.on('click', 'FAA Obstacles', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(5);
+            coordinates[1] = coordinates[1].toFixed(5);
+            const oas_number = e.features[0].properties.oas_number;
+            const type_code = e.features[0].properties.type_code;
+            const agl = e.features[0].properties.agl;
+            const amsl = e.features[0].properties.amsl;
+            const lighting = e.features[0].properties.lighting;
+            const marking = e.features[0].properties.marking;
+            const study = e.features[0].properties.study;
+            const date = e.features[0].properties.date;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>FAA Obstacle: " + oas_number + "</text>" +
+                    "<text id='towerpopuptext'>Type: " + type_code + "<br>" +
+                    "AGL: " + agl + " ft" + "<br>" +
+                    "AMSL: " + amsl + " ft" + "<br>" +
+                    "Lighting: " + lighting + "<br>" +
+                    "Marking: " + marking + "<br>" +
+                    "Study: " + study + "<br>" +
+                    "Date: " + date + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
         });
 
         // on left click
@@ -946,15 +1004,19 @@ function Map() {
 
         // on move, if zoom is above 14, try to update towers and / or antennas
         mapbox.current.on('moveend', () => {
-            if (mapbox.current.getZoom() >= 14) {
+            let zoomlevel = mapbox.current.getZoom();
+            if (zoomlevel >= 14) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
 
                 if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
-                    // update decommissioned towers from the center of the map
                     updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                }
+
+                if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
+                    updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
             }
         });
@@ -993,16 +1055,6 @@ function Map() {
             trackUserLocation: true,
             showUserHeading: true
         }), 'top-left');
-
-        // draw control
-        // mapbox.current.addControl(new MapboxDraw({
-        //     displayControlsDefault: true,
-        //     controls: {
-        //         polygon: true,
-        //         trash: true
-        //     }
-        // }), 'top-left');
-
     }, [mapRef]);
 
     useEffect(() => {
@@ -1018,12 +1070,28 @@ function Map() {
         else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving", "darkMode": false});
     }, []);
 
+    const renderCoordinatesSegment = (coordinates) => {
+        console.log("rendering coordinates segment with coordinates: ", coordinates);
+        let lat = coordinates[1].toFixed(5);
+        let lng = coordinates[0].toFixed(5);
+
+        return <button id="coordinatesbutton" onClick={() => {
+            navigator.clipboard.writeText(lat + ", " + lng);
+        }}><text id="popupcoords">{lat}, {lng}</text></button>
+    }
+
+    // const renderButtons = () => {
+
     const renderRightClickPopup = (state) => {
         const placeholder = document.createElement('div');
 
         if (state === "default") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <div id="rightclickpopupbuttons">
+                    <button id="rightclickpopupbutton" onClick={() => {
+                        setRightClickPopupState("external");
+                    }}><FontAwesomeIcon icon={faExternalLinkAlt} />
+                    </button>
                     <button id="rightclickpopupbutton" onClick={() => {
                         console.log("setting home position to ", rightClickPopupPosition);
                         setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
@@ -1041,7 +1109,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faMapMarkerAlt} />
                     </button>}
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
 
 
@@ -1111,10 +1179,6 @@ function Map() {
                             lng: rightClickPopupPosition[0]
                         });
 
-                        // close popup
-                        setRightClickPopupState("default");
-                        setShowRightClickPopup(false);
-
                     }}><FontAwesomeIcon icon={faFloppyDisk} />
                     </button>
                     <button id="rightclickpopupbutton" onClick={() => {
@@ -1123,8 +1187,9 @@ function Map() {
                     </button>
 
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
+
         } if (state === "routing") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id="rightclickpopup-routing-state">Calculating...</text>
@@ -1134,7 +1199,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>);
         } if (state === "routing-complete") {
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
@@ -1148,7 +1213,33 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {rightClickPopupPosition[1].toFixed(5)}, {rightClickPopupPosition[0].toFixed(5)} </text>
+                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
+            </div>
+            );
+        } if (state === "external") {
+            // window.open("http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]);
+            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
+                <text id="rightclickpopup-routing-state">External Maps</text><br />
+                <div id="rightclickpopupexternallinks">
+                {/* links */}
+                    <a href={"http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Maps
+                    </a><br/>
+                    <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=15.9&style=h"} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Bing Maps
+                    </a><br />
+                    <a href={"https://apps.sentinel-hub.com/sentinel-playground/?source=S2L2A&lat=" + rightClickPopupPosition[1] + "&lng=" + rightClickPopupPosition[0] + "&zoom=16&preset=1_TRUE_COLOR&layers=B01,B02,B03&maxcc=20&gain=1.0&gamma=1.0"} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Sentinel Playground
+                    </a><br />
+                </div>
+                    <div id="rightclickpopupbuttons">
+                        <button id="rightclickpopupbutton" onClick={() => {
+                            setRightClickPopupState("default");
+                            setRoutingLine(null);
+                        }}><FontAwesomeIcon icon={faArrowLeft} />
+                        </button>
+                    </div>
+                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
             </div>
             );
         }
@@ -1167,7 +1258,6 @@ function Map() {
         const placeholder = document.createElement('div');
 
         if (state === "default") {
-            console.log("rendering default custom map popup, home is set: ", homeIsSet);
             ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
                 <text id='custompopupname'>{properties.name}</text><br />
                 <text id='custompopupdescription'>{properties.description}</text><br />
@@ -1192,7 +1282,7 @@ function Map() {
                     </button>
                     }
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1227,11 +1317,6 @@ function Map() {
                 <div id="rightclickpopupbuttons">
 
                     <button id="rightclickpopupbutton" onClick={() => {
-                        // save
-                        console.log("saving");
-                        console.log("name: ", document.getElementById("custompopupname").value);
-                        console.log("description: ", document.getElementById("custompopupdescription").value);
-
                         // call save function // should query API and then edit our local data if successful
                         savePoint(properties.mapId, properties.id, {
                             name: document.getElementById("custompopupname").value,
@@ -1260,7 +1345,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1304,7 +1389,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1317,7 +1402,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1333,7 +1418,7 @@ function Map() {
                     }}><FontAwesomeIcon icon={faArrowLeft} />
                     </button>
                 </div>
-                <text id='popupcoords'> {coordinates[1].toFixed(5)}, {coordinates[0].toFixed(5)} </text>
+                {renderCoordinatesSegment(coordinates)}
             </div>);
         }
 
@@ -1429,6 +1514,10 @@ function Map() {
             return;
         }
 
+        // close popup
+        setRightClickPopupState("default");
+        setShowRightClickPopup(false);
+
         const accessToken = await getAccessTokenSilently();
 
         console.log("Saving with point data", pointData);
@@ -1483,7 +1572,7 @@ function Map() {
         const onLoad = (streetViewService) => {
             streetViewService.getPanorama({
                 location: { lat: lat, lng: lng },
-                radius: 20,
+                radius: 10,
             }, (data, status) => {
                 if (status === "OK") {
                     console.log("streetview available");
@@ -1571,6 +1660,16 @@ function Map() {
         )
     }
 
+    const updateObstacles = async (lat, lng) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveObstacles(accessToken, lat, lng, 5000).then(
+            (response) => {
+                if (response.data)
+                    setObstaclePoints(response.data.obstacles);
+            }
+        )
+    }
+
     const updateSettings = (settingName, settingValue) => {
         settings[settingName] = settingValue;
         setSettings({ ...settings });
@@ -1623,7 +1722,6 @@ function Map() {
     }, [routingDuration, routingDistance]);
 
     // show custom map popup useeffect
-    // show right click popup useeffect
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showCustomMapPopup) { // remove the popup if we don't want to show it
@@ -1861,7 +1959,15 @@ function Map() {
                     .setLngLat([homeMarkerPosition[0], homeMarkerPosition[1]])
                     .addTo(mapbox.current));
             }
-            console.log("Home marker set, setting homeIsSet to true");
+            console.log("Home marker set, setting homeIsSet to true, and centering map");
+            setPollingPosition([homeMarkerPosition[0], homeMarkerPosition[1]]);
+
+            // fly to the home marker
+            mapbox.current.flyTo({
+                center: [homeMarkerPosition[0], homeMarkerPosition[1]],
+                zoom: 11.6
+            });
+
             setHomeIsSet(true);
         }
         , [homeMarkerPosition]);
@@ -1875,17 +1981,6 @@ function Map() {
         // set home location in database
         setHomeMarkerPosition([lng, lat]);
         await setHome(accessToken, lat, lng);
-    }
-
-    const getHomeMetrics = () => {
-        return (
-            <div id="home-metrics">
-                <h4>At home:</h4>
-                <text id="sidebar-content-header">Home:</text>
-
-                {sunburstHomeInfo ? getSunburstSegment() : ""}
-            </div>
-        );
     }
 
     // all towers useEffect
@@ -1916,6 +2011,16 @@ function Map() {
         mapbox.current.getSource('Antennas').setData(antennaPoints);
 
     }, [antennaPoints]);
+
+    // obstacles useEffect
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        if (!obstaclePoints) return; // wait for obstacles data to be set
+
+        mapbox.current.getSource('FAA Obstacles').setData(obstaclePoints);
+
+    }, [obstaclePoints]);
+
 
     // custom maps useeffect, update when custom maps change
     useEffect(() => {
@@ -1988,6 +2093,7 @@ function Map() {
                         'icon-color': ['get', 'color'],
                         'icon-halo-color': '#fff',
                         'icon-halo-width': 5,
+                        'icon-halo-blur': .1,
                     }
                 });
 
@@ -2008,11 +2114,6 @@ function Map() {
                     setCurrentSelectedCustomMapPoint({ "pointId": e.features[0].properties.id, "layerId": e.features[0].layer.id });
 
                     console.log("Clicked on custom map: ", name, description, coordinates);
-
-                    // if the popup is already open, close it
-                    // if (!showCustomMapPopup) {
-                    //     customMapPopup.addTo(mapbox.current);
-                    // }
 
                     // see if we have edit permissions for this map
                     // this is a slow and inefficient way to do this! We should have a usestate for the permissions and update it when we get the custom maps
@@ -2064,7 +2165,12 @@ function Map() {
 
         Object.keys(customMapPoints).forEach((mapId) => {
             let newMapPoints = JSON.parse(JSON.stringify(customMapPoints[mapId]));
-            newMapPoints.features = newMapPoints.features.filter(feature => feature.properties.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase()) && (pointFilters[mapId].category != "" ? feature.properties.category == pointFilters[mapId].category : true) && (pointFilters[mapId].color != "" ? feature.properties.color == pointFilters[mapId].color : true) && (pointFilters[mapId].icon != "" ? feature.properties.icon == pointFilters[mapId].icon : true))
+
+            newMapPoints.features = newMapPoints.features.filter(feature => (feature.properties.name.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())
+                    || (feature.properties.description && feature.properties.description.toLowerCase().includes(pointFilters[mapId].name.toLowerCase())))
+                && (pointFilters[mapId].category !== "" ? feature.properties.category === pointFilters[mapId].category : true)
+                && (pointFilters[mapId].color !== "" ? feature.properties.color === pointFilters[mapId].color : true)
+                && (pointFilters[mapId].icon !== "" ? feature.properties.icon === pointFilters[mapId].icon : true))
 
             console.log("Setting custom map points for ", mapId, ": ", customMapPoints[mapId]);
             mapbox.current.getSource(mapId).setData(newMapPoints);
@@ -2098,12 +2204,6 @@ function Map() {
                     return;
                 }
 
-                // then try to close sidebar, if we can then return
-                if (displaySidebar) {
-                    setDisplaySidebar(false);
-                    return;
-                }
-
                 if (rightClickPopup.isOpen()) {
                     rightClickPopup.remove();
                     return;
@@ -2114,6 +2214,12 @@ function Map() {
                     customMapPopup.remove();
                 }
 
+
+                // then try to close sidebar, if we can then return
+                if (displaySidebar) {
+                    setDisplaySidebar(false);
+                    return;
+                }
             }
         }
         window.addEventListener('keydown', handleKeydown);
@@ -2122,70 +2228,40 @@ function Map() {
         }
     }, [displaySidebar, displayStreetView, openModal]);
 
-    // // dark mode useEffect
-    // useEffect(() => {
-    //     if (!mapbox.current) return; // wait for map to initialize
-    //
-    //     console.log("Dark mode changed: ", settings["darkMode"]);
-    //
-    //     // if map style is not loaded yet, then don't do anything
-    //     // use .isStyleLoaded() to check
-    //     if (!mapbox.current.isStyleLoaded()) return;
-    //
-    //     if (settings["darkMode"]) {
-    //         // set style
-    //         mapbox.current.setStyle('mapbox://styles/mapbox/dark-v10');
-    //
-    //         // set fog
-    //         // mapbox.current.setFog(
-    //         //     {
-    //         //         'range': [5, 6],
-    //         //         'horizon-blend': 0.3,
-    //         //         'color': '#242B4B',
-    //         //         'high-color': '#161B36',
-    //         //         'space-color': '#0B1026',
-    //         //         'star-intensity': .95
-    //         //     }
-    //         // )
-    //
-    //     } else {
-    //         // set style
-    //         mapbox.current.setStyle('mapbox://styles/mapbox/light-v10');
-    //
-    //         // set fog
-    //         // mapbox.current.setFog(
-    //         //     {
-    //         //         'range': [5, 6],
-    //         //         'horizon-blend': 0.3,
-    //         //         'color': 'white',
-    //         //         'high-color': '#add8e6',
-    //         //         'space-color': '#d8f2ff',
-    //         //         'star-intensity': 0.0
-    //         //     })
-    //         }
-    //     }, [settings["darkMode"]]);
-
-    // sunburst home info - update on home change or map datetime change
+    // sunburst home info - update on polling position change or map datetime change
     useEffect(() => {
+        console.log("useEffect for sunburst home info: ", pollingPosition, mapDatetime, sunburstToken);
         if (!mapbox.current) return; // wait for map to initialize
 
-        // if we don't have a home, then don't do anything
-        if (!homeIsSet) return;
-
-        // if we don't have a home marker position, then don't do anything
-        if (homeMarkerPosition.length < 2) return;
-
-        // if map datetime is more than 4 days in the future, we don't have sunburst data, so unset it
-        if (mapDatetime > new Date().getTime() + 4 * 24 * 60 * 60 * 1000) {
-            setSunburstHomeInfo(null);
+        if (!sunburstToken) {
+            retrieveSunburstToken().then(() => {
+                console.log("Sunburst token retrieved: ", sunburstToken);
+            });
             return;
         }
 
-        // get sunburst data
-        getSunburstData(homeMarkerPosition[1], homeMarkerPosition[0], mapDatetime.toISOString()).then((data) => {
-            setSunburstHomeInfo(data);
+        if (!pollingPosition.length) return;
+
+        getSunburstData(pollingPosition[1], pollingPosition[0], mapDatetime.toISOString(), sunburstToken).then((data) => {
+            setSunburstInfo(data);
         });
-    }, [homeMarkerPosition, mapDatetime]);
+    }, [pollingPosition, mapDatetime, sunburstToken]);
+
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+
+        // make sure polling position is set
+        if (!pollingPosition.length) return;
+
+        let date = mapDatetime.toISOString().split("T")[0]
+
+        let utcdifference = -(mapDatetime.getTimezoneOffset() / 60)
+
+
+        retrieveAstronomyData(utcdifference, date, pollingPosition[1], pollingPosition[0]).then((data) => {
+            setAstronomyInfo(data.data);
+        });
+    }, [pollingPosition, mapDatetime]);
 
     const displayLabels = display => {
         if (!mapbox.current) return;
@@ -2195,17 +2271,30 @@ function Map() {
         });
     }
 
-    // sunburst API fetch
-    const getSunburstData = async (lat, lng, after) => {
-        let sunburstToken = process.env.REACT_APP_SUNBURST_API_TOKEN;
-        console.log("Using Sunburst token: ", sunburstToken);
+    async function retrieveSunburstToken() {
+        const query = await fetch(
+            `https://sunburst.sunsetwx.com/v1/login`,
+            {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Basic ${btoa(`${process.env.REACT_APP_SUNBURST_API_EMAIL}:${process.env.REACT_APP_SUNBURST_API_PASSWORD}`)}`
+                },
+                body: "grant_type=password&type=access"
+            });
 
+        const data = await query.json();
+        setSunburstToken(data.access_token);
+    }
+
+    // sunburst API fetch
+    const getSunburstData = async (lat, lng, after, token) => {
         const query = await fetch(
             `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}&after=${after}`,
             {
                 method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${sunburstToken}`
+                    "Authorization": `Bearer ${token}`
                 }
             }
         );
@@ -2213,37 +2302,6 @@ function Map() {
         const data = await query.json();
         console.log("Sunburst retrieved data: ", data);
         return data;
-    }
-
-    const getSunburstSegment = () => {
-        // this will break if rendered before the API call is finished, so this should only be called after sunburstHomeInfo is set
-        let type = sunburstHomeInfo["features"][0]["properties"]["type"];
-        let twilight;
-        if (type === "Sunrise") {
-            twilight = "dawn";
-        } else {
-            twilight = "dusk";
-        }
-        let quality = sunburstHomeInfo["features"][0]["properties"]["quality"];
-        let quality_percent = sunburstHomeInfo["features"][0]["properties"]["quality_percent"];
-
-        let astro_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
-        let nautical_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
-        let civil_time = new Date(Date.parse(sunburstHomeInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
-
-        return (
-            <div id="sunburst-segment">
-                <div id="sunrise-sunset-metrics">
-                    <text id="sunburst-sunrise-sunset">Type: {type}
-                        Quality: {quality} ({quality_percent}%)
-                        Times:
-                        Astronomical: {astro_time}
-                        Nautical: {nautical_time}
-                        Civil: {civil_time}
-                    </text>
-                </div>
-            </div>
-        )
     }
 
     const getCustomMapPoints = async (mapID) => {
@@ -2256,7 +2314,6 @@ function Map() {
 
     const getWeatherInfo = async (lat, lng, datetime) => {
         let weatherToken = process.env.REACT_APP_WEATHER_API_TOKEN;
-        console.log("Using Weather token: ", weatherToken);
 
         let query = await fetch(
             `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,
@@ -2292,13 +2349,20 @@ function Map() {
                 expanded={displaySidebar && mapbox.current} 
                 setDisplaySidebar={setDisplaySidebar} 
                 setLayoutProperty={setLayoutProperty} 
-                getLayoutProperty={getLayoutProperty} 
+                getLayoutProperty={getLayoutProperty}
                 showShadeMap={showShadeMap} 
                 setShowShadeMap={setShowShadeMap} 
                 showIsochrone={showIso} 
                 setShowIsochrone={setShowIso} 
-                customMapsData={customMaps} 
-                flyTo={flyTo} 
+                customMapsData={customMaps}
+                sunburstInfo={sunburstInfo}
+                flyTo={flyTo}
+                map={mapbox.current}
+                pollingPosition={pollingPosition}
+                setPollingPosition={setPollingPosition}
+                mapDatetime={mapDatetime}
+                setMapDatetime={setMapDatetime}
+                astronomyInfo={astronomyInfo}
                 currentSelectedCustomMapPoint={currentSelectedCustomMapPoint} 
                 setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint} 
                 setOpenModal={setOpenModal} 
