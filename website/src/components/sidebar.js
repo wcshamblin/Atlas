@@ -105,17 +105,11 @@ const Sidebar = ({
         "Antennas": ["Antennas"],
         "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
-        "Decommissioned Towers": ["Decommissioned Towers", "Decommissioned Tower Extrusions"],
-        "Safe Towers": ["Safe Towers", "Safe Tower Extrusions"]
     }
 
     const [layers, setLayers] = useState({
         "All Towers": { "visible": false, "country": "usa" },
         "All Tower Extrusions": { "visible": false, "country": "usa" },
-        "Decommissioned Towers": { "visible": false, "country": "usa" },
-        "Decommissioned Tower Extrusions": { "visible": false, "country": "usa" },
-        "Safe Towers": { "visible": false, "country": "usa" },
-        "Safe Tower Extrusions": { "visible": false, "country": "usa" },
         "Google StreetView": { "visible": false, "country": "all" },
         "3D Buildings": { "visible": false, "country": "all" },
         "Shade Map": { "visible": false, "country": "all" },
@@ -297,8 +291,8 @@ const Sidebar = ({
         try {
             // sun info
             let sun_phenomena = astronomyInfo["properties"]["data"]["sundata"];
-            let sunrise_utc = sun_phenomena.find(phen => phen["phen"] === "Begin Civil Twilight");
-            let sunset_utc = sun_phenomena.find(phen => phen["phen"] === "End Civil Twilight");
+            let sunrise_utc = sun_phenomena.find(phen => phen["phen"] === "Rise");
+            let sunset_utc = sun_phenomena.find(phen => phen["phen"] === "Set");
             let solar_noon_utc = sun_phenomena.find(phen => phen["phen"] === "Upper Transit");
 
             let sunrise_local;
@@ -538,6 +532,7 @@ const Sidebar = ({
                         <br/>
                         <ClockIcon className="sunburst-clock-icon"/><text>{twilight.charAt(0).toUpperCase() + twilight.slice(1)}: </text><br/>
                         <div style={{ marginLeft: "20px" }}>
+                            <text>Civil: {civil_time}</text><br/>
                             <text>Astronomical: {astro_time}</text><br/>
                             <text>Nautical: {nautical_time}</text><br/>
                         </div>

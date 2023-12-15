@@ -418,87 +418,6 @@ function Map() {
         });
 
 
-        // add decom towers from file assets/geojson/decoms.geojson
-        let decoms = require('./decoms.geojson');
-        mapbox.current.addSource('Decommissioned Towers', {
-            'type': 'geojson',
-            'data': decoms
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Decommissioned Towers',
-            'type': 'circle',
-            'source': 'Decommissioned Towers',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
-
-        // add safe towers from assets/decom-towers/safe_towers.geojson
-        let safe_towers = require('./safe_towers.geojson');
-        mapbox.current.addSource('Safe Towers', {
-            'type': 'geojson',
-            'data': safe_towers
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Safe Towers',
-            'type': 'circle',
-            'source': 'Safe Towers',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
-        // 3d towers, visibility should be false by default
-        let decom_tower_extrusions = require('./decom_polygons.geojson');
-        // extrude based on height
-        mapbox.current.addSource('Decommissioned Tower Extrusions', {
-            'type': 'geojson',
-            'data': decom_tower_extrusions,
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Decommissioned Tower Extrusions',
-            'type': 'fill-extrusion',
-            'source': 'Decommissioned Tower Extrusions',
-            'minzoom': 12,
-            'paint': {
-                'fill-extrusion-color': ['get', 'color'],
-                'fill-extrusion-height': ['get', 'height'],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.8
-            }
-        });
-
-        let safe_tower_extrusions = require('./safe_towers_polygons.geojson');
-        // extrude based on height
-        mapbox.current.addSource('Safe Tower Extrusions', {
-            'type': 'geojson',
-            'data': safe_tower_extrusions,
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Safe Tower Extrusions',
-            'type': 'fill-extrusion',
-            'source': 'Safe Tower Extrusions',
-            'minzoom': 12,
-            'paint': {
-                'fill-extrusion-color': ['get', 'color'],
-                'fill-extrusion-height': ['get', 'height'],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.8
-            }
-        });
-
-        // make not visible by default
-        mapbox.current.setLayoutProperty('Decommissioned Tower Extrusions', 'visibility', 'none');
-        mapbox.current.setLayoutProperty('Safe Tower Extrusions', 'visibility', 'none');
-
-
         // google street view overlay should only be visible when zoom level is above 12
         mapbox.current.addSource('Google StreetView', {
             'type': 'raster',
@@ -747,21 +666,6 @@ function Map() {
             setLoading(false);
         });
 
-        // on click on hovers
-        mapbox.current.on('click', 'Safe Towers', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
-            const name = e.features[0].properties.name;
-            const description = e.features[0].properties.description;
-
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML("<text id='towerpopuptitle'>Safe tower: " + name + "</text><text id='towerpopuptext'>" + description + "</text>" + "<text id='popupcoords'>" + coordinates + "</text>")
-                .addTo(mapbox.current);
-        });
-
         // if the right click popup is closed, set our popup usestate to reflect that
         rightClickPopup.on('close', () => {
             setShowRightClickPopup(false);
@@ -835,33 +739,6 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = 'pointer';
         });
         mapbox.current.on('mouseleave', 'Long Lines', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-
-        mapbox.current.on('click', 'Decommissioned Towers', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
-            const name = e.features[0].properties.name;
-            const description = e.features[0].properties.description;
-            // convert to feet with 2 decimal places
-            const height = (e.features[0].properties.height * 3.28084).toFixed(2);
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>Decommisioned tower: " + name + "</text>" +
-                    // "<text id='towerpopupstat'>height:</text>" +
-                    "<text id='towerpopuptext'>" + description + "</text>" +
-                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-        mapbox.current.on('mouseenter', 'Decommissioned Towers', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Decommissioned Towers', () => {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
