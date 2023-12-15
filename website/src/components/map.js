@@ -623,7 +623,6 @@ function Map() {
         const accessToken = await getAccessTokenSilently();
         const { data, error } = await fetchMaps(accessToken);
         if (data) {
-            data.maps = data.maps.filter(map => map.description != 'test3t' && map.description != '111' && map.description != 'test3awet' && map.name != '33333' && map.name != "66666" && map.name != "777777");
             setCustomMaps(data);
         }
         if (error) {
