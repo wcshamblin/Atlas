@@ -755,7 +755,7 @@ function Map() {
             // round to 6 decimal places
             coordinates[0] = coordinates[0].toFixed(5);
             coordinates[1] = coordinates[1].toFixed(5);
-            const name = e.features[0].properties.designation;
+            const name = e.features[0].properties.name;
             const height_feet = e.features[0].properties.height_feet;
             const height_meters = e.features[0].properties.height_meters;
             const year = e.features[0].properties.year;
@@ -769,7 +769,7 @@ function Map() {
                     "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
                     "Type: " + type + "<br>" +
                     "Year: " + year + "<br>" +
-                    "Regards: " + regards + "</text>" +
+                    regards + "</text>" +
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
         });
