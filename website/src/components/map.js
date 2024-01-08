@@ -768,7 +768,7 @@ function Map() {
                 .setHTML("<text id='towerpopuptitle'>" + name + "</text>" +
                     "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
                     "Type: " + type + "<br>" +
-                    "Year: " + year + "<br>" +
+                    (year ? "Constructed in " + year + "<br>" : "") +
                     regards + "</text>" +
                     "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
                 .addTo(mapbox.current);
@@ -1175,6 +1175,9 @@ function Map() {
                     <a href={"https://apps.sentinel-hub.com/sentinel-playground/?source=S2L2A&lat=" + rightClickPopupPosition[1] + "&lng=" + rightClickPopupPosition[0] + "&zoom=16&preset=1_TRUE_COLOR&layers=B01,B02,B03&maxcc=20&gain=1.0&gamma=1.0"} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> Sentinel Playground
                     </a><br />
+                    <a href={"https://livingatlas.arcgis.com/wayback/#mapCenter=" + rightClickPopupPosition[0] + "%2C" + rightClickPopupPosition[1] + "%2C17"} target="_blank" rel="noreferrer">
+                        <FontAwesomeIcon icon={faExternalLinkAlt} /> ArcGIS Wayback
+                    </a><br />
                 </div>
                     <div id="rightclickpopupbuttons">
                         <button id="rightclickpopupbutton" onClick={() => {
@@ -1554,14 +1557,15 @@ function Map() {
                             visible={displayStreetView}
                             // turn off all controls
                             options={{
-                                addressControl: false,
+                                addressControl: true,
                                 fullscreenControl: false,
                                 linksControl: false,
                                 motionTrackingControl: false,
                                 motionTrackingControlOptions: false,
                                 panControl: true,
                                 zoomControl: false,
-                                enableCloseButton: false
+                                enableCloseButton: false,
+                                imageDateControl: true
                             }}
                             // heading and pitch
                             pov={{
