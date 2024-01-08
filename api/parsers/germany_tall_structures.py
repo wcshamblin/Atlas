@@ -21,6 +21,10 @@ for line in structures:
     height_feet = line[1].strip().split(" ")[0]
     if height_feet == "":
         height_feet = float(line[2].strip().split(" ")[0]) * 3.28084
+
+    height_feet = round(float(height_feet), 2)
+    height_meters = round(float(height_feet) * 0.3048, 2)
+
     year = line[3].strip()
     type = line[4].strip()
 
@@ -63,13 +67,14 @@ for line in structures:
 
         print(name, " | ", height_feet, " | ", year, " | ", type, " | ", regards, " | ", north_decimal, " | ", east_decimal)
 
+
         # add to geojson
         geojson["features"].append({
             "type": "Feature",
             "properties": {
                 "name": name,
                 "height_feet": height_feet,
-                "height_meters": str(float(height_feet) * 0.3048),
+                "height_meters": height_meters,
                 "year": year,
                 "type": type,
                 "regards": regards
