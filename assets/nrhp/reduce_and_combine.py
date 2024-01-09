@@ -52,6 +52,8 @@ for file in files:
                 "creation_date": feature["properties"]["CREATEDATE"],
                 "edit_date": feature["properties"]["EDIT_DATE"]
                 }
+            ,
+            "geometry": feature["geometry"]
             }
         )
 
