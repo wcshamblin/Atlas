@@ -43,6 +43,7 @@ for file in files:
             "type": "Feature",
             "properties": {
                 "type": type,
+                "color": color,
                 "object_id": feature["properties"]["OBJECTID"],
                 "name": feature["properties"]["RESNAME"],
                 "is_extant": feature["properties"]["IS_EXTANT"],
