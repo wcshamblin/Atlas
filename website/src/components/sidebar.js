@@ -106,6 +106,7 @@ const Sidebar = ({
         "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
         "Germany Tall Structures": ["Germany Tall Structures", "Germany Tall Structures Extrusions"],
+        "National Register of Historic Places": ["National Register of Historic Places"],
     }
 
     const [layers, setLayers] = useState({
@@ -123,6 +124,7 @@ const Sidebar = ({
         "FAA Obstacles": { "visible": false, "country": "usa" },
         "Germany Tall Structures": { "visible": false, "country": "eu" },
         "Germany Tall Structures Extrusions": { "visible": false, "country": "eu" },
+        "National Register of Historic Places": { "visible": false, "country": "usa" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
