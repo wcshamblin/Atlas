@@ -455,21 +455,21 @@ function Map() {
         });
 
         // add National Register Of Historic Places (NRHP)
-        let nrhp = require('./nrhp.geojson');
-        mapbox.current.addSource('National Register Of Historic Places', {
-            'type': 'geojson',
-            'data': nrhp
-        });
+        // let nrhp = require('./nrhp.geojson');
+        // mapbox.current.addSource('National Register Of Historic Places', {
+        //     'type': 'geojson',
+        //     'data': nrhp
+        // });
 
-        mapbox.current.addLayer({
-            'id': 'National Register Of Historic Places',
-            'type': 'circle',
-            'source': 'National Register Of Historic Places',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': '#62b031',
-            }
-        });
+        // mapbox.current.addLayer({
+        //     'id': 'National Register Of Historic Places',
+        //     'type': 'circle',
+        //     'source': 'National Register Of Historic Places',
+        //     'paint': {
+        //         'circle-radius': 6,
+        //         'circle-color': '#62b031',
+        //     }
+        // });
 
         // google street view overlay should only be visible when zoom level is above 12
         mapbox.current.addSource('Google StreetView', {
