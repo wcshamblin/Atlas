@@ -455,21 +455,21 @@ function Map() {
         });
 
         // add National Register Of Historic Places (NRHP)
-        // let nrhp = require('./nrhp.geojson');
-        // mapbox.current.addSource('National Register Of Historic Places', {
-        //     'type': 'geojson',
-        //     'data': nrhp
-        // });
+        let nrhp = require('./nrhp.geojson');
+        mapbox.current.addSource('National Register of Historic Places', {
+            'type': 'geojson',
+            'data': nrhp
+        });
 
-        // mapbox.current.addLayer({
-        //     'id': 'National Register Of Historic Places',
-        //     'type': 'circle',
-        //     'source': 'National Register Of Historic Places',
-        //     'paint': {
-        //         'circle-radius': 6,
-        //         'circle-color': '#62b031',
-        //     }
-        // });
+        mapbox.current.addLayer({
+            'id': 'National Register of Historic Places',
+            'type': 'circle',
+            'source': 'National Register of Historic Places',
+            'paint': {
+                'circle-radius': 6,
+                'circle-color': ['get', 'color'],
+            }
+        });
 
         // google street view overlay should only be visible when zoom level is above 12
         mapbox.current.addSource('Google StreetView', {
@@ -740,8 +740,8 @@ function Map() {
         mapbox.current.on('click', 'FLYGHINDER 2023', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.designation;
             const number = e.features[0].properties.number;
             const height_feet = e.features[0].properties.height_feet;
@@ -770,8 +770,8 @@ function Map() {
         mapbox.current.on('click', 'Germany Tall Structures', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.name;
             const height_feet = e.features[0].properties.height_feet;
             const height_meters = e.features[0].properties.height_meters;
@@ -801,8 +801,8 @@ function Map() {
 
         mapbox.current.on('click', 'Long Lines', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.Name;
             const description = e.features[0].properties.description;
             const type = e.features[0].properties.type;
@@ -826,10 +826,36 @@ function Map() {
             mapbox.current.getCanvas().style.cursor = '';
         });
 
+        mapbox.current.on('click', 'National Register of Historic Places', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
+            const name = e.features[0].properties.name;
+            const type = e.features[0].properties.type;
+            const src_date = e.features[0].properties.src_date;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    "<text id='towerpopuptitle'>" + name + "</text>" +
+                    "<text id='towerpopuptext'>Type: " + type + "</text>" +
+                    "<text id='towerpopupstat'>Source date: " + src_date + "</text>" +
+                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
+                .addTo(mapbox.current);
+        });
+
+        mapbox.current.on('mouseenter', 'National Register of Historic Places', () => {
+            mapbox.current.getCanvas().style.cursor = 'pointer';
+        });
+
+        mapbox.current.on('mouseleave', 'National Register of Historic Places', () => {
+            mapbox.current.getCanvas().style.cursor = '';
+        });
+
         mapbox.current.on('click', 'All Towers', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.name;
             // convert to feet with 2 decimal places
             const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
@@ -852,8 +878,8 @@ function Map() {
 
         mapbox.current.on('click', 'Antennas', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const name = e.features[0].properties.name;
             const transmitter_type = e.features[0].properties.transmitter_type;
             const facility_id = e.features[0].properties.facility_id;
@@ -916,8 +942,8 @@ function Map() {
         // oas_number, type_code, agl, amsl, lighting, marking, study, date
         mapbox.current.on('click', 'FAA Obstacles', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(5);
-            coordinates[1] = coordinates[1].toFixed(5);
+            coordinates[0] = coordinates[0].toFixed(6);
+            coordinates[1] = coordinates[1].toFixed(6);
             const oas_number = e.features[0].properties.oas_number;
             const type_code = e.features[0].properties.type_code;
             const agl = e.features[0].properties.agl;
@@ -1033,8 +1059,8 @@ function Map() {
 
     const renderCoordinatesSegment = (coordinates) => {
         console.log("rendering coordinates segment with coordinates: ", coordinates);
-        let lat = coordinates[1].toFixed(5);
-        let lng = coordinates[0].toFixed(5);
+        let lat = coordinates[1].toFixed(6);
+        let lng = coordinates[0].toFixed(6);
 
         return <button id="coordinatesbutton" onClick={() => {
             navigator.clipboard.writeText(lat + ", " + lng);

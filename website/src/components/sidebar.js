@@ -106,7 +106,7 @@ const Sidebar = ({
         "Long Lines": ["Long Lines"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
         "Germany Tall Structures": ["Germany Tall Structures", "Germany Tall Structures Extrusions"],
-        // "National Register of Historic Places": ["National Register of Historic Places"],
+        "National Register of Historic Places": ["National Register of Historic Places"],
     }
 
     const [layers, setLayers] = useState({
@@ -124,7 +124,7 @@ const Sidebar = ({
         "FAA Obstacles": { "visible": false, "country": "usa" },
         "Germany Tall Structures": { "visible": false, "country": "eu" },
         "Germany Tall Structures Extrusions": { "visible": false, "country": "eu" },
-        // "National Register of Historic Places": { "visible": false, "country": "usa" },
+        "National Register of Historic Places": { "visible": false, "country": "usa" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
@@ -879,7 +879,7 @@ const Sidebar = ({
                             return (
                                 <div className="settings-container">
                                     <h1>SETTINGS</h1>
-                                    <span>Show low power antennas (information may not be accurate): </span>
+                                    <span>Show cell antennas (information may not be accurate): </span>
                                     <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)} />
                                     <br /><br />
                                     <span>Isochrone minutes (how far to show the isochrone): </span>
