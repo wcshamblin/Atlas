@@ -87,10 +87,13 @@ const Sidebar = ({
         "Google Hybrid": { "visible": true, "country": "all" },
         "Bing Hybrid": { "visible": false, "country": "all" },
         "ESRI": { "visible": false, "country": "all" },
+        "ESRI Clarity": { "visible": false, "country": "all" },
         "NAIP": { "visible": false, "country": "usa" },
         "MAXAR": { "visible": false, "country": "all" },
-        "VFR": { "visible": false, "country": "usa" },
+        "Mapbox": { "visible": false, "country": "all" },
+        "Lantmäteriet" : { "visible": false, "country": "eu" },
         "USGS Topo": { "visible": false, "country": "usa" },
+        "VFR": { "visible": false, "country": "usa" },
         "OpenStreetMap": { "visible": false, "country": "all" },
     });
 

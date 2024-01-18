@@ -157,6 +157,7 @@ function Map() {
             ],
             'tileSize': 256
         });
+
         mapbox.current.addSource('Bing Hybrid', {
             'type': 'raster',
             'tiles': [
@@ -165,20 +166,52 @@ function Map() {
                 'https://ecn.t2.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z',
                 'https://ecn.t3.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z'
             ],
-            'tileSize': 256
+            'tileSize': 256,
+            'maxzoom': 20
         });
 
+        // https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/2168/20/411560/294463?blankTile=false
         mapbox.current.addSource('ESRI', {
             'type': 'raster',
             'tiles': [
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false',
+                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false',
+                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false'
             ],
             'tileSize': 256,
-            'maxzoom': 18
+            'maxzoom': 20
+        });
+        
+        mapbox.current.addSource('ESRI Clarity', {
+            'type': 'raster',
+            'tiles': [
+                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false',
+                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false',
+                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+            ],
+            'tileSize': 256,
+            'maxzoom': 20
         });
 
+        mapbox.current.addSource('Mapbox', {
+            'type': 'raster',
+            'tiles': [
+                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + process.env.REACT_APP_MAPBOX_API_KEY
+            ],
+            'tileSize': 256,
+            'maxzoom': 20
+        });
+
+        mapbox.current.addSource('Lantmäteriet', {
+            'type': 'raster',
+            'tiles': [
+                'https://minkarta.lantmateriet.se/map/ortofoto?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Ortofoto_0.5%2COrtofoto_0.4%2COrtofoto_0.25%2COrtofoto_0.16&TILED=true&STYLES=&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX={bbox-epsg-3857}'
+            ],
+            'tileSize': 256,
+            'maxzoom': 20
+        });
+
+        
         mapbox.current.addSource('OpenStreetMap', {
             'type': 'raster',
             'tiles': [
@@ -569,6 +602,33 @@ function Map() {
 
         mapbox.current.addLayer(
             {
+                'id': 'ESRI Clarity',
+                'type': 'raster',
+                'source': 'ESRI Clarity',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'Mapbox',
+                'type': 'raster',
+                'source': 'Mapbox',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'Lantmäteriet',
+                'type': 'raster',
+                'source': 'Lantmäteriet',
+                'paint': {}
+            },
+        );
+
+        mapbox.current.addLayer(
+            {
                 'id': 'OpenStreetMap',
                 'type': 'raster',
                 'source': 'OpenStreetMap',
@@ -649,10 +709,7 @@ function Map() {
         if (mapbox.current) return; // initialize map only once
 
         // initialize map
-        let style = 'mapbox://styles/mapbox/streets-v11';
-        if (new Date().getHours() > 18 || new Date().getHours() < 6) {
-            style = 'mapbox://styles/mapbox/dark-v10';
-        }
+        let style = 'mapbox://styles/mapbox/dark-v10';
         mapbox.current = new mapboxgl.Map({
             container: mapRef.current,
             style: style,

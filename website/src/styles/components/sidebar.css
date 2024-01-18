@@ -60,10 +60,17 @@
     overflow-x: hidden;
 }
 
-#sidebar-content h1, #sidebar-content h2, #sidebar-content h3 {
+#sidebar-content h1, #sidebar-content h2 {
     margin-left: 5px;
     margin-top: 0px;
     margin-bottom: 3px;
+}
+
+#sidebar-content h3 {
+    margin-left: 5px;
+    margin-top: 60px;
+    margin-bottom: 3px;
+
 }
 
 #datetime-input {
