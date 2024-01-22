@@ -91,6 +91,7 @@ const Sidebar = ({
         "NAIP": { "visible": false, "country": "usa" },
         "MAXAR": { "visible": false, "country": "all" },
         "Mapbox": { "visible": false, "country": "all" },
+        "Sentinel 2-L2A": { "visible": false, "country": "all" },
         "Lantmäteriet" : { "visible": false, "country": "eu" },
         "USGS Topo": { "visible": false, "country": "usa" },
         "VFR": { "visible": false, "country": "usa" },
