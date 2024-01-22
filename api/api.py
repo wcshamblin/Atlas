@@ -1043,12 +1043,14 @@ async def get_astronomy_info(response: Response, lat: float, lng: float, date: s
     return astronomy_info
 
 @app.get("/sentinel/{start}/{end}/{bbox}")
-async def get_sentinel(response: Response, start: str, end: str, bbox: list, token: str = Depends(token_auth_scheme)):
+async def get_sentinel(response: Response, start: str, end: str, bbox: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return result
+    
+    bbox = [float(x) for x in bbox.split(",")]
     
     # get sentinel images
     images = get_sentinel_image("2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z", bbox)
