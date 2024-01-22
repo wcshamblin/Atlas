@@ -29,7 +29,7 @@ function evaluatePixel(sample) {
 """
 
 # ISO-8601 formatted time intervals
-def get_image(bbox: list, time_range: list):
+def get_sentinel_image(bbox: list, time_range: list):
     request = {
         "input": {
             "bounds": {
