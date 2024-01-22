@@ -1047,9 +1047,16 @@ async def get_sentinel(response: Response, start: str, end: str, bbox: str):
     bbox = [float(x) for x in bbox.split(",")]
     
     # get sentinel images
-    images = get_sentinel_image(["2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z"], bbox)
+    image = get_sentinel_image(["2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z"], bbox)
 
-    return {"status": "success", "message": "Images retrieved", "images": images}
+    responses = {
+        200: {"content": {"image/png": {}}}
+    }
+
+    response.headers["Content-Type"] = "image/png"
+    response.headers["Content-Disposition"] = "attachment; filename=sentinel.png"
+
+    return Response(content=image, media_type="image/png")
 
 if __name__ == '__main__':
     import uvicorn
