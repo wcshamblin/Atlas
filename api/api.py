@@ -13,6 +13,7 @@ from database.database import delete_map_by_id, get_home, get_point_by_id, \
     add_map, add_point_to_map, update_map_users, update_point_in_map, remove_point_from_map, get_eula_acceptance, \
     set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend, \
     update_map_categories, update_map_colors, update_map_icons
+from sentinel_fetching import get_sentinel_image
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -1040,6 +1041,19 @@ async def get_astronomy_info(response: Response, lat: float, lng: float, date: s
     astronomy_info = get(f"https://aa.usno.navy.mil/api/rstt/oneday?date={date}&coords={lat},{lng}&tz={tzdiff}").json()
 
     return astronomy_info
+
+@app.get("/sentinel/{start}/{end}/{bbox}")
+async def get_sentinel(response: Response, start: str, end: str, bbox: list, token: str = Depends(token_auth_scheme)):
+    result = VerifyToken(token.credentials).verify()
+    
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    
+    # get sentinel images
+    images = get_sentinel_image("2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z", bbox)
+
+    return {"status": "success", "message": "Images retrieved", "images": images}
 
 if __name__ == '__main__':
     import uvicorn
