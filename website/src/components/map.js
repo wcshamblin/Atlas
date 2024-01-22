@@ -254,6 +254,16 @@ function Map() {
             'tileSize': 256
         });
 
+        mapbox.current.addSource('Sentinel 2-L2A', {
+            'type': 'raster',
+            'tiles': [
+                'https://atlas2.org/api/sentinel/start/end/{bbox-epsg-3857}'
+            ],
+            'tileSize': 256
+        });
+
+
+
         // all towers source
         mapbox.current.addSource('All Towers', {
             'type': 'geojson',
@@ -671,6 +681,15 @@ function Map() {
                 'paint': {}
             },
         );
+
+        mapbox.current.addLayer(
+            {
+                'id': 'Sentinel 2-L2A',
+                'type': 'raster',
+                'source': 'Sentinel 2-L2A',
+                'paint': {}
+            }
+        )
 
         mapbox.current.addLayer(
             {
