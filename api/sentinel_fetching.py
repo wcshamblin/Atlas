@@ -1,8 +1,12 @@
+from datetime import timedelta
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
-from time import time
+
+def sentinelhub_compliance_hook(response):
+    response.raise_for_status()
+    return response
 
 # Your client credentials
 client_id = 'sh-ab15c4e1-32e4-4cd0-8105-18b495d02b0c'
@@ -12,6 +16,8 @@ client = BackendApplicationClient(client_id=client_id)
 oauth = OAuth2Session(client=client)
 token = oauth.fetch_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
                           client_secret=client_secret, include_client_id=True)
+
+oauth.register_compliance_hook("access_token_response", sentinelhub_compliance_hook)
 
 evalscript = """
 //VERSION=3
@@ -31,11 +37,11 @@ def retrieve_sentinel_image(oauth, url, request):
     return resp.content
 
 # ISO-8601 formatted time intervals
-def get_sentinel_image(time_range: list, bbox: list):
-    if token['expires_at'] < time():
-        oauth.refresh_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
-                            client_secret=client_secret)
-        
+def get_sentinel_image(bbox, date):
+    # end date is passed in, and start date should be 13 days prior (Sentinel's orbit should create a max 12 day revisit cycle)
+    startdate = (date - timedelta(days=13)).strftime("%Y-%m-%dT00:00:00Z")
+    enddate = date.strftime("%Y-%m-%dT00:00:00Z")    
+    
     request = {
         "input": {
             "bounds": {
@@ -52,8 +58,8 @@ def get_sentinel_image(time_range: list, bbox: list):
                     "type": "sentinel-2-l2a",
                     "dataFilter": {
                         "timeRange": {
-                            "from": time_range[0],
-                            "to": time_range[1], 
+                            "from": startdate,
+                            "to": enddate,
                         }
                     },
                 }
@@ -66,10 +72,13 @@ def get_sentinel_image(time_range: list, bbox: list):
         "evalscript": evalscript,
     }
 
-    url = "https://sh.dataspace.copernicus.eu/api/v1/process"
+    try:
+        resp = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=request)
+    except TokenExpiredError as e:
+        oauth.fetch_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
+                                  client_secret=client_secret, include_client_id=True)
+        resp = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=request)
 
-    resp = oauth.post(url, json=request)
-    
     return resp.content
 
 if __name__ == '__main__':
