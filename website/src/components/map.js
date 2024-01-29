@@ -257,9 +257,10 @@ function Map() {
         mapbox.current.addSource('Sentinel 2-L2A', {
             'type': 'raster',
             'tiles': [
-                'https://atlas2.org/api/sentinel/start/end/{bbox-epsg-3857}'
+                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}'
             ],
-            'tileSize': 256
+            'tileSize': 256,
+            'maxzoom': 18
         });
 
 

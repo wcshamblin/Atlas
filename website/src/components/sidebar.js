@@ -232,6 +232,30 @@ const Sidebar = ({
         </div>
     )
     }
+    const sentinelDatetimeElement = () => {
+        return (
+            <div id="change-datetime-element-sentinel">
+                <span id="sentinel-datetime-label">Sentinel 2 image acquisition date</span>
+                <input
+                    type="datetime-local"
+                    id="datetime-input-sentinel"
+                    name="datetime-input"
+                    required
+                    value={moment(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
+                    onChange={e => {
+                        console.log("Sentinel datetime changed: " + e.target.value);
+                        // if it was cleared, or if the date is invalid, then use the current time
+                        if (e.target.value === "") {
+                            changeSentinelDate(new Date());
+                            return;
+                        }
+                        changeSentinelDate(new Date(e.target.value));
+                        }
+                    }
+                />
+            </div>
+        )
+    }
 
     const changeDatetimeElement = () => {
         return (
@@ -254,8 +278,8 @@ const Sidebar = ({
     }
 
     const setDateTimeToNow = () => {
-        // if within 30 seconds, don't set to now
-        if (Math.abs((new Date()).getTime() - mapDatetime.getTime()) / 1000 < 30) {
+        // if within 60 seconds, don't set to now
+        if (Math.abs((new Date()).getTime() - mapDatetime.getTime()) / 1000 < 60) {
             return;
         }
         setMapDatetime(new Date());
@@ -814,6 +838,34 @@ const Sidebar = ({
         setModalSelectedCustomMapPointId("");
     }
 
+    function changeSentinelDate(date) {
+        // if the date is in the future, set it to today
+        if (date > new Date()) {
+            date = new Date();
+        }
+
+        // remove source, then add it back
+        map.removeLayer('Sentinel 2-L2A');
+        map.removeSource('Sentinel 2-L2A');
+
+        map.addSource('Sentinel 2-L2A', {
+            'type': 'raster',
+            'tiles': [
+                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}?date=' + date.toISOString().split('T')[0]
+            ],
+            'tileSize': 256,
+            'maxzoom': 18
+        });
+        map.addLayer(
+            {
+                'id': 'Sentinel 2-L2A',
+                'type': 'raster',
+                'source': 'Sentinel 2-L2A',
+                'paint': {}
+            }
+        )
+    }
+
     return expanded ? (
         <div id="sidebar">
             <div id="sidebar-header">
@@ -868,6 +920,8 @@ const Sidebar = ({
                                     </select>
                                     <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
                                     {renderBaseLayers()}
+                                    {/*only render sentinel datetime element if layer is visible*/}
+                                    {baseLayers["Sentinel 2-L2A"].visible ? sentinelDatetimeElement() : ""}
                                     <h3>Regular Layers</h3>
                                     {renderRegularLayers()}
                                 </div>
