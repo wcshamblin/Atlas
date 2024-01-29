@@ -140,7 +140,7 @@ async def root():
 
 
 @app.get("/eula")
-async def eula(response: Response, token: str = Depends(token_auth_scheme)):
+def eula(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -152,7 +152,7 @@ async def eula(response: Response, token: str = Depends(token_auth_scheme)):
 
 
 @app.post("/eula")
-async def eula(response: Response, token: str = Depends(token_auth_scheme)):
+def eula(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -165,7 +165,7 @@ async def eula(response: Response, token: str = Depends(token_auth_scheme)):
 
 
 @app.post("/set_home")
-async def sethome(response: Response, home: dict, token: str = Depends(token_auth_scheme)):
+def sethome(response: Response, home: dict, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     print("Result from VerifyToken:", result)
@@ -182,7 +182,7 @@ async def sethome(response: Response, home: dict, token: str = Depends(token_aut
 
 
 @app.get("/home")
-async def retrieve_home(response: Response, token: str = Depends(token_auth_scheme)):
+def retrieve_home(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -203,7 +203,7 @@ async def retrieve_home(response: Response, token: str = Depends(token_auth_sche
 
 
 @app.get("/maps")
-async def get_maps(response: Response, token: str = Depends(token_auth_scheme)):
+def get_maps(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -215,7 +215,7 @@ async def get_maps(response: Response, token: str = Depends(token_auth_scheme)):
     return {"status": "success", "message": "Maps retrieved", "maps": maps}
 
 @app.get("/maps/user")
-async def get_my_maps(response: Response, token: str = Depends(token_auth_scheme)):
+def get_my_maps(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -229,7 +229,7 @@ async def get_my_maps(response: Response, token: str = Depends(token_auth_scheme
 
 
 @app.get("/maps/contributor")
-async def get_contributor_maps(response: Response, token: str = Depends(token_auth_scheme)):
+def get_contributor_maps(response: Response, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -259,7 +259,7 @@ async def get_contributor_maps(response: Response, token: str = Depends(token_au
 
 # create a new map
 @app.post("/maps")
-async def post_map(response: Response, map: MapPost, token: str = Depends(token_auth_scheme)):
+def post_map(response: Response, map: MapPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     print("Result from VerifyToken:", result)
@@ -300,7 +300,7 @@ async def post_map(response: Response, map: MapPost, token: str = Depends(token_
 
 # edit map name
 @app.put("/maps/{map_id}/name")
-async def put_map_name(response: Response, map_id: str, name: PutMapName, token: str = Depends(token_auth_scheme)):
+def put_map_name(response: Response, map_id: str, name: PutMapName, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -325,7 +325,7 @@ async def put_map_name(response: Response, map_id: str, name: PutMapName, token:
 
 # edit map description
 @app.put("/maps/{map_id}/description")
-async def put_map_description(response: Response, map_id: str, description: PutMapDescription, token: str = Depends(token_auth_scheme)):
+def put_map_description(response: Response, map_id: str, description: PutMapDescription, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -350,7 +350,7 @@ async def put_map_description(response: Response, map_id: str, description: PutM
 
 # edit map legend
 @app.put("/maps/{map_id}/legend")
-async def put_map_legend(response: Response, map_id: str, legend: PutMapLegend, token: str = Depends(token_auth_scheme)):
+def put_map_legend(response: Response, map_id: str, legend: PutMapLegend, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -376,7 +376,7 @@ async def put_map_legend(response: Response, map_id: str, legend: PutMapLegend, 
 
 # post a new map category
 @app.post("/maps/{map_id}/categories")
-async def post_map_categories(response: Response, map_id: str, categories: PostMapCategories, token: str = Depends(token_auth_scheme)):
+def post_map_categories(response: Response, map_id: str, categories: PostMapCategories, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -404,7 +404,7 @@ async def post_map_categories(response: Response, map_id: str, categories: PostM
 
 # edit map categories
 @app.put("/maps/{map_id}/categories")
-async def put_map_categories(response: Response, map_id: str, categories: PutMapCategories, token: str = Depends(token_auth_scheme)):
+def put_map_categories(response: Response, map_id: str, categories: PutMapCategories, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -437,7 +437,7 @@ async def put_map_categories(response: Response, map_id: str, categories: PutMap
 
 # delete map categories
 @app.delete("/maps/{map_id}/categories")
-async def delete_map_categories(response: Response, map_id: str, categories: DeleteMapCategories, token: str = Depends(token_auth_scheme)):
+def delete_map_categories(response: Response, map_id: str, categories: DeleteMapCategories, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -465,7 +465,7 @@ async def delete_map_categories(response: Response, map_id: str, categories: Del
     return {"status": "success", "message": "Map category deleted", "categories": current_map["categories"]}
 
 @app.get("/maps/{map_id}/categories")
-async def get_map_categories(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+def get_map_categories(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -483,7 +483,7 @@ async def get_map_categories(response: Response, map_id: str, token: str = Depen
 
 # post a new map color
 @app.post("/maps/{map_id}/colors")
-async def post_map_color(response: Response, map_id: str, colors: PostMapColors, token: str = Depends(token_auth_scheme)):
+def post_map_color(response: Response, map_id: str, colors: PostMapColors, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -510,7 +510,7 @@ async def post_map_color(response: Response, map_id: str, colors: PostMapColors,
 
 
 @app.delete("/maps/{map_id}/colors")
-async def delete_map_colors(response: Response, map_id: str, colors: DeleteMapColors, token: str = Depends(token_auth_scheme)):
+def delete_map_colors(response: Response, map_id: str, colors: DeleteMapColors, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -539,7 +539,7 @@ async def delete_map_colors(response: Response, map_id: str, colors: DeleteMapCo
 
 
 @app.get("/maps/{map_id}/colors")
-async def get_map_colors(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+def get_map_colors(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -556,7 +556,7 @@ async def get_map_colors(response: Response, map_id: str, token: str = Depends(t
 
 
 @app.put("/maps/{map_id}/colors")
-async def put_map_colors(response: Response, map_id: str, colors: PutMapColors, token: str = Depends(token_auth_scheme)):
+def put_map_colors(response: Response, map_id: str, colors: PutMapColors, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -588,7 +588,7 @@ async def put_map_colors(response: Response, map_id: str, colors: PutMapColors, 
 
 
 @app.post("/maps/{map_id}/icons")
-async def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, token: str = Depends(token_auth_scheme)):
+def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -614,7 +614,7 @@ async def post_map_icons(response: Response, map_id: str, icons: PostMapIcons, t
     return {"status": "success", "message": "Map icon added", "icons": current_map["icons"]}
 
 @app.put("/maps/{map_id}/icons")
-async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, token: str = Depends(token_auth_scheme)):
+def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -646,7 +646,7 @@ async def put_map_icons(response: Response, map_id: str, icons: PutMapIcons, tok
 
 
 @app.delete("/maps/{map_id}/icons")
-async def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcons, token: str = Depends(token_auth_scheme)):
+def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcons, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -674,7 +674,7 @@ async def delete_map_icons(response: Response, map_id: str, icons: DeleteMapIcon
     return {"status": "success", "message": "Map icon deleted", "icons": current_map["icons"]}
 
 @app.get("/maps/{map_id}/icons")
-async def get_map_icons(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+def get_map_icons(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     
     if result.get("status"):
@@ -692,7 +692,7 @@ async def get_map_icons(response: Response, map_id: str, token: str = Depends(to
 
 # delete a map
 @app.delete("/maps/{map_id}")
-async def delete_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+def delete_map(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -717,7 +717,7 @@ async def delete_map(response: Response, map_id: str, token: str = Depends(token
 
 # add a user to the map
 @app.post("/maps/{map_id}/users")
-async def post_map_user(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
+def post_map_user(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -750,7 +750,7 @@ async def post_map_user(response: Response, map_id: str, users: UserPut, token: 
 
 # remove a user from the map
 @app.delete("/maps/{map_id}/users")
-async def delete_map_user(response: Response, map_id: str, users: UserDelete, token: str = Depends(token_auth_scheme)):
+def delete_map_user(response: Response, map_id: str, users: UserDelete, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -779,7 +779,7 @@ async def delete_map_user(response: Response, map_id: str, users: UserDelete, to
 
 # edit user permissions
 @app.put("/maps/{map_id}/users")
-async def put_map_user_permissions(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
+def put_map_user_permissions(response: Response, map_id: str, users: UserPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -810,7 +810,7 @@ async def put_map_user_permissions(response: Response, map_id: str, users: UserP
 
 # get points geojson
 @app.get("/maps/{map_id}/points")
-async def get_map_points(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
+def get_map_points(response: Response, map_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -826,7 +826,7 @@ async def get_map_points(response: Response, map_id: str, token: str = Depends(t
 
 # add new point to the map
 @app.post("/maps/{map_id}/points")
-async def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
+def post_map_point(response: Response, map_id: str, point: PointPost, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -878,7 +878,7 @@ async def post_map_point(response: Response, map_id: str, point: PointPost, toke
     return {"status": "success", "message": "Point added to map", "point": new_point}
 
 @app.delete("/maps/{map_id}/points/{point_id}")
-async def delete_map_point(response: Response, map_id: str, point_id: str, token: str = Depends(token_auth_scheme)):
+def delete_map_point(response: Response, map_id: str, point_id: str, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -905,7 +905,7 @@ async def delete_map_point(response: Response, map_id: str, point_id: str, token
 
 # edit map point
 @app.put("/maps/{map_id}/points/{point_id}")
-async def put_map_point(response: Response, map_id: str, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
+def put_map_point(response: Response, map_id: str, point_id: str, point: PointPut, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     if result.get("status"):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -997,7 +997,7 @@ async def put_map_point(response: Response, map_id: str, point_id: str, point: P
 
 
 @app.get("/fcc/towers/nearby/{lat}/{lng}/{radius}")
-async def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -1011,7 +1011,7 @@ async def get_towers_nearby(response: Response, lat: float, lng: float, radius: 
 
 
 @app.get("/fcc/antennas/nearby/{lat}/{lng}/{radius}/{uls}")
-async def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, uls: bool, token: str = Depends(token_auth_scheme)):
+def get_antennas_nearby(response: Response, lat: float, lng: float, radius: float, uls: bool, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -1023,7 +1023,7 @@ async def get_antennas_nearby(response: Response, lat: float, lng: float, radius
     return {"status": "success", "message": "Antennas retrieved", "antennas": antennas}
 
 @app.get("/faa/obstacles/nearby/{lat}/{lng}/{radius}")
-async def get_obstacles_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+def get_obstacles_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
     
     if result.get("status"):
@@ -1037,19 +1037,40 @@ async def get_obstacles_nearby(response: Response, lat: float, lng: float, radiu
 
 @app.get("/astronomy/{tzdiff}/{date}/{lat}/{lng}")
 # doesn't need auth
-async def get_astronomy_info(response: Response, lat: float, lng: float, date: str, tzdiff: int):  
+def get_astronomy_info(response: Response, lat: float, lng: float, date: str, tzdiff: int):  
     astronomy_info = get(f"https://aa.usno.navy.mil/api/rstt/oneday?date={date}&coords={lat},{lng}&tz={tzdiff}").json()
 
     return astronomy_info
 
-@app.get("/sentinel/{start}/{end}/{bbox}")
-async def get_sentinel(response: Response, start: str, end: str, bbox: str):    
+@app.get("/sentinel/{bbox}")
+def get_sentinel(response: Response, bbox: str, date: str = "None"):
     bbox = [float(x) for x in bbox.split(",")]
+
+    # ISO-8601 2024-01-01T00:00:00Z
+    # if date is not provided, use the current date
+    if date == "None":
+        date = datetime.utcnow()
+    else:
+        # check if date is valid
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {"status": "error", "message": "Invalid date"}   
     
     # get sentinel images
-    images = get_sentinel_image(["2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z"], bbox)
+    image = get_sentinel_image(bbox, date)
 
-    return {"status": "success", "message": "Images retrieved", "images": images}
+    responses = {
+        200: {"content": {"image/png": {}}}
+    }
+
+    response.headers["Content-Type"] = "image/png"
+    response.headers["Content-Disposition"] = "attachment; filename=sentinel.png"
+
+    return Response(content=image, media_type="image/png")
+
+    return "test"
 
 if __name__ == '__main__':
     import uvicorn
