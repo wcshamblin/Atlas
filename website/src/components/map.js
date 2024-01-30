@@ -233,7 +233,7 @@ function Map() {
         mapbox.current.addSource('VFR', {
             'type': 'raster',
             'tiles': [
-                'https://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{y}.png?origin=nw'
+                'https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{z}/{y}/{x}.png'
             ],
             'tileSize': 256
         });
