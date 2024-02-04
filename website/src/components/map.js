@@ -1328,9 +1328,6 @@ function Map() {
                     <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=15.9&style=h"} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> Bing Maps
                     </a><br />
-                    <a href={"https://apps.sentinel-hub.com/sentinel-playground/?source=S2L2A&lat=" + rightClickPopupPosition[1] + "&lng=" + rightClickPopupPosition[0] + "&zoom=16&preset=1_TRUE_COLOR&layers=B01,B02,B03&maxcc=20&gain=1.0&gamma=1.0"} target="_blank" rel="noreferrer">
-                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Sentinel Playground
-                    </a><br />
                     <a href={"https://livingatlas.arcgis.com/wayback/#mapCenter=" + rightClickPopupPosition[0] + "%2C" + rightClickPopupPosition[1] + "%2C17"} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> ArcGIS Wayback
                     </a><br />
