@@ -1551,39 +1551,71 @@ function Map() {
 
 
     const coordinatesGeocoder = function (query) {
-        const matches = query.match(
-            /(?:((?:[-+]?\d{1,2}[.]\d+),\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[E|W]))/
-        );
-
-        if (!matches) {
-            return null;
-        }
-
+        let matches;
         let lat;
         let lng;
 
-        // if match 0 has a , in it, it's lat, lng
-        try {
-            if (matches[0].includes(",")) {
-                lat = parseFloat(matches[0].split(",")[0]);
-                lng = parseFloat(matches[0].split(",")[1]);
-            } else {
-                // it's a dms
-                let parts =  matches[0].split(/(\d+)°(\d+)'(\d+\.\d+)\"([NSns]) (\d+)°(\d+)'(\d+\.\d+)\"([EWew])/);
-                lat = ConvertDMSToDD(parseInt(parts[1]), parseInt(parts[2]), parseFloat(parts[3]), parts[4]);
-                lng = ConvertDMSToDD(parseInt(parts[5]), parseInt(parts[6]), parseFloat(parts[7]), parts[8]);
+        // match 35°12'01.4"N 78°50'03.2"W
+        // 35.20005178613768, -78.83495385015117
+        // (35.20005178613768, -78.83495385015117)
+        matches = query.match(
+            /(?:((?:[-+]?\d{1,2}[.]\d+),\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[E|W]))/i
+        );
+
+        if (matches) {
+            try {
+                if (matches[0].includes(",")) {
+                    lat = parseFloat(matches[0].split(",")[0]).toFixed(6);
+                    lng = parseFloat(matches[0].split(",")[1]).toFixed(6);
+                } else {
+                    // it's a dms
+                    let parts =  matches[0].split(/(\d+)°(\d+)'(\d+\.\d+)\"([NS]) (\d+)°(\d+)'(\d+\.\d+)\"([EW])/i);
+                    lat = ConvertDMSToDD(parseInt(parts[1]), parseInt(parts[2]), parseFloat(parts[3]), parts[4]).toFixed(6);
+                    lng = ConvertDMSToDD(parseInt(parts[5]), parseInt(parts[6]), parseFloat(parts[7]), parts[8]).toFixed(6);
+                }
+                return [coordinateFeature(lng, lat)];
+            } catch (e) {
+                console.log("error parsing coordinates: " + e);
             }
-        } catch (e) {
-            console.log("error parsing coordinates: " + e);
-            return null;
         }
 
-        // round to 6 decimal places
-        lat = lat.toFixed(6);
-        lng = lng.toFixed(6);
+        // try to match 35°12'00"N 78°50'03"W
+        matches = query.match(
+            /(\d+)°(\d+)'(\d+)\"([NS]) (\d+)°(\d+)'(\d+)\"([EW])/i
+        );
 
-        return [coordinateFeature(lng, lat)];
+        if (matches) {
+            try {
+                lat = ConvertDMSToDD(parseInt(matches[1]), parseInt(matches[2]), parseFloat(matches[3]), matches[4]).toFixed(6);
+                lng = ConvertDMSToDD(parseInt(matches[5]), parseInt(matches[6]), parseFloat(matches[7]), matches[8]).toFixed(6);
+                return [coordinateFeature(lng, lat)];
+            } catch (e) {
+                console.log("error parsing coordinates: " + e);
+            }
+        }
 
+        // now try to match 33.32492° N, 81.59102° W
+        matches = query.match(
+            /(-?\d+(\.\d+)?)°\s*([NS])\s*,\s*(-?\d+(\.\d+)?)°\s*([EW])/i
+        );
+
+        if (matches) {
+            try {
+                lat = parseFloat(matches[1]).toFixed(6);
+                lng = parseFloat(matches[4]).toFixed(6);
+                if (matches[3].toUpperCase() === "S") {
+                    lat = lat * -1;
+                }
+                if (matches[6].toUpperCase() === "W") {
+                    lng = lng * -1;
+                }
+                return [coordinateFeature(lng, lat)];
+            } catch (e) {
+                console.log("error parsing coordinates: " + e);
+            }
+        }
+
+        return null;
     };
 
     // create a function to make a directions request
