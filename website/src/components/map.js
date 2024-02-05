@@ -1105,7 +1105,7 @@ function Map() {
         // on move, if zoom is above 14, try to update towers and / or antennas
         mapbox.current.on('moveend', () => {
             let zoomlevel = mapbox.current.getZoom();
-            if (zoomlevel >= 11.5) {
+            if (zoomlevel >= 11.4) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
@@ -1526,51 +1526,64 @@ function Map() {
         customMapPopup.setDOMContent(placeholder);
     }
 
+    function ConvertDMSToDD(degrees, minutes, seconds, direction) {
+        let dd = degrees + minutes/60 + seconds/(60*60);
+
+        if (direction.toUpperCase() === "S" || direction.toUpperCase() === "W") {
+            dd = dd * -1;
+        } // Don't do anything for N or E
+        return dd;
+    }
+
+    function coordinateFeature(lng, lat) {
+        return {
+            center: [lng, lat],
+            geometry: {
+                type: 'Point',
+                coordinates: [lng, lat]
+            },
+            place_name: lat + ', ' + lng,
+            place_type: ['coordinate'],
+            properties: {},
+            type: 'Feature'
+        };
+    }
+
+
     const coordinatesGeocoder = function (query) {
-        // Match anything which looks like
-        // decimal degrees coordinate pair.
         const matches = query.match(
-            /^[ ]*(?:Lat: )?(-?\d+\.?\d*)[, ]+(?:Lng: )?(-?\d+\.?\d*)[ ]*$/i
+            /(?:((?:[-+]?\d{1,2}[.]\d+),\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[E|W]))/
         );
+
         if (!matches) {
             return null;
         }
 
-        function coordinateFeature(lng, lat) {
-            return {
-                center: [lng, lat],
-                geometry: {
-                    type: 'Point',
-                    coordinates: [lng, lat]
-                },
-                place_name: lat + ', ' + lng,
-                place_type: ['coordinate'],
-                properties: {},
-                type: 'Feature'
-            };
+        let lat;
+        let lng;
+
+        // if match 0 has a , in it, it's lat, lng
+        try {
+            if (matches[0].includes(",")) {
+                lat = parseFloat(matches[0].split(",")[0]);
+                lng = parseFloat(matches[0].split(",")[1]);
+            } else {
+                // it's a dms
+                let parts =  matches[0].split(/(\d+)°(\d+)'(\d+\.\d+)\"([NSns]) (\d+)°(\d+)'(\d+\.\d+)\"([EWew])/);
+                lat = ConvertDMSToDD(parseInt(parts[1]), parseInt(parts[2]), parseFloat(parts[3]), parts[4]);
+                lng = ConvertDMSToDD(parseInt(parts[5]), parseInt(parts[6]), parseFloat(parts[7]), parts[8]);
+            }
+        } catch (e) {
+            console.log("error parsing coordinates: " + e);
+            return null;
         }
 
-        const coord1 = Number(matches[1]);
-        const coord2 = Number(matches[2]);
-        const geocodes = [];
+        // round to 6 decimal places
+        lat = lat.toFixed(6);
+        lng = lng.toFixed(6);
 
-        if (coord1 < -90 || coord1 > 90) {
-            // must be lng, lat
-            geocodes.push(coordinateFeature(coord1, coord2));
-        }
+        return [coordinateFeature(lng, lat)];
 
-        if (coord2 < -90 || coord2 > 90) {
-            // must be lat, lng
-            geocodes.push(coordinateFeature(coord2, coord1));
-        }
-
-        if (geocodes.length === 0) {
-            // else could be either lng, lat or lat, lng
-            geocodes.push(coordinateFeature(coord2, coord1));
-            geocodes.push(coordinateFeature(coord1, coord2));
-        }
-
-        return geocodes;
     };
 
     // create a function to make a directions request
