@@ -301,7 +301,7 @@ function Map() {
                 'icon-size': 1,
             },
             'source': 'All Towers',
-            'minzoom': 14,
+            'minzoom': 12,
             'paint': {
                 'icon-color': ['get', 'color'],
             }
@@ -318,7 +318,7 @@ function Map() {
             'id': 'All Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'All Tower Extrusions',
-            'minzoom': 14,
+            'minzoom': 12,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'overall_height'],
@@ -388,7 +388,7 @@ function Map() {
                 'icon-size': 1,
             },
             'source': 'FAA Obstacles',
-            'minzoom': 14,
+            'minzoom': 12,
             'paint': {
                 'icon-color': '#000000',
             }
@@ -1105,18 +1105,15 @@ function Map() {
         // on move, if zoom is above 14, try to update towers and / or antennas
         mapbox.current.on('moveend', () => {
             let zoomlevel = mapbox.current.getZoom();
-            if (zoomlevel >= 14) {
+            if (zoomlevel >= 12) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
-
-                if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
-                    updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
-                }
-
-                if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
-                    updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                if (zoomlevel >= 14) {
+                    if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
+                        updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    }
                 }
             }
         });
@@ -1741,7 +1738,7 @@ function Map() {
     const updateAllTowers = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
         console.log("updateAllTowers");
-        await retrieveTowers(accessToken, lat, lng, 5000).then(
+        await retrieveTowers(accessToken, lat, lng, 7000).then(
             (response) => {
                 if (response.data) {
                     setAllTowerPolygons(response.data.towers_polygons);
@@ -1763,7 +1760,7 @@ function Map() {
 
     const updateObstacles = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveObstacles(accessToken, lat, lng, 5000).then(
+        await retrieveObstacles(accessToken, lat, lng, 7000).then(
             (response) => {
                 if (response.data)
                     setObstaclePoints(response.data.obstacles);
