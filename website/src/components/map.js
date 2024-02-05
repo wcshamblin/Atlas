@@ -1110,9 +1110,13 @@ function Map() {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
+                if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
+                    updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                }
+
                 if (zoomlevel >= 14) {
-                    if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
-                        updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
+                        updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                     }
                 }
             }
@@ -1738,7 +1742,7 @@ function Map() {
     const updateAllTowers = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
         console.log("updateAllTowers");
-        await retrieveTowers(accessToken, lat, lng, 7000).then(
+        await retrieveTowers(accessToken, lat, lng, 40000).then(
             (response) => {
                 if (response.data) {
                     setAllTowerPolygons(response.data.towers_polygons);
@@ -1760,7 +1764,7 @@ function Map() {
 
     const updateObstacles = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveObstacles(accessToken, lat, lng, 7000).then(
+        await retrieveObstacles(accessToken, lat, lng, 40000).then(
             (response) => {
                 if (response.data)
                     setObstaclePoints(response.data.obstacles);
