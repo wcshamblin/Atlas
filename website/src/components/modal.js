@@ -49,9 +49,9 @@ const Modal = ({ getAccessToken, modalOpen, modalType, map, point, setOpenModal,
                         newMapUsers.push({ usersub: user.usersub, permissions: Object.entries(user.permissions).filter(([name, perm]) => perm).map(([name, perm]) => name).join(",") });
                 });
 
-                newPointCat = newMapCats[0].id;
-                newPointIcon = newMapIcons[0].id;
-                newPointColor = newMapColors[0].id;
+                if (newMapCats.length > 0) newPointCat = newMapCats[0].id;
+                if (newMapIcons.length > 0) newPointIcon = newMapIcons[0].id;
+                if (newMapColors.length > 0) newPointColor = newMapColors[0].id;
             }
             if (point) {
                 newPointName = point.name;
