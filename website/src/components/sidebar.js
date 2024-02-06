@@ -101,6 +101,7 @@ const Sidebar = ({
     const layerCategories = {
         "OpenRailwayMap": ["OpenRailwayMap"],
         "Google Streetview": ["Google StreetView"],
+        "Parcel ownership": ["Parcel ownership", "Parcel ownership labels"],
         "Isochrone": ["Isochrone"],
         "3D Buildings": ["3D Buildings"],
         "Shade Map": ["Shade Map"],
@@ -129,6 +130,8 @@ const Sidebar = ({
         "Germany Tall Structures": { "visible": false, "country": "eu" },
         "Germany Tall Structures Extrusions": { "visible": false, "country": "eu" },
         "National Register of Historic Places": { "visible": false, "country": "usa" },
+        "Parcel ownership": { "visible": false, "country": "usa" },
+        "Parcel ownership labels": { "visible": false, "country": "usa" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});

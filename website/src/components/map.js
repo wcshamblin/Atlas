@@ -273,6 +273,44 @@ function Map() {
         });
 
 
+        mapbox.current.addSource('Parcel ownership', {
+            'type': 'vector',
+            'tiles': [
+                'https://atlas2.org/api/parcel/{z}/{x}/{y}'
+            ],
+            'minzoom': 12,
+            'maxzoom': 18
+        });
+        // add parcel layers with labels from vector source layer "owner"
+        mapbox.current.addLayer({
+            'id': 'Parcel ownership',
+            'type': 'line',
+            'source': 'Parcel ownership',
+            'source-layer': 'parcels',
+            'paint': {
+                'line-color': '#00a97d',
+                'line-width': 1,
+            }
+        });
+        // labels layer for parcels, from "mvt_id"
+        mapbox.current.addLayer({
+            'id': 'Parcel ownership labels',
+            'type': 'symbol',
+            'source': 'Parcel ownership',
+            'source-layer': 'parcels',
+            'layout': {
+                'text-field': '{owner}',
+                "text-font": ["Open Sans Regular"],
+                'text-size': 14,
+                'visibility': 'visible'
+            },
+            'paint': {
+                'text-color': '#00a97d',
+            },
+            // set minzoom to 16 to avoid cluttering the map
+            'minzoom': 14
+        });
+
 
         // all towers source
         mapbox.current.addSource('All Towers', {
@@ -720,6 +758,8 @@ function Map() {
         mapbox.current.moveLayer('Antennas');
         mapbox.current.moveLayer('Routing');
         mapbox.current.moveLayer('OpenRailwayMap');
+        mapbox.current.moveLayer('Parcel ownership');
+        mapbox.current.moveLayer('Parcel ownership labels');
     }
 
     // get maps from api
