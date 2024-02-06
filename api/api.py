@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Response, Request, status
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+from parcel_fetching import get_parcels
 from faa_functions import retrieve_obstacles
 from database.classes import MapPermissions, MapUser, Point, Map, Category, Color, Icon
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
@@ -1061,16 +1062,20 @@ def get_sentinel(response: Response, bbox: str, date: str = "None"):
     # get sentinel images
     image = get_sentinel_image(bbox, date)
 
-    responses = {
-        200: {"content": {"image/png": {}}}
-    }
-
     response.headers["Content-Type"] = "image/png"
     response.headers["Content-Disposition"] = "attachment; filename=sentinel.png"
 
     return Response(content=image, media_type="image/png")
 
-    return "test"
+@app.get("/parcel/{z}/{x}/{y}")
+def get_regrid_parcels(response: Response, z: int, x: int, y: int):
+    # get parcels
+    parceltile = get_parcels(z, x, y)
+
+    response.headers["Content-Type"] = "application/vnd.mapbox-vector-tile"
+    response.headers["Content-Disposition"] = "attachment; filename=parcels.pbf"
+
+    return Response(content=parceltile, media_type="application/vnd.mapbox-vector-tile")
 
 if __name__ == '__main__':
     import uvicorn
