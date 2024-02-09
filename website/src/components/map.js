@@ -61,7 +61,7 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
 const shadeMap = new ShadeMap({
     date: new Date(),    // display shadows for current date
     color: '#0f1624',    // shade color
-    opacity: 0.7,        // opacity of shade colors
+    opacity: 0.93,        // opacity of shade colors
     apiKey: process.env.REACT_APP_SHADE_MAP_API_KEY,
     terrainSource: {
         tileSize: 256,       // DEM tile size
@@ -272,6 +272,22 @@ function Map() {
             'maxzoom': 18
         });
 
+        mapbox.current.addSource("Skoterleder", {
+            'type': 'raster',
+            'tiles': [
+                'https://atlas2.org/api/skoterleder/{z}/{x}/{y}'
+            ],
+            'tileSize': 256,
+            'maxzoom': 14
+        });
+        mapbox.current.addLayer({
+            'id': 'Skoterleder',
+            'type': 'raster',
+            'source': 'Skoterleder',
+            'paint': {}
+        });
+
+
 
         mapbox.current.addSource('Parcel ownership', {
             'type': 'vector',
@@ -301,11 +317,11 @@ function Map() {
             'layout': {
                 'text-field': '{owner}',
                 "text-font": ["Open Sans Regular"],
-                'text-size': 14,
+                'text-size': 15,
                 'visibility': 'visible'
             },
             'paint': {
-                'text-color': '#00a97d',
+                'text-color': '#8affe0',
             },
             // set minzoom to 16 to avoid cluttering the map
             'minzoom': 14
@@ -1799,6 +1815,7 @@ function Map() {
                                 addressControl: true,
                                 fullscreenControl: false,
                                 linksControl: false,
+                                motionTracking: false,
                                 motionTrackingControl: false,
                                 motionTrackingControlOptions: false,
                                 panControl: true,
