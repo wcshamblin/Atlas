@@ -95,7 +95,7 @@ const Sidebar = ({
         "Lantmäteriet" : { "visible": false, "country": "eu" },
         "Skoterleder": { "visible": false, "country": "eu" },
         "USGS Topo": { "visible": false, "country": "usa" },
-        "VFR": { "visible": false, "country": "usa" },
+        // "VFR": { "visible": false, "country": "usa" },
         "OpenStreetMap": { "visible": false, "country": "all" },
     });
 
