@@ -1077,6 +1077,15 @@ def get_regrid_parcels(response: Response, z: int, x: int, y: int):
 
     return Response(content=parceltile, media_type="application/vnd.mapbox-vector-tile")
 
+@app.get("/skoterleder/{z}/{x}/{y}")
+def get_skoterleder_tile(response: Response, z: int, x: int, y: int):
+    tile = get("https://tiles.skoterleder.org/tiles/{}/{}/{}.png".format(z, x, y)).content
+
+    response.headers["Content-Type"] = "image/png"
+    response.headers["Content-Disposition"] = "attachment; filename=skoterleder.png"
+
+    return Response(content=tile, media_type="image/png")
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='127.0.0.1', port=5000)
