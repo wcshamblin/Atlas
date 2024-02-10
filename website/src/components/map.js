@@ -239,13 +239,13 @@ function Map() {
             'tileSize': 256
         });
 
-        mapbox.current.addSource('VFR', {
-            'type': 'raster',
-            'tiles': [
-                'https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{z}/{y}/{x}.png'
-            ],
-            'tileSize': 256
-        });
+        // mapbox.current.addSource('VFR', {
+        //     'type': 'raster',
+        //     'tiles': [
+        //         'https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{z}/{y}/{x}.png'
+        //     ],
+        //     'tileSize': 256
+        // });
 
         mapbox.current.addSource('MAXAR', {
             'type': 'raster',
@@ -719,14 +719,14 @@ function Map() {
             },
         );
 
-        mapbox.current.addLayer(
-            {
-                'id': 'VFR',
-                'type': 'raster',
-                'source': 'VFR',
-                'paint': {}
-            },
-        );
+        // mapbox.current.addLayer(
+        //     {
+        //         'id': 'VFR',
+        //         'type': 'raster',
+        //         'source': 'VFR',
+        //         'paint': {}
+        //     },
+        // );
 
         mapbox.current.addLayer(
             {
