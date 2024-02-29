@@ -239,13 +239,13 @@ function Map() {
             'tileSize': 256
         });
 
-        // mapbox.current.addSource('VFR', {
-        //     'type': 'raster',
-        //     'tiles': [
-        //         'https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{z}/{y}/{x}.png'
-        //     ],
-        //     'tileSize': 256
-        // });
+        mapbox.current.addSource('VFR', {
+            'type': 'raster',
+            'tiles': [
+                'https://atlas2.org/api/vfr/{z}/{x}/{y}.png'
+            ],
+            'tileSize': 256
+        });
 
         mapbox.current.addSource('MAXAR', {
             'type': 'raster',
@@ -266,7 +266,7 @@ function Map() {
         mapbox.current.addSource('Sentinel 2-L2A', {
             'type': 'raster',
             'tiles': [
-                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}'
+                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png'
             ],
             'tileSize': 256,
             'maxzoom': 18
@@ -275,7 +275,7 @@ function Map() {
         mapbox.current.addSource("Skoterleder", {
             'type': 'raster',
             'tiles': [
-                'https://atlas2.org/api/skoterleder/{z}/{x}/{y}'
+                'https://atlas2.org/api/skoterleder/{z}/{x}/{y}.png'
             ],
             'tileSize': 256,
             'maxzoom': 14
@@ -719,14 +719,14 @@ function Map() {
             },
         );
 
-        // mapbox.current.addLayer(
-        //     {
-        //         'id': 'VFR',
-        //         'type': 'raster',
-        //         'source': 'VFR',
-        //         'paint': {}
-        //     },
-        // );
+        mapbox.current.addLayer(
+            {
+                'id': 'VFR',
+                'type': 'raster',
+                'source': 'VFR',
+                'paint': {}
+            },
+        );
 
         mapbox.current.addLayer(
             {

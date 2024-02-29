@@ -92,10 +92,10 @@ const Sidebar = ({
         "MAXAR": { "visible": false, "country": "all" },
         "Mapbox": { "visible": false, "country": "all" },
         "Sentinel 2-L2A": { "visible": false, "country": "all" },
+        "VFR": { "visible": false, "country": "usa" },
         "Lantmäteriet" : { "visible": false, "country": "eu" },
         "Skoterleder": { "visible": false, "country": "eu" },
         "USGS Topo": { "visible": false, "country": "usa" },
-        // "VFR": { "visible": false, "country": "usa" },
         "OpenStreetMap": { "visible": false, "country": "all" },
     });
 
@@ -855,7 +855,7 @@ const Sidebar = ({
         map.addSource('Sentinel 2-L2A', {
             'type': 'raster',
             'tiles': [
-                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}?date=' + date.toISOString().split('T')[0]
+                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png?date=' + date.toISOString().split('T')[0]
             ],
             'tileSize': 256,
             'maxzoom': 18
