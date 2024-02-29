@@ -1043,7 +1043,7 @@ def get_astronomy_info(response: Response, lat: float, lng: float, date: str, tz
 
     return astronomy_info
 
-@app.get("/sentinel/{bbox}")
+@app.get("/sentinel/{bbox}.png")
 def get_sentinel(response: Response, bbox: str, date: str = "None"):
     bbox = [float(x) for x in bbox.split(",")]
 
@@ -1077,7 +1077,7 @@ def get_regrid_parcels(response: Response, z: int, x: int, y: int):
 
     return Response(content=parceltile, media_type="application/vnd.mapbox-vector-tile")
 
-@app.get("/skoterleder/{z}/{x}/{y}")
+@app.get("/skoterleder/{z}/{x}/{y}.png")
 def get_skoterleder_tile(response: Response, z: int, x: int, y: int):
     tile = get("https://tiles.skoterleder.org/tiles/{}/{}/{}.png".format(z, x, y)).content
 
@@ -1085,6 +1085,18 @@ def get_skoterleder_tile(response: Response, z: int, x: int, y: int):
     response.headers["Content-Disposition"] = "attachment; filename=skoterleder.png"
 
     return Response(content=tile, media_type="image/png")
+
+
+@app.get("/vfr/{z}/{x}/{y}.png")
+def get_vfr_tile(response: Response, z: int, x: int, y: int):
+    tile = get("https://maps.iflightplanner.com/Maps/Tiles/Sectional/Z{}/{}/{}.png".format(z, y, x)).content
+
+    response.headers["Content-Type"] = "image/png"
+    response.headers["Content-Disposition"] = "attachment; filename=vfr.png"
+
+    return Response(content=tile, media_type="image/png")
+
+
 
 if __name__ == '__main__':
     import uvicorn
