@@ -11,7 +11,7 @@ export const MobileNavBarTabs = ({ handleClick }) => {
         {isAuthenticated && (
             <>
                 <MobileNavBarTab path="/map" label="Map" handleClick={handleClick}/>
-                <MobileNavBarTab path="/profile" label="Profile" handleClick={handleClick}/>
+                <MobileNavBarTab path="https://discord.gg/zvvRuDebSK" label="Our Discord" handleClick={handleClick}/>
             </>
         )}
     </div>

@@ -616,7 +616,10 @@ function Map() {
             ],
             //server returns 512px img for 256 tiles
             'tileSize': 512,
-            'tilePixelRatio': 2
+            // 'tilePixelRatio': 2
+            // 'tileSize': 256,
+            'minzoom': 2,
+            'maxzoom': 19
         });
 
 
@@ -1382,7 +1385,7 @@ function Map() {
                     <a href={"http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Maps
                     </a><br/>
-                    <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=15.9&style=h"} target="_blank" rel="noreferrer">
+                    <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=17.5&style=h"} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> Bing Maps
                     </a><br />
                     <a href={"https://livingatlas.arcgis.com/wayback/#mapCenter=" + rightClickPopupPosition[0] + "%2C" + rightClickPopupPosition[1] + "%2C17"} target="_blank" rel="noreferrer">

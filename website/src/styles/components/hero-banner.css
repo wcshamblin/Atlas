@@ -64,7 +64,8 @@
 .hero-banner__headline {
   letter-spacing: -1.5px;
   color: var(--white);
-
+  
+  filter: drop-shadow(rgba(0,0,0,.7) 4px 4px 3px);
 
   /* responsive */
 

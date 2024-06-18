@@ -46,15 +46,6 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
-.button--discord {
-  background-color: #7289da;
-  margin-right: 1.6rem;
-}
-
-.button--discord:hover {
-  background: rgba(76, 98, 176, 0.85);
-}
-
 .button--donate {
     text-align: center;
     align-items: center;
@@ -84,6 +75,39 @@
     font-size: 1.3rem;
     line-height: 2rem;
   }
+}
+
+
+.button__map {
+  min-width: 8.4rem;
+
+  border: 0.1rem solid var(--indigo);
+  color: var(--white);
+  background: var(--indigo);
+  /* width: 50%; */
+  font-size: 2rem;
+
+  font-family: var(--font-primary);
+  font-style: normal;
+  font-weight: 600;
+  line-height: 3.2rem;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  text-align: center;
+
+  margin-top: 1rem;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: background 0.3s ease-out, color 0.3s ease-out;
+}
+
+/* on hover */
+.button__map:hover {
+  /* change background and border to lighten up */
+  background: rgba(130, 125, 255, 0.85);
+  border: 0.1rem solid rgba(130, 125, 255, 0.85);
 }
 
 .button__login,
