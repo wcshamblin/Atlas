@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   flex-shrink: 0;
-  width: 100%;
+  width: -webkit-fill-available;
 
   box-shadow: rgb(90 95 102) 0-1.5px 0 inset;
 
