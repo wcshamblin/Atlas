@@ -1097,6 +1097,20 @@ def get_vfr_tile(response: Response, z: int, x: int, y: int):
     return Response(content=tile, media_type="image/png")
 
 
+@app.get("/openrailwaymap/{z}/{x}/{y}.png")
+def get_openrailwaymap_tile(response: Response, z: int, x: int, y: int):
+    # https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png
+    # testing
+    print(get("https://tiles.openrailwaymap.org/standard/{}/{}/{}.png".format(z, x, y)).content)
+
+    tile = get("https://tiles.openrailwaymap.org/standard/{}/{}/{}.png".format(z, x, y)).content
+    print("https://tiles.openrailwaymap.org/standard/{}/{}/{}.png".format(z, x, y))
+
+    response.headers["Content-Type"] = "image/png"
+    response.headers["Content-Disposition"] = "attachment; filename=openrailwaymap.png"
+
+    return Response(content=tile, media_type="image/png")
+
 
 if __name__ == '__main__':
     import uvicorn
