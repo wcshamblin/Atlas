@@ -10,7 +10,7 @@ export const NavBarTabs = () => {
       {isAuthenticated && (
         <>
           <NavBarTab path="/map" label="Map" />
-          <NavBarTab path="/profile" label="Profile" />
+          <NavBarTab path="https://discord.gg/zvvRuDebSK" label="Our Discord" />
         </>
       )}
     </div>
