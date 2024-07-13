@@ -153,7 +153,11 @@ function Map() {
     const settingsRef = useRef({});
     const [settings, setSettings] = useState({});
 
-    // dealing with mobile right clicks
+    const towerRenderZoomLevel = 10.5;
+    const towerExtrusionRenderZoomLevel = 11.5;
+    const antennaRenderZoomLevel = 13.5;
+    const antennaSearchRadius = 8000;
+    const towerSearchRadius = 150000;
 
 
     const addSources = () => {
@@ -355,7 +359,7 @@ function Map() {
                 'icon-size': 1,
             },
             'source': 'All Towers',
-            'minzoom': 11.5,
+            'minzoom': towerRenderZoomLevel,
             'paint': {
                 'icon-color': ['get', 'color'],
             }
@@ -372,7 +376,7 @@ function Map() {
             'id': 'All Tower Extrusions',
             'type': 'fill-extrusion',
             'source': 'All Tower Extrusions',
-            'minzoom': 11.5,
+            'minzoom': towerExtrusionRenderZoomLevel,
             'paint': {
                 'fill-extrusion-color': ['get', 'color'],
                 'fill-extrusion-height': ['get', 'overall_height'],
@@ -408,7 +412,7 @@ function Map() {
                 'icon-size': 1,
             },
             'source': 'Antennas',
-            'minzoom': 15,
+            'minzoom': antennaRenderZoomLevel,
             'paint': {
                 'icon-color': ['get', 'color'],
             }
@@ -442,7 +446,7 @@ function Map() {
                 'icon-size': 1,
             },
             'source': 'FAA Obstacles',
-            'minzoom': 11.5,
+            'minzoom': towerRenderZoomLevel,
             'paint': {
                 'icon-color': '#000000',
             }
@@ -1161,10 +1165,9 @@ function Map() {
             mapbox.current.on('gestureend', clearIosTimeout);
         }
 
-        // on move, if zoom is above 14, try to update towers and / or antennas
         mapbox.current.on('moveend', () => {
             let zoomlevel = mapbox.current.getZoom();
-            if (zoomlevel >= 11.4) {
+            if (zoomlevel >= (towerRenderZoomLevel - .1)) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
                     // update all towers from the center of the map
                     updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
@@ -1173,7 +1176,7 @@ function Map() {
                     updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                 }
 
-                if (zoomlevel >= 15) {
+                if (zoomlevel >= (antennaRenderZoomLevel - .1)) {
                     if (mapbox.current.getLayoutProperty('Antennas', 'visibility') === 'visible') {
                         updateAntennas(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
                     }
@@ -1613,12 +1616,13 @@ function Map() {
         let matches;
         let lat;
         let lng;
-
+        
+        // match  36°42'29.25"N 79°22'21.34"W
         // match 35°12'01.4"N 78°50'03.2"W
         // 35.20005178613768, -78.83495385015117
         // (35.20005178613768, -78.83495385015117)
         matches = query.match(
-            /(?:((?:[-+]?\d{1,2}[.]\d+),\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d\"[E|W]))/i
+            /(?:((?:[-+]?\d{1,2}[.]\d+)\s?,\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d{1,2}\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d{1,2}\"[E|W]))/i
         );
 
         if (matches) {
@@ -1732,6 +1736,7 @@ function Map() {
 
 
         await postPoint(accessToken, mapId, pointData).then((data) => {
+            // dispatch(showSuccessSnackbar("Success!"));
             console.log("point added");
             console.log(data);
             getMaps();
@@ -1847,7 +1852,7 @@ function Map() {
     const updateAllTowers = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
         console.log("updateAllTowers");
-        await retrieveTowers(accessToken, lat, lng, 60000).then(
+        await retrieveTowers(accessToken, lat, lng, towerSearchRadius).then(
             (response) => {
                 if (response.data) {
                     setAllTowerPolygons(response.data.towers_polygons);
@@ -1859,7 +1864,7 @@ function Map() {
 
     const updateAntennas = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveAntennas(accessToken, lat, lng, 5000, settingsRef.current["showUls"]).then(
+        await retrieveAntennas(accessToken, lat, lng, antennaSearchRadius, settingsRef.current["showUls"]).then(
             (response) => {
                 if (response.data)
                     setAntennaPoints(response.data.antennas);
@@ -1869,7 +1874,7 @@ function Map() {
 
     const updateObstacles = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveObstacles(accessToken, lat, lng, 60000).then(
+        await retrieveObstacles(accessToken, lat, lng, towerSearchRadius).then(
             (response) => {
                 if (response.data)
                     setObstaclePoints(response.data.obstacles);
