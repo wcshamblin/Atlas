@@ -195,7 +195,7 @@ function Map() {
             'maxzoom': 20
         });
         
-        mapbox.current.addSource('ESRI Clarity', {
+        mapbox.current.addSource('ESRI (2014)', {
             'type': 'raster',
             'tiles': [
                 'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false',
@@ -291,6 +291,23 @@ function Map() {
             'paint': {}
         });
 
+
+        mapbox.current.addSource("Light Pollution", {
+            'type': 'raster',
+            'tiles': [
+                'https://djlorenz.github.io/astronomy/lp2022/overlay/tiles/tile_{z}_{x}_{y}.png'
+            ],
+            'tileSize': 1024,
+            'maxzoom': 6
+        });
+        mapbox.current.addLayer({
+            'id': 'Light Pollution',
+            'type': 'raster',
+            'source': 'Light Pollution',
+            'paint': {
+                'raster-opacity': 0.4
+            }
+        });
 
 
         mapbox.current.addSource('Parcel ownership', {
@@ -683,9 +700,9 @@ function Map() {
 
         mapbox.current.addLayer(
             {
-                'id': 'ESRI Clarity',
+                'id': 'ESRI (2014)',
                 'type': 'raster',
-                'source': 'ESRI Clarity',
+                'source': 'ESRI (2014)',
                 'paint': {}
             },
         );
@@ -769,7 +786,7 @@ function Map() {
                 'source': 'Isochrone',
                 'paint': {
                     'fill-color': '#5a3fc0',
-                    'fill-opacity': 0.4
+                    'fill-opacity': 0.3
                 }
             },
         );
@@ -778,6 +795,7 @@ function Map() {
         mapbox.current.moveLayer('Isochrone');
         mapbox.current.moveLayer('Google StreetView');
         mapbox.current.moveLayer('All Towers');
+        mapbox.current.moveLayer('Light Pollution');
         mapbox.current.moveLayer('Antennas');
         mapbox.current.moveLayer('Routing');
         mapbox.current.moveLayer('OpenRailwayMap');
@@ -1122,6 +1140,11 @@ function Map() {
             let lat = e.lngLat.lat;
             let lng = e.lngLat.lng;
             console.log("Left click at: " + lat + ", " + lng);
+
+            // if mobile, close side bar
+            if (window.mobileAndTabletCheck()) {
+                setDisplaySidebar(false);
+            }
 
             if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') === 'visible' && mapbox.current.getZoom() >= 14) {
                 setStreetViewPosition([lat, lng]);

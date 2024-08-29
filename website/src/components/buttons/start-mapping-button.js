@@ -10,7 +10,7 @@ export const StartMappingButton = () => {
         returnTo: "/map",
       },
       authorizationParams: {
-        prompt: "login",
+        // prompt: "none",
       },
     });
   };

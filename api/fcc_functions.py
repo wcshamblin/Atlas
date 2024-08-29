@@ -2,6 +2,7 @@ import psycopg2
 from math import sin, cos, sqrt
 import re
 import random
+from datetime import datetime
 
 
 # db initialization
@@ -156,6 +157,17 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
 
     # loop through towers and make geojson objects
     for tower in results:
+        try:
+            overall_height = float(tower[tower_declaration.index("overall_height_above_ground")])
+        except ValueError:
+            overall_height = 0
+
+        try:
+            height_support = float(tower[tower_declaration.index("height_of_structure")])
+        except ValueError:
+            height_support = 0
+
+
         # circular shapes
         # PIPE, POLE, SILO, STACK, TANK, TREE, UPOLE, MTOWER, []NMTANN
         # we can't really get a circle so let's just do an octogon
@@ -165,8 +177,8 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
             towers_polygons["features"].append({"type": "Feature", "properties": {
                 "name": tower[tower_declaration.index("registration_number")],
                 "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
+                "overall_height": overall_height,
+                "height_support": height_support,
                 "color": "#BD1313"},
                                     "geometry": {"type": "Polygon", "coordinates":
                                         [polygon_coordinates]
@@ -184,8 +196,8 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
             towers_polygons["features"].append({"type": "Feature", "properties": {
                 "name": tower[tower_declaration.index("registration_number")],
                 "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
+                "overall_height": overall_height,
+                "height_support": height_support,
                 "color": "#6813bd"},
                                     "geometry": {"type": "Polygon", "coordinates":
                                         [polygon_coordinates]
@@ -201,8 +213,8 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
             towers_polygons["features"].append({"type": "Feature", "properties": {
                 "name": tower[tower_declaration.index("registration_number")],
                 "description": "",
-                "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-                "height_support": float(tower[tower_declaration.index("height_of_structure")]),
+                "overall_height": overall_height,
+                "height_support": height_support,
                 "color": "#1370bd"},
                                     "geometry": {"type": "Polygon", "coordinates":
                                         [polygon_coordinates]
@@ -211,8 +223,8 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
         towers_points["features"].append({"type": "Feature", "properties": {
             "name": tower[tower_declaration.index("registration_number")],
             "description": "",
-            "overall_height": float(tower[tower_declaration.index("overall_height_above_ground")]),
-            "height_support": float(tower[tower_declaration.index("height_of_structure")]),
+            "overall_height": overall_height,
+            "height_support": height_support,
             "structure_type": tower[tower_declaration.index("structure_type")] + " - " + get_tower_description(tower[tower_declaration.index("structure_type")]),
             "color": towers_polygons["features"][-1]["properties"]["color"]},
                                 "geometry": {"type": "Point", "coordinates":
@@ -272,8 +284,19 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
             "RabbitEars": "https://www.rabbitears.info/market.php?request=station_search&callsign=" + antenna[tv_declaration.index("facility_id")]
         })
 
-    # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
+    # only output antennas with a unique facility_id, if there are multiple with the same, chose the newest one (last_update)
+    # create a dictionary with the facility_id as the key
+    antennas_dict = {}
+    for antenna in antennas_out:
+        if antennas_dict.get(antenna["facility_id"]):
+            # convert last_update to datetime
+            # 05/16/2023
+            if datetime.strptime(antenna["last_update"], "%m/%d/%Y") > datetime.strptime(antennas_dict[antenna["facility_id"]]["last_update"], "%m/%d/%Y"):
+                antennas_dict[antenna["facility_id"]] = antenna
+        else:
+            antennas_dict[antenna["facility_id"]] = antenna
+    
+    antennas_out = list(antennas_dict.values())
 
     return antennas_out
 
@@ -349,9 +372,20 @@ def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
             "last_update": antenna[fm_declaration.index("last_update_date")].split(" ")[0],
         })
 
-    # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
-    # antennas_out.sort(key=lambda x: x["effective_erp"], reverse=True)
-    # not needed at the moment because of antenna displacer
+    # only output antennas with a unique facility_id, if there are multiple with the same, chose the newest one (last_update)
+    # create a dictionary with the facility_id as the key
+    antennas_dict = {}
+    for antenna in antennas_out:
+        if antennas_dict.get(antenna["facility_id"]):
+            # convert last_update to datetime
+            # 05/16/2023
+            if datetime.strptime(antenna["last_update"], "%Y-%m-%d") > datetime.strptime(antennas_dict[antenna["facility_id"]]["last_update"], "%Y-%m-%d"):
+                antennas_dict[antenna["facility_id"]] = antenna
+        else:
+            antennas_dict[antenna["facility_id"]] = antenna
+    
+    antennas_out = list(antennas_dict.values())
+
     return antennas_out
 
 def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
@@ -429,6 +463,7 @@ def retrieve_fcc_antenna_objects(lat, lng, radius, uls=False):
                 "description": "",
                 "transmitter_type": antenna["type"],
                 "facility_id": antenna["call_sign"],
+                "erp": 0,
                 "color": "#ffffff"},
                 "geometry": {"type": "Point", "coordinates":
                                         [antenna["lng"], antenna["lat"]]
@@ -481,7 +516,7 @@ def retrieve_fcc_antenna_objects(lat, lng, radius, uls=False):
             "transmitter_type": "AM",
             "status": antenna["status"],
             "last_update": antenna["last_update"],
-            "erp": antenna["nominal_power"],
+            "erp": float(antenna["nominal_power"]),
             "facility_id": antenna["appid"],
             "hours_operation": antenna["hours_operation"],
             "towers_in_array": antenna["towers_in_array"],
@@ -510,6 +545,9 @@ def retrieve_fcc_antenna_objects(lat, lng, radius, uls=False):
                 # if we have an even number, move the antenna to the left
                 else:
                     antennas["features"][j]["geometry"]["coordinates"][0] -= changer * 0.00003
+    
+    # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
+    antennas["features"].sort(key=lambda x: x["properties"]["erp"], reverse=True)
 
 
     return antennas

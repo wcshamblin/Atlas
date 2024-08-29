@@ -87,7 +87,7 @@ const Sidebar = ({
         "Google Hybrid": { "visible": true, "country": "all" },
         "Bing Hybrid": { "visible": false, "country": "all" },
         "ESRI": { "visible": false, "country": "all" },
-        "ESRI Clarity": { "visible": false, "country": "all" },
+        "ESRI (2014)": { "visible": false, "country": "all" },
         "NAIP": { "visible": false, "country": "usa" },
         "MAXAR": { "visible": false, "country": "all" },
         "Mapbox": { "visible": false, "country": "all" },
@@ -103,13 +103,14 @@ const Sidebar = ({
         "OpenRailwayMap": ["OpenRailwayMap"],
         "Google Streetview": ["Google StreetView"],
         "Parcel ownership": ["Parcel ownership", "Parcel ownership labels"],
-        "Isochrone": ["Isochrone"],
         "3D Buildings": ["3D Buildings"],
-        "Shade Map": ["Shade Map"],
+        "Light Pollution": ["Light Pollution"],
         "Towers": ["All Towers", "All Tower Extrusions"],
         "FAA Obstacles": ["FAA Obstacles"],
         "Antennas": ["Antennas"],
         "Long Lines": ["Long Lines"],
+        "Shade Map": ["Shade Map"],
+        "Isochrone": ["Isochrone"],
         "FLYGHINDER 2023": ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"],
         "Germany Tall Structures": ["Germany Tall Structures", "Germany Tall Structures Extrusions"],
         "National Register of Historic Places": ["National Register of Historic Places"],
@@ -133,6 +134,7 @@ const Sidebar = ({
         "National Register of Historic Places": { "visible": false, "country": "usa" },
         "Parcel ownership": { "visible": false, "country": "usa" },
         "Parcel ownership labels": { "visible": false, "country": "usa" },
+        "Light Pollution": { "visible": false, "country": "all" },
     })
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});

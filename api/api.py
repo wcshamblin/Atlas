@@ -10,7 +10,7 @@ from faa_functions import retrieve_obstacles
 from database.classes import MapPermissions, MapUser, Point, Map, Category, Color, Icon
 from fcc_functions import retrieve_fcc_tower_objects, retrieve_fcc_antenna_objects
 from database.database import delete_map_by_id, get_home, get_point_by_id, \
-    get_points_geojson_for_map, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
+    get_points_geojson_for_map, log_deleted_point, set_home, get_maps_by_user, get_maps_for_user, get_map_by_id, \
     add_map, add_point_to_map, update_map_users, update_point_in_map, remove_point_from_map, get_eula_acceptance, \
     set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend, \
     update_map_categories, update_map_colors, update_map_icons
@@ -897,9 +897,10 @@ def delete_map_point(response: Response, map_id: str, point_id: str, token: str 
     if not verify_user_permissions(map_id, result["sub"], "edit"):
         response.status_code = status.HTTP_403_FORBIDDEN
         return {"status": "error", "message": "You do not have permission to delete a point from this map"}
-
     
-    remove_point_from_map(map_id, point_id)
+    point = remove_point_from_map(map_id, point_id)
+
+    log_deleted_point(map_id, point)
 
     return {"status": "success", "message": "Point removed from map"}
 

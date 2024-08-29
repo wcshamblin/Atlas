@@ -291,8 +291,27 @@ def add_point_to_map(map_id, point) -> str:
     return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayUnion([point])})
 
 
-def remove_point_from_map(map_id, point_id) -> str:
-    return db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([get_point_from_map(map_id, point_id)])})
+def remove_point_from_map(map_id, point_id) -> dict:
+    point = get_point_from_map(map_id, point_id)
+    db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([point])})
+    return point
+
+def log_deleted_point(map_id, point) -> str:
+    # if we can't find a deleted points entry for the map
+    try:
+        return db.collection(u'deleted_points').where(u'id', u'==', map_id).get()[0].reference.update({u'deleted_points': firestore.ArrayUnion([point])})
+    except IndexError as e:
+        # create the deleted points entry
+        deleted_points = {
+            "id": map_id,
+            "deleted_points": [point]
+        }
+
+        return db.collection(u'deleted_points').add(deleted_points)
+
+     
+
+    
 
 
 def get_point_from_map(map_id, point_id) -> dict:

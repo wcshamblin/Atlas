@@ -1,4 +1,4 @@
-from datetime import timedelta
+import datetime
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -39,7 +39,7 @@ def retrieve_sentinel_image(oauth, url, request):
 # ISO-8601 formatted time intervals
 def get_sentinel_image(bbox, date):
     # end date is passed in, and start date should be 13 days prior (Sentinel's orbit should create a max 12 day revisit cycle)
-    startdate = (date - timedelta(days=13)).strftime("%Y-%m-%dT00:00:00Z")
+    startdate = (date - datetime.timedelta(days=13)).strftime("%Y-%m-%dT00:00:00Z")
     enddate = date.strftime("%Y-%m-%dT00:00:00Z")    
     
     request = {
@@ -88,7 +88,10 @@ if __name__ == '__main__':
     
     timerange = ["2024-01-01T00:00:00Z", "2024-01-22T00:00:00Z"]
 
-    image = get_sentinel_image(bbox, timerange)
+    date = "2024-01-01"
+    date = datetime.datetime.strptime(date, "%Y-%m-%d")
+
+    image = get_sentinel_image(bbox, date)
     
     with open("image.png", "wb") as f:
         f.write(image)
