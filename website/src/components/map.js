@@ -815,6 +815,18 @@ function Map() {
         }
     };
 
+    const getMap = async (mapName) => {
+        const accessToken = await getAccessTokenSilently();
+        const { data, error } = await fetchMap(accessToken, mapName);
+        if (data) {
+            // ok here we need to look at customMaps and get the map from the dict and then modify it
+            
+        }
+        if (error) {
+            console.log(error);
+        }
+    }
+
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
 

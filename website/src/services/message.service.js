@@ -1,3 +1,4 @@
+import { accessToken } from "mapbox-gl";
 import { callExternalApi } from "./external-api.service";
 
 const apiServerUrl = process.env.REACT_APP_API_SERVER_URL;
@@ -286,6 +287,24 @@ export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
 export const fetchMaps = async (accessToken) => {
     const config = {
         url: `${apiServerUrl}/maps`,
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+
+    const { data, error } = await callExternalApi({ config });
+
+    return {
+        data: data || null,
+        error,
+    }
+}
+
+export const fetchMap = async (accessToken, mapName) => {
+    const config = {
+        url: `${apiServerUrl}/maps/{map_id}/points`,
         method: "GET",
         headers: {
             "content-type": "application/json",
