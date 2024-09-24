@@ -139,6 +139,7 @@ const Sidebar = ({
 
     const [customMapsLayers, setCustomMapsLayers] = useState({});
     const [customMapsLayersLoaded, setCustomMapsLayersLoaded] = useState(false);
+    const [sentinelDate, setSentinelDate] = useState(new Date())
 
     useEffect(() => {
         if (!customMapsData) return;
@@ -247,7 +248,7 @@ const Sidebar = ({
                     id="datetime-input-sentinel"
                     name="datetime-input"
                     required
-                    value={moment(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
+                    value={moment(sentinelDate).format("YYYY-MM-DDTHH:mm:ss")}
                     onChange={e => {
                         console.log("Sentinel datetime changed: " + e.target.value);
                         // if it was cleared, or if the date is invalid, then use the current time
@@ -849,6 +850,9 @@ const Sidebar = ({
         if (date > new Date()) {
             date = new Date();
         }
+
+        // set state
+        setSentinelDate(date);
 
         // remove source, then add it back
         map.removeLayer('Sentinel 2-L2A');
