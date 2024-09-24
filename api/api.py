@@ -900,6 +900,10 @@ def delete_map_point(response: Response, map_id: str, point_id: str, token: str 
     
     point = remove_point_from_map(map_id, point_id)
 
+    if not point:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"status": "error", "message": "Point not found"}
+
     log_deleted_point(map_id, point)
 
     return {"status": "success", "message": "Point removed from map"}

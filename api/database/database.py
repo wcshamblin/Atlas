@@ -293,7 +293,9 @@ def add_point_to_map(map_id, point) -> str:
 
 def remove_point_from_map(map_id, point_id) -> dict:
     point = get_point_from_map(map_id, point_id)
-    db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([point])})
+    if point:
+        db.collection(u'maps').where(u'id', u'==', map_id).get()[0].reference.update({u'points': firestore.ArrayRemove([point])})
+
     return point
 
 def log_deleted_point(map_id, point) -> str:
