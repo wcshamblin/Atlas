@@ -820,7 +820,6 @@ function Map() {
         const { data, error } = await fetchMap(accessToken, mapName);
         if (data) {
             // ok here we need to look at customMaps and get the map from the dict and then modify it
-            
         }
         if (error) {
             console.log(error);
