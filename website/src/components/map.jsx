@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
-import Sidebar from '../components/sidebar';
+import Sidebar from './sidebar';
 
 import mapboxgl from 'mapbox-gl';
 
@@ -49,20 +49,18 @@ import {useAuth0} from "@auth0/auth0-react";
 import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
 import Modal from './modal';
 
-/* eslint-disable import/first */
-// eslint-disable-next-line import/no-webpack-loader-syntax
-mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
+// mapboxgl.workerClass = MapboxGLWorker;
 
 
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
+mapboxgl.accessToken = import.meta.env.VITE_APP_MAPBOX_API_KEY;
 
 const shadeMap = new ShadeMap({
     date: new Date(),    // display shadows for current date
     color: '#0f1624',    // shade color
     opacity: 0.93,        // opacity of shade colors
-    apiKey: process.env.REACT_APP_SHADE_MAP_API_KEY,
+    apiKey: import.meta.env.VITE_APP_SHADE_MAP_API_KEY,
     terrainSource: {
         tileSize: 256,       // DEM tile size
         maxZoom: 15,         // Maximum zoom of DEM tile set
@@ -209,7 +207,7 @@ function Map() {
         mapbox.current.addSource('Mapbox', {
             'type': 'raster',
             'tiles': [
-                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + process.env.REACT_APP_MAPBOX_API_KEY
+                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + import.meta.env.VITE_APP_MAPBOX_API_KEY
             ],
             'tileSize': 256,
             'maxzoom': 20
@@ -254,7 +252,7 @@ function Map() {
         mapbox.current.addSource('MAXAR', {
             'type': 'raster',
             'tiles': [
-                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + process.env.REACT_APP_HERE_API_KEY
+                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + import.meta.env.VITE_APP_HERE_API_KEY
             ],
             'tileSize': 512
         });
@@ -492,10 +490,10 @@ function Map() {
         });
 
         // add long lines 
-        let long_lines = require('./long-lines.geojson');
+        // let long_lines = require('./long-lines.geojson');
         mapbox.current.addSource('Long Lines', {
             'type': 'geojson',
-            'data': long_lines
+            'data': './long-lines.geojson'
         });
 
         mapbox.current.addLayer({
@@ -509,10 +507,10 @@ function Map() {
         });
 
         // add FLYGHINDER
-        let flyghinder = require('./flyghinder.geojson');
+        // let flyghinder = require('./flyghinder.geojson');
         mapbox.current.addSource('FLYGHINDER 2023', {
             'type': 'geojson',
-            'data': flyghinder
+            'data': './flyghinder.geojson'
         });
 
         mapbox.current.addLayer({
@@ -526,10 +524,10 @@ function Map() {
         });
         
         // add FLYGHINDER extrusions
-        let flyghinder_extrusions = require('./flyghinder_polygons.geojson');
+        // let flyghinder_extrusions = require('./flyghinder_polygons.geojson');
         mapbox.current.addSource('FLYGHINDER 2023 Extrusions', {
             'type': 'geojson',
-            'data': flyghinder_extrusions
+            'data': './flyghinder_polygons.geojson'
         });
 
         mapbox.current.addLayer({
@@ -546,10 +544,10 @@ function Map() {
         });
 
         // add germany tallest objects
-        let germany_tallest = require('./germany_tall_structures.geojson');
+        // let germany_tallest = require('./germany_tall_structures.geojson');
         mapbox.current.addSource('Germany Tall Structures', {
             'type': 'geojson',
-            'data': germany_tallest
+            'data': './germany_tall_structures.geojson'
         });
 
         mapbox.current.addLayer({
@@ -563,10 +561,10 @@ function Map() {
         });
 
         // add germany tallest objects extrusions
-        let germany_tallest_extrusions = require('./germany_tall_structures_polygons.geojson');
+        // let germany_tallest_extrusions = require('./germany_tall_structures_polygons.geojson');
         mapbox.current.addSource('Germany Tall Structures Extrusions', {
             'type': 'geojson',
-            'data': germany_tallest_extrusions
+            'data': './germany_tall_structures_polygons.geojson'
         });
 
         mapbox.current.addLayer({
@@ -583,10 +581,10 @@ function Map() {
         });
 
         // add National Register Of Historic Places (NRHP)
-        let nrhp = require('./nrhp.geojson');
+        // let nrhp = require('./nrhp.geojson');
         mapbox.current.addSource('National Register of Historic Places', {
             'type': 'geojson',
-            'data': nrhp
+            'data': './nrhp.geojson'
         });
 
         mapbox.current.addLayer({
@@ -815,16 +813,16 @@ function Map() {
         }
     };
 
-    const getMap = async (mapName) => {
-        const accessToken = await getAccessTokenSilently();
-        const { data, error } = await fetchMap(accessToken, mapName);
-        if (data) {
-            // ok here we need to look at customMaps and get the map from the dict and then modify it
-        }
-        if (error) {
-            console.log(error);
-        }
-    }
+    // const getMap = async (mapName) => {
+    //     const accessToken = await getAccessTokenSilently();
+    //     const { data, error } = await fetchMap(accessToken, mapName);
+    //     if (data) {
+    //         // ok here we need to look at customMaps and get the map from the dict and then modify it
+    //     }
+    //     if (error) {
+    //         console.log(error);
+    //     }
+    // }
 
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
@@ -1830,7 +1828,7 @@ function Map() {
         }
 
         return (
-            <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+            <LoadScript googleMapsApiKey={import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY}>
                 <StreetViewService onLoad={onLoad} />
             </LoadScript>
         )
@@ -2049,7 +2047,7 @@ function Map() {
     async function getIso() {
 
         const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings["isoMinutes"] * 60}&travelMode=${settings["isoProfile"]}&key=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings["isoMinutes"] * 60}&travelMode=${settings["isoProfile"]}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`,
             {
                 method: 'GET',
                 headers: {
@@ -2524,7 +2522,7 @@ function Map() {
                 method: 'POST',
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": `Basic ${btoa(`${process.env.REACT_APP_SUNBURST_API_EMAIL}:${process.env.REACT_APP_SUNBURST_API_PASSWORD}`)}`
+                    "Authorization": `Basic ${btoa(`${import.meta.env.VITE_SUNBURST_API_EMAIL}:${import.meta.env.VITE_APP_SUNBURST_API_PASSWORD}`)}`
                 },
                 body: "grant_type=password&type=access"
             });
@@ -2559,7 +2557,7 @@ function Map() {
 
 
     const getWeatherInfo = async (lat, lng, datetime) => {
-        let weatherToken = process.env.REACT_APP_WEATHER_API_TOKEN;
+        let weatherToken = import.meta.env.VITE_APP_WEATHER_API_TOKEN;
 
         let query = await fetch(
             `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,

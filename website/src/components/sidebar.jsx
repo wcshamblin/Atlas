@@ -13,27 +13,27 @@ import {
     faCircleQuestion,
 } from '@fortawesome/free-solid-svg-icons'
 
-import { ReactComponent as SunriseIcon } from '../styles/images/sunrise_icon.svg';
-import { ReactComponent as SunsetIcon } from '../styles/images/sunset_icon.svg';
-import { ReactComponent as SunnyIcon } from '../styles/images/sunny.svg';
-import { ReactComponent as ClockIcon } from '../styles/images/clock.svg';
-import { ReactComponent as PollingIcon } from '../styles/images/polling_center.svg';
-import { ReactComponent as ClockForwardIcon } from '../styles/images/clock_forward.svg';
-import { ReactComponent as QuestionMarkIcon } from '../styles/images/question_mark.svg';
+import SunriseIcon from '../styles/images/sunrise_icon.svg?react';
+import SunsetIcon from '../styles/images/sunset_icon.svg?react';
+import SunnyIcon from '../styles/images/sunny.svg?react';
+import ClockIcon from '../styles/images/clock.svg?react';
+import PollingIcon from '../styles/images/polling_center.svg?react';
+import ClockForwardIcon from '../styles/images/clock_forward.svg?react';
+import QuestionMarkIcon from '../styles/images/question_mark.svg?react';
 
-import {ReactComponent as FullMoonIcon} from '../styles/images/full_moon.svg';
-import {ReactComponent as WaningGibbousIcon} from '../styles/images/waning_gibbous.svg';
-import {ReactComponent as LastQuarterIcon} from '../styles/images/last_quarter.svg';
-import {ReactComponent as WaningCrescentIcon} from '../styles/images/waning_crescent.svg';
-import {ReactComponent as NewMoonIcon} from '../styles/images/new_moon.svg';
-import {ReactComponent as WaxingCrescentIcon} from '../styles/images/waxing_crescent.svg';
-import {ReactComponent as FirstQuarterIcon} from '../styles/images/first_quarter.svg';
-import {ReactComponent as WaxingGibbousIcon} from '../styles/images/waxing_gibbous.svg';
-import {ReactComponent as MoonriseIcon} from '../styles/images/moonrise.svg';
-import {ReactComponent as MoonsetIcon} from '../styles/images/moonset.svg';
-import {ReactComponent as MoonNoonIcon} from '../styles/images/moon_noon.svg';
+import FullMoonIcon from '../styles/images/full_moon.svg?react';
+import WaningGibbousIcon from '../styles/images/waning_gibbous.svg?react';
+import LastQuarterIcon from '../styles/images/last_quarter.svg?react';
+import WaningCrescentIcon from '../styles/images/waning_crescent.svg?react';
+import NewMoonIcon from '../styles/images/new_moon.svg?react';
+import WaxingCrescentIcon from '../styles/images/waxing_crescent.svg?react';
+import FirstQuarterIcon from '../styles/images/first_quarter.svg?react';
+import WaxingGibbousIcon from '../styles/images/waxing_gibbous.svg?react';
+import MoonriseIcon from '../styles/images/moonrise.svg?react';
+import MoonsetIcon from '../styles/images/moonset.svg?react';
+import MoonNoonIcon from '../styles/images/moon_noon.svg?react';
 
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 const Sidebar = ({ 
     mapStatus,
@@ -248,7 +248,7 @@ const Sidebar = ({
                     id="datetime-input-sentinel"
                     name="datetime-input"
                     required
-                    value={moment(sentinelDate).format("YYYY-MM-DDTHH:mm:ss")}
+                    value={dayjs(sentinelDate).format("YYYY-MM-DDTHH:mm:ss")}
                     onChange={e => {
                         console.log("Sentinel datetime changed: " + e.target.value);
                         // if it was cleared, or if the date is invalid, then use the current time
@@ -272,7 +272,7 @@ const Sidebar = ({
                     id="datetime-input"
                     name="datetime-input"
                     required
-                    value={moment(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
+                    value={dayjs(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
                     onChange={e => {
                         // if it was cleared, or if the date is invalid, then don't update the map datetime
                         if (e.target.value === "") return;
@@ -950,6 +950,9 @@ const Sidebar = ({
                                     <span>Show cell antennas (information may not be accurate): </span>
                                     <input type="checkbox" checked={settings["showUls"]} onChange={e => updateSettings("showUls", e.target.checked)} />
                                     <br /><br />
+                                    {/* <span>FAA/FCC Tower Height Filter</span>
+                                    <input type="range" value={towerHeightFilter} min="5" max="240" onChange={e => setIsoMinutesLive(e.target.value)} />
+                                    <br /><br /> */}
                                     <span>Isochrone minutes (how far to show the isochrone): </span>
                                     <input type="range" value={isoMinutesLive} min="5" max="240" onChange={e => setIsoMinutesLive(e.target.value)} />
                                     <span> {isoMinutesLive} minutes</span>

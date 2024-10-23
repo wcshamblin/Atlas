@@ -1,7 +1,7 @@
 import { accessToken } from "mapbox-gl";
 import { callExternalApi } from "./external-api.service";
 
-const apiServerUrl = process.env.REACT_APP_API_SERVER_URL;
+const apiServerUrl = import.meta.env.VITE_APP_API_SERVER_URL;
 
 export const getPublicResource = async () => {
   const config = {

@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+      // type checking
+      "strict": false, // ideally should be on for better code quality
+      "noImplicitAny": false, // ideally this should be on for better code quality
+      "useUnknownInCatchVariables": false,
+      // modules
+      "module": "esnext",
+      "moduleResolution": "bundler",
+      "resolveJsonModule": true,
+      "baseUrl": "./src",
+      "rootDirs": ["./"],
+      "types": [
+        "vite/client",
+        "vite-plugin-svgr/client",
+      ],
+      // emit
+      "noEmit": true,
+      "sourceMap": false,
+      // js support
+      "allowJs": true,
+      "checkJs": true,
+      // interop
+      "esModuleInterop": true,
+      "isolatedModules": true,
+      "verbatimModuleSyntax": true,
+      "allowSyntheticDefaultImports": true,
+      "forceConsistentCasingInFileNames": true,
+      // env
+      "target": "esnext",
+      "jsx": "react-jsx",
+      "experimentalDecorators": true,
+      "useDefineForClassFields": true,
+      // completeness
+      "skipLibCheck": false,
+    },
+    "include": ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.mts", "./src/**/*.js", "./src/**/*.jsx", "./src/**/*.mjs"],
+    "exclude": ["**/node_modules/*"]
+  }
