@@ -879,20 +879,20 @@ const Sidebar = ({
     return expanded ? (
         <div id="sidebar">
             <div id="sidebar-header">
-                <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faCloudSun} class="sidebar-link-button" onClick={e => setSelectedPart('weather')} />
+                <div className="sidebar-link">
+                    <FontAwesomeIcon icon={faCloudSun} className="sidebar-link-button" onClick={e => setSelectedPart('weather')} />
                 </div>
-                <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faLayerGroup} class="sidebar-link-button" onClick={e => setSelectedPart('layers')} />
+                <div className="sidebar-link">
+                    <FontAwesomeIcon icon={faLayerGroup} className="sidebar-link-button" onClick={e => setSelectedPart('layers')} />
                 </div>
-                <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faMap} class="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
+                <div className="sidebar-link">
+                    <FontAwesomeIcon icon={faMap} className="sidebar-link-button" onClick={e => setSelectedPart('customMaps')} />
                 </div>
-                <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faGear} class="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
+                <div className="sidebar-link">
+                    <FontAwesomeIcon icon={faGear} className="sidebar-link-button" onClick={e => setSelectedPart('settings')} />
                 </div>
-                <div class="sidebar-link">
-                    <FontAwesomeIcon icon={faBars} class="sidebar-link-button" onClick={e => setDisplaySidebar(false)} />
+                <div className="sidebar-link">
+                    <FontAwesomeIcon icon={faBars} className="sidebar-link-button" onClick={e => setDisplaySidebar(false)} />
                 </div>
             </div>
 
@@ -975,6 +975,6 @@ const Sidebar = ({
                 })()}
             </div>
         </div>
-    ) : <FontAwesomeIcon icon={faBars} class="sidebar-link-button sidebar-hidden" onClick={e => setDisplaySidebar(true)} />
+    ) : <FontAwesomeIcon icon={faBars} className="sidebar-link-button sidebar-hidden" onClick={e => setDisplaySidebar(true)} />
 };
 export default Sidebar;
