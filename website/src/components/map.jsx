@@ -1,13 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
-import Sidebar from './sidebar';
+import Sidebar from './Sidebar';
 
 import mapboxgl from 'mapbox-gl';
 
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
+
+// local geojson files
 import long_lines from '@assets/long-lines/long-lines.geojson?url';
 import flyghinder from '@assets/flyghinder/flyghinder.geojson?url';
 import flyghinder_polygons from '@assets/flyghinder/flyghinder_polygons.geojson?url';
@@ -53,7 +55,7 @@ import {
 import {useAuth0} from "@auth0/auth0-react";
 
 import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
-import Modal from './modal';
+import Modal from './Modal';
 
 // mapboxgl.workerClass = MapboxGLWorker;
 

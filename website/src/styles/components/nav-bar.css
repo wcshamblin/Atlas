@@ -55,6 +55,24 @@
   justify-content: flex-end;
 }
 
+.nav-bar__tabs > a {
+    animation: fadeIn 2s;
+}
+
+.nav-bar__tabs > div {
+    animation: fadeIn 2s;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 .nav-bar__tab {
   display: flex;
   flex-direction: row;
@@ -92,7 +110,6 @@
 
 .nav-bar__buttons {
   display: flex;
-  margin-left: 24px;
 }
 
 @media only screen and (max-width: 640px) and (hover: none) {

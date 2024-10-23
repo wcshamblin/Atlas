@@ -1,9 +1,7 @@
-import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
-import { CodeSnippet } from "../components/code-snippet";
-import { PageLayout } from "../components/page-layout";
+import { useAuth0 } from "@auth0/auth0-react";
 
-export const ProfilePage = () => {
+export const Profile = () => {
   const { user } = useAuth0();
 
   if (!user) {
@@ -11,7 +9,6 @@ export const ProfilePage = () => {
   }
 
   return (
-    <PageLayout>
       <div className="content-layout">
         <div className="content__body">
           <div className="profile-grid">
@@ -27,14 +24,17 @@ export const ProfilePage = () => {
               </div>
             </div>
             <div className="profile__details">
-              <CodeSnippet
-                title="Decoded ID Token"
-                code={JSON.stringify(user, null, 2)}
-              />
+              <div className="code-snippet">
+                <span className="code-snippet__title">Decoded ID Token</span>
+                <div className="code-snippet__container">
+                  <div className="code-snippet__wrapper">
+                    <pre className="code-snippet__body">{JSON.stringify(user, null, 2)}</pre>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </PageLayout>
   );
 };

@@ -1,35 +1,40 @@
-import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { PageLoader } from "./components/page-loader";
-import { AuthenticationGuard } from "./components/authentication-guard";
-import { CallbackPage } from "./pages/callback-page";
-import { HomePage } from "./pages/home-page";
-import { NotFoundPage } from "./pages/not-found-page";
-import { ProfilePage } from "./pages/profile-page";
-import { MapPage} from "./pages/map-page";
+import { AuthenticationGuard } from "./components/AuthenticationGuard";
+import { CallbackPage } from "./components/CallbackPage";
+import { HeroBanner } from "./components/HeroBanner";
+import { Profile } from "./components/Profile";
+import { NavBar } from "./components/NavBar";
+import { MobileNavBar } from "./components/MobileNavBar";
+import Map from './components/Map';
 
 export const App = () => {
-  const { isLoading } = useAuth0();
-
-  if (isLoading) {
-    return (
-      <div className="page-layout">
-        <PageLoader />
-      </div>
-    );
-  }
-
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route
-        path="/profile"
-        element={<AuthenticationGuard component={ProfilePage} />}
-      />
-        <Route path="/map" element={<MapPage />} />
-      <Route path="/callback" element={<CallbackPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <div className="page-layout">
+      <NavBar /> 
+      <MobileNavBar />
+      <div className="page-layout__content">
+        <Routes>
+          <Route path="/" element={<HeroBanner />} />
+          <Route
+            path="/profile"
+            element={<AuthenticationGuard Component={Profile} />}
+          />
+          <Route
+            path="/map"
+            element={<AuthenticationGuard Component={Map} eulaRequired />}
+          />
+          <Route path="/callback" element={<CallbackPage />} />
+          <Route path="*" element={
+            <div className="content-layout">
+              <h1 id="page-title" className="content__title">
+                Not Found
+              </h1>
+            </div>}
+          />
+        </Routes>
+      </div>
+      {/*<PageFooter />*/}
+    </div>
   );
 };

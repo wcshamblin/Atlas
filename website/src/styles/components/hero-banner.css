@@ -14,6 +14,17 @@
 
   margin: 0 auto;
   padding: 3.2rem 6.4rem;
+  animation: fadeIn 1.5s;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .hero-banner--yellow-mandarine {

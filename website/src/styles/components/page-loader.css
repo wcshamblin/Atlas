@@ -7,6 +7,15 @@
   animation: spin 2s infinite linear;
 }
 
+.navbar-loader {
+  height: 3rem;
+  width: 3rem;
+
+  right: 0;
+
+  animation: spin 2s infinite linear;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

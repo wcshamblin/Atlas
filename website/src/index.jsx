@@ -1,8 +1,8 @@
 import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { App } from "./app";
-import { Auth0ProviderWithNavigate } from "./auth0-provider-with-navigate";
+import { App } from "./App";
+import { Auth0ProviderWithNavigate } from "./providers/Auth0ProviderWithNavigate";
 import "./styles/styles.css";
 
 const container = document.getElementById("root");

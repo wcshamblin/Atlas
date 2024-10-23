@@ -14,11 +14,6 @@ export default defineConfig({
     },
     css: {
         devSourcemap: true,
-        preprocessorOptions: {
-            scss: {
-                api: "modern-compiler"
-            }
-        }
     },
     resolve: {
         alias: [

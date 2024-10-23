@@ -1,15 +1,13 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
-import { NavBar } from "../components/navigation/desktop/nav-bar";
-import { MobileNavBar } from "../components/navigation/mobile/mobile-nav-bar";
-import { PageLayout } from "../components/page-layout";
+import { NavBar } from "./NavBar";
+import { MobileNavBar } from "./MobileNavBar";
 
 export const CallbackPage = () => {
   const { error } = useAuth0();
 
   if (error) {
     return (
-      <PageLayout>
         <div className="content-layout">
           <h1 id="page-title" className="content__title">
             Error
@@ -20,7 +18,6 @@ export const CallbackPage = () => {
             </p>
           </div>
         </div>
-      </PageLayout>
     );
   }
 
