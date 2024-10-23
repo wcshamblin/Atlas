@@ -8,6 +8,12 @@ import mapboxgl from 'mapbox-gl';
 // search control @mapbox/search-js-react
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import ShadeMap from 'mapbox-gl-shadow-simulator';
+import long_lines from '@assets/long-lines/long-lines.geojson?url';
+import flyghinder from '@assets/flyghinder/flyghinder.geojson?url';
+import flyghinder_polygons from '@assets/flyghinder/flyghinder_polygons.geojson?url';
+import germany_tall_structures from '@assets/germany_tall_structures/germany_tall_structures.geojson?url';
+import germany_tall_structures_polygons from '@assets/germany_tall_structures/germany_tall_structures_polygons.geojson?url';
+import nrhp from '@assets/nrhp/nrhp.geojson?url';
 
 // css
 import '../styles/components/map.css';
@@ -490,10 +496,9 @@ function Map() {
         });
 
         // add long lines 
-        // let long_lines = require('./long-lines.geojson');
         mapbox.current.addSource('Long Lines', {
             'type': 'geojson',
-            'data': './long-lines.geojson'
+            'data': long_lines
         });
 
         mapbox.current.addLayer({
@@ -507,10 +512,9 @@ function Map() {
         });
 
         // add FLYGHINDER
-        // let flyghinder = require('./flyghinder.geojson');
         mapbox.current.addSource('FLYGHINDER 2023', {
             'type': 'geojson',
-            'data': './flyghinder.geojson'
+            'data': flyghinder
         });
 
         mapbox.current.addLayer({
@@ -524,10 +528,9 @@ function Map() {
         });
         
         // add FLYGHINDER extrusions
-        // let flyghinder_extrusions = require('./flyghinder_polygons.geojson');
         mapbox.current.addSource('FLYGHINDER 2023 Extrusions', {
             'type': 'geojson',
-            'data': './flyghinder_polygons.geojson'
+            'data': flyghinder_polygons
         });
 
         mapbox.current.addLayer({
@@ -544,10 +547,9 @@ function Map() {
         });
 
         // add germany tallest objects
-        // let germany_tallest = require('./germany_tall_structures.geojson');
         mapbox.current.addSource('Germany Tall Structures', {
             'type': 'geojson',
-            'data': './germany_tall_structures.geojson'
+            'data': germany_tall_structures
         });
 
         mapbox.current.addLayer({
@@ -561,10 +563,9 @@ function Map() {
         });
 
         // add germany tallest objects extrusions
-        // let germany_tallest_extrusions = require('./germany_tall_structures_polygons.geojson');
         mapbox.current.addSource('Germany Tall Structures Extrusions', {
             'type': 'geojson',
-            'data': './germany_tall_structures_polygons.geojson'
+            'data': germany_tall_structures_polygons
         });
 
         mapbox.current.addLayer({
@@ -581,10 +582,9 @@ function Map() {
         });
 
         // add National Register Of Historic Places (NRHP)
-        // let nrhp = require('./nrhp.geojson');
         mapbox.current.addSource('National Register of Historic Places', {
             'type': 'geojson',
-            'data': './nrhp.geojson'
+            'data': nrhp
         });
 
         mapbox.current.addLayer({

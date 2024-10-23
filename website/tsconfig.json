@@ -14,6 +14,11 @@
         "vite/client",
         "vite-plugin-svgr/client",
       ],
+      "paths": {
+        "@assets/*": [
+          "../../assets/*"
+        ]
+      },
       // emit
       "noEmit": true,
       "sourceMap": false,
