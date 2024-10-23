@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
-import Sidebar from './Sidebar';
+import Sidebar from './sidebar/Sidebar';
 
 import mapboxgl from 'mapbox-gl';
 
@@ -16,6 +16,9 @@ import flyghinder_polygons from '@assets/flyghinder/flyghinder_polygons.geojson?
 import germany_tall_structures from '@assets/germany_tall_structures/germany_tall_structures.geojson?url';
 import germany_tall_structures_polygons from '@assets/germany_tall_structures/germany_tall_structures_polygons.geojson?url';
 import nrhp from '@assets/nrhp/nrhp.geojson?url';
+
+// helpers
+import { getWeatherInfo } from 'helpers/weather-helper';
 
 // css
 import '../styles/components/map.css';
@@ -128,8 +131,6 @@ function Map() {
     const [customMapPopupProperties, setCustomMapPopupProperties] = useState(null);
 
     const [astronomyInfo, setAstronomyInfo] = useState(null);
-    const [sunburstInfo, setSunburstInfo] = useState(null);
-    const [sunburstToken, setSunburstToken] = useState(null);
     const [showShadeMap, setShowShadeMap] = useState(false);
 
     const [allTowersPoints, setAllTowersPoints] = useState(null);
@@ -2474,25 +2475,6 @@ function Map() {
         }
     }, [displaySidebar, displayStreetView, openModal]);
 
-    // sunburst home info - update on polling position change or map datetime change
-    useEffect(() => {
-        console.log("useEffect for sunburst home info: ", pollingPosition, mapDatetime, sunburstToken);
-        if (!mapbox.current) return; // wait for map to initialize
-
-        if (!sunburstToken) {
-            retrieveSunburstToken().then(() => {
-                console.log("Sunburst token retrieved: ", sunburstToken);
-            });
-            return;
-        }
-
-        if (!pollingPosition.length) return;
-
-        getSunburstData(pollingPosition[1], pollingPosition[0], mapDatetime.toISOString(), sunburstToken).then((data) => {
-            setSunburstInfo(data);
-        });
-    }, [pollingPosition, mapDatetime, sunburstToken]);
-
     useEffect(() => {
         if (!mapbox.current) return; // wait for map to initialize
 
@@ -2517,60 +2499,11 @@ function Map() {
         });
     }
 
-    async function retrieveSunburstToken() {
-        const query = await fetch(
-            `https://sunburst.sunsetwx.com/v1/login`,
-            {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": `Basic ${btoa(`${import.meta.env.VITE_SUNBURST_API_EMAIL}:${import.meta.env.VITE_APP_SUNBURST_API_PASSWORD}`)}`
-                },
-                body: "grant_type=password&type=access"
-            });
-
-        const data = await query.json();
-        setSunburstToken(data.access_token);
-    }
-
-    // sunburst API fetch
-    const getSunburstData = async (lat, lng, after, token) => {
-        const query = await fetch(
-            `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}&after=${after}`,
-            {
-                method: 'GET',
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        );
-
-        const data = await query.json();
-        console.log("Sunburst retrieved data: ", data);
-        return data;
-    }
-
     const getCustomMapPoints = async (mapID) => {
         // get access token
         const accessToken = await getAccessTokenSilently();
 
         return await retrieveCustomMapPoints(accessToken, mapID);
-    }
-
-
-    const getWeatherInfo = async (lat, lng, datetime) => {
-        let weatherToken = import.meta.env.VITE_APP_WEATHER_API_TOKEN;
-
-        let query = await fetch(
-            `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,
-            {
-                method: 'GET',
-            }
-        );
-
-        let data = await query.json();
-        console.log("Weather retrieved data: ", data);
-        return data;
     }
 
     const setLayoutProperty = (layer, name, value) => {
@@ -2591,17 +2524,13 @@ function Map() {
         <>
             <div id="map" ref={mapRef}></div>
             <Sidebar 
-                mapStatus={!loading} 
-                expanded={displaySidebar && mapbox.current} 
-                setDisplaySidebar={setDisplaySidebar} 
-                setLayoutProperty={setLayoutProperty} 
-                getLayoutProperty={getLayoutProperty}
-                showShadeMap={showShadeMap} 
-                setShowShadeMap={setShowShadeMap} 
-                showIsochrone={showIso} 
-                setShowIsochrone={setShowIso} 
+                mapStatus={!loading}
+                expanded={displaySidebar && mapbox.current}
+                setDisplaySidebar={setDisplaySidebar}
+                setLayoutProperty={setLayoutProperty}
+                setShowShadeMap={setShowShadeMap}
+                setShowIsochrone={setShowIso}
                 customMapsData={customMaps}
-                sunburstInfo={sunburstInfo}
                 flyTo={flyTo}
                 map={mapbox.current}
                 pollingPosition={pollingPosition}
