@@ -4,7 +4,6 @@ import viteTsconfigPaths from 'vite-tsconfig-paths'
 import svgr from 'vite-plugin-svgr'
 import eslint from 'vite-plugin-eslint'
 import path from 'path'
-import resolve from '@rollup/plugin-node-resolve'
 
 export default defineConfig({
     base: '/',
