@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { retrieveEulaAcceptance, acceptEula } from "../services/message.service";
 
 export const AuthenticationGuard = ({ Component, eulaRequired=false }) => {
+  const navigate = useNavigate();
   const { isAuthenticated, getAccessTokenSilently, isLoading } = useAuth0();
   const [eulaLoading, setEulaLoading] = useState(true);
   const [eulaAccepted, setEulaAccepted] = useState(false);
@@ -26,14 +27,19 @@ export const AuthenticationGuard = ({ Component, eulaRequired=false }) => {
   }
 
   useEffect(() => {
-    checkEulaAcceptance();
-  }, [])
+    if(!isLoading) {
+      if(isAuthenticated) {
+        checkEulaAcceptance();
+      } else {
+        navigate("/");
+      }
+    }
+  }, [isLoading]);
 
   return (
     isLoading || (eulaRequired && eulaLoading) ? <img className="loader" src={"https://cdn.auth0.com/blog/hello-auth0/loader.svg"} alt="Loading..." />
-      : !isAuthenticated ? <Navigate to="/" />
-        : !eulaRequired ? <Component />
-          : eulaAccepted ? <Component /> : <Eula handleAcceptEula={handleAcceptEula} />
+      : !eulaRequired ? <Component />
+        : eulaAccepted ? <Component /> : <Eula handleAcceptEula={handleAcceptEula} />
   );
 };
 

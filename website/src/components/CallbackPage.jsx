@@ -22,10 +22,6 @@ export const CallbackPage = () => {
   }
 
   return (
-    <div className="page-layout">
-      <NavBar />
-      <MobileNavBar />
-      <div className="page-layout__content" />
-    </div>
+    <span>Success</span>
   );
 };

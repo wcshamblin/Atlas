@@ -34,7 +34,6 @@ export const App = () => {
           />
         </Routes>
       </div>
-      {/*<PageFooter />*/}
     </div>
   );
 };
