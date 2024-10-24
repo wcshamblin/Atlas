@@ -7,6 +7,7 @@ import { Profile } from "./components/Profile";
 import { NavBar } from "./components/NavBar";
 import { MobileNavBar } from "./components/MobileNavBar";
 import Map from './components/Map';
+import MapPage from './components/MapPage';
 
 export const App = () => {
   return (
@@ -22,7 +23,7 @@ export const App = () => {
           />
           <Route
             path="/map"
-            element={<AuthenticationGuard Component={Map} eulaRequired />}
+            element={<AuthenticationGuard Component={MapPage} eulaRequired />}
           />
           <Route path="/callback" element={<CallbackPage />} />
           <Route path="*" element={

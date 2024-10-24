@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { Auth0ProviderWithNavigate } from "./providers/Auth0ProviderWithNavigate";
 import SettingsProvider from "providers/SettingsProvider";
+import { MapProvider } from "react-map-gl";
 import "./styles/styles.css";
 
 const container = document.getElementById("root");
@@ -12,11 +13,13 @@ const root = createRoot(container);
 root.render(
   <StrictMode>
     <BrowserRouter>
+      <MapProvider>
       <SettingsProvider>
-        <Auth0ProviderWithNavigate>
-          <App />
-        </Auth0ProviderWithNavigate>
-      </SettingsProvider>
+          <Auth0ProviderWithNavigate>
+            <App />
+          </Auth0ProviderWithNavigate>
+        </SettingsProvider>
+      </MapProvider>
     </BrowserRouter>
   </StrictMode>
 );
