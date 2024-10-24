@@ -43,8 +43,6 @@ const Sidebar = ({
     setModalSelectedCustomMapId, 
     setModalSelectedCustomMapPointId, 
     displayLabels, 
-    settings, 
-    updateSettings,
     pointFilters,
     updatePointFilters,
 }) => {
@@ -108,10 +106,7 @@ const Sidebar = ({
                                 updatePointFilters={updatePointFilters}
                             />
                         case SidebarTab.Settings:
-                            return <SettingsTab
-                                settings={settings}
-                                updateSettings={updateSettings}
-                            />
+                            return <SettingsTab />
                         default:
                             return ""
                     }

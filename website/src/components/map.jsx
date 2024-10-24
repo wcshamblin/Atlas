@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom/client';
 
 import Sidebar from './sidebar/Sidebar';
@@ -59,6 +59,7 @@ import {useAuth0} from "@auth0/auth0-react";
 
 import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
 import Modal from './Modal';
+import { SettingsContext } from 'providers/SettingsProvider';
 
 // mapboxgl.workerClass = MapboxGLWorker;
 
@@ -96,6 +97,7 @@ window.mobileAndTabletCheck = function() {
 
 function Map() {
     const { getAccessTokenSilently } = useAuth0();
+    const settings = useContext(SettingsContext);
 
     const mapRef = useRef(null);
     const mapbox = useRef(null);
@@ -156,9 +158,6 @@ function Map() {
 
     const [pointFilters, setPointFilters] = useState({});
     const [newPointMap, setNewPointMap] = useState(null);
-
-    const settingsRef = useRef({});
-    const [settings, setSettings] = useState({});
 
     const towerRenderZoomLevel = 10.5;
     const towerExtrusionRenderZoomLevel = 11.5;
@@ -841,20 +840,7 @@ function Map() {
         });
 
         mapbox.current.on('style.load', () => {
-            let darkMode = false;
-            if (localStorage.getItem('settings')) {
-                const settings = JSON.parse(localStorage.getItem('settings'));
-                if (settings.darkMode) {
-                    darkMode = true;
-                }
-            } else {
-                // no settings so just used time based dark mode
-                if (new Date().getHours() > 18 || new Date().getHours() < 6) {
-                    darkMode = true;
-                }
-            }
-
-            if (darkMode) {
+            if (settings.darkMode) {
                 mapbox.current.setFog(
                     {
                         'range': [5, 6],
@@ -1254,19 +1240,6 @@ function Map() {
             showUserHeading: true
         }), 'top-left');
     }, [mapRef]);
-
-    useEffect(() => {
-        settingsRef.current = settings;
-        if (Object.keys(settings).length > 0) {
-            localStorage.setItem('settings', JSON.stringify(settings));
-        }
-    }, [settings]);
-
-    useEffect(() => {
-        if (localStorage.getItem('settings'))
-            setSettings(JSON.parse(localStorage.getItem('settings')));
-        else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving", "darkMode": false});
-    }, []);
 
     const renderCoordinatesSegment = (coordinates) => {
         console.log("rendering coordinates segment with coordinates: ", coordinates);
@@ -1899,7 +1872,7 @@ function Map() {
 
     const updateAntennas = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
-        await retrieveAntennas(accessToken, lat, lng, antennaSearchRadius, settingsRef.current["showUls"]).then(
+        await retrieveAntennas(accessToken, lat, lng, antennaSearchRadius, settings.showUls).then(
             (response) => {
                 if (response.data)
                     setAntennaPoints(response.data.antennas);
@@ -1915,11 +1888,6 @@ function Map() {
                     setObstaclePoints(response.data.obstacles);
             }
         )
-    }
-
-    const updateSettings = (settingName, settingValue) => {
-        settings[settingName] = settingValue;
-        setSettings({ ...settings });
     }
 
     // show right click popup useeffect
@@ -2016,6 +1984,7 @@ function Map() {
 
     // isochrone API fetch
     useEffect(() => {
+        console.log("here for isochrone");
         console.log("useEffect for isochrone");
         if (!mapbox.current) return; // wait for map to initialize
         // if homemarker position is not set (length is less than 2), then don't do anything
@@ -2042,7 +2011,7 @@ function Map() {
             mapbox.current.setLayoutProperty('Isochrone', 'visibility', 'visible');
             mapbox.current.getSource('Isochrone').setData(data);
         });
-    }, [homeMarkerPosition, settings["isoMinutes"], settings["isoProfile"], showIso]);
+    }, [homeMarkerPosition, settings.isoMinutes, settings.isoProfile, showIso]);
 
 
 
@@ -2050,7 +2019,7 @@ function Map() {
     async function getIso() {
 
         const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings["isoMinutes"] * 60}&travelMode=${settings["isoProfile"]}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`,
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings.isoMinutes * 60}&travelMode=${settings.isoProfile}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`,
             {
                 method: 'GET',
                 headers: {
@@ -2545,8 +2514,6 @@ function Map() {
                 setModalSelectedCustomMapId={setModalSelectedCustomMapId} 
                 setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId} 
                 displayLabels={displayLabels} 
-                settings={settings} 
-                updateSettings={updateSettings}
                 pointFilters={pointFilters}
                 updatePointFilters={updatePointFilters}
             />
