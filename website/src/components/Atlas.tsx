@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, createContext, type ReactElement, type Ref, type RefObject, useContext } from 'react';
+import React, { useMemo, useState, useEffect, useRef, createContext, type ReactElement, type Ref, type RefObject, useContext } from 'react';
 // css
 import 'styles/components/map.css';
 import 'styles/components/sidebar.css';
@@ -9,21 +9,24 @@ import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
 
-import Map, { type MapRef, useMap } from 'react-map-gl/maplibre';
+import Map, { useMap, type ViewState } from 'react-map-gl/maplibre';
 import Sidebar from 'components/sidebar/NewSidebar';
 import { AtlasContext } from 'providers/AtlasContext';
 import type { StyleSpecification } from 'maplibre-gl';
 
 import * as utils from 'helpers/data-utils';
-import { SettingsContext } from 'providers/SettingsProvider';
+import { SettingsContext } from 'providers/SettingsContext';
 
 const Atlas = () => {
     const { atlas } = useMap();
     const { hideLabels } = useContext(SettingsContext);
-    const [viewState, setViewState] = useState({
+    const [viewState, setViewState] = useState<ViewState>({
         longitude: -100,
         latitude: 40,
-        zoom: 3.5
+        zoom: 3.5,
+        bearing: 0,
+        pitch: 0,
+        padding: { top: 0, bottom: 0, left: 0, right: 0}
     });
     const [displaySidebar, setDisplaySidebar] = useState(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -34,8 +37,12 @@ const Atlas = () => {
     //     return layerr;
     // }, [selectedBaseLayer]);
 
-    const [baseStyle, setBaseStyle] = useState<StyleSpecification>(utils.getDefaultMapStyle());
-    const memoizedBaseStyle: StyleSpecification = useMemo(() => baseStyle, [baseStyle]);
+    const [baseStyle, setBaseStyle] = useState<string>(utils.getDefaultMapStyle());
+    const memoizedBaseStyle: StyleSpecification = useMemo(() => {
+        // whenever baseStyle or hideLabels updates, regenerate the stylespecification
+        localStorage.setItem('base-style', baseStyle);
+        return utils.getUpdatedMapStyle(baseStyle, hideLabels);
+    }, [baseStyle, hideLabels]);
 
     const [selectedRegularLayers, setSelectedRegularLayers] = useState<string[]>([]);
     const [selectedRegularCategories, setSelectedRegularCategories] = useState<[string, string[]][]>([]);
@@ -57,27 +64,28 @@ const Atlas = () => {
         }
     }, [displaySidebar]);
 
-    const updateBaseStyle = (styleId: string) => {
-        // setting to show labels or not (hide labels for maps without them)
-        // if(hideLabels)
-        setBaseStyle(utils.updateMapStyle(styleId));
-        // setBaseStyle(utils.defaultMapStyle2());
-        // setSelectedBaseLayer(layerId);
-        localStorage.setItem('base-style', styleId);
+    // const updateBaseStyle = (styleId: string) => {
+    //     setting to show labels or not (hide labels for maps without them)
+    //     if(hideLabels)
+    //     setBaseStyle(styleId);
+    //     localStorage.setItem('base-style', styleId);
+    //     setBaseStyle(utils.getUpdatedMapStyle(styleId, hideLabels));
+    //     setBaseStyle(utils.defaultMapStyle2());
+    //     setSelectedBaseLayer(layerId);
 
-        // google and osm have labels by default so they need to be hidden on the main mapbox layer
-        // use this if we switch to the new mapbox standard to fix most issues: https://docs.mapbox.com/mapbox-gl-js/guides/styles/#mapbox-standard-1\
-        // if we dont switch be aware that 3d buildings are currently hidden for google and osm
-        // if (['Google Hybrid', 'OpenStreetMap'].includes(layerId)) {
-        //     if (atlasRef.current.getStyle().name !== "Mapbox Satellite") {
-        //         atlasRef.current.getMap().setStyle(sourceUtils.noLabelsMapStyle);
-        //     }
-        // } else {
-        //     if (atlasRef.current.getStyle().name !== "Mapbox Dark") {
-        //         atlasRef.current.getMap().setStyle(sourceUtils.defaultMapStyle);
-        //     }
-        // }
-    }
+    //     google and osm have labels by default so they need to be hidden on the main mapbox layer
+    //     use this if we switch to the new mapbox standard to fix most issues: https://docs.mapbox.com/mapbox-gl-js/guides/styles/#mapbox-standard-1\
+    //     if we dont switch be aware that 3d buildings are currently hidden for google and osm
+    //     if (['Google Hybrid', 'OpenStreetMap'].includes(layerId)) {
+    //         if (atlasRef.current.getStyle().name !== "Mapbox Satellite") {
+    //             atlasRef.current.getMap().setStyle(sourceUtils.noLabelsMapStyle);
+    //         }
+    //     } else {
+    //         if (atlasRef.current.getStyle().name !== "Mapbox Dark") {
+    //             atlasRef.current.getMap().setStyle(sourceUtils.defaultMapStyle);
+    //         }
+    //     }
+    // }
 
     const toggleRegularLayers = (layerIds: string[], partlySelected?: boolean) => {
         let newLayers = [...selectedRegularLayers];
@@ -131,33 +139,31 @@ const Atlas = () => {
         setIsLoading(false);
     } 
 
-    const onIdle = () => {
+    const testLoadFunc = () => {
         // atlas.setConfigProperty('basemap', 'showPlaceLabels', true)
-        setIsLoading(false);
+        // setIsLoading(false);
     }
 
     return (
         <AtlasContext.Provider
             value={{
-                baseStyle,
-                updateBaseStyle,
+                baseStyleSpecification: memoizedBaseStyle,
+                setBaseStyle,
                 selectedRegularLayers,
                 toggleRegularLayers,
             }}
         >
             <Map
                 id='atlas'
-                // @ts-expect-error
-                projection={"globe"}
-                accessToken={import.meta.env.VITE_APP_MAPBOX_API_KEY}
                 {...viewState}
                 onMove={evt => setViewState(evt.viewState)}
                 // needs to have a transition for the opacity
-                style={{ width: '100%', height: '91vh', opacity: '100%' }}
+                style={{ width: '100%', height: '90vh', opacity: '100%' }}
                 mapStyle={memoizedBaseStyle}
                 reuseMaps
                 onRender={loadStoredLayers}
                 // onData={loadStoredLayers}
+                onClick={testLoadFunc}
             >
                 {/* {memoizedBaseLayer !== undefined && memoizedBaseLayer} */}
                 {/* {memoizedRegularLayers} */}

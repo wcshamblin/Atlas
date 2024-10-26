@@ -6,7 +6,6 @@ import { HeroBanner } from "components/HeroBanner";
 import { Profile } from "components/Profile";
 import { NavBar } from "components/NavBar";
 import { MobileNavBar } from "components/MobileNavBar";
-import Map from './components/map';
 import Atlas from 'components/Atlas';
 
 export const App = () => {

@@ -13,21 +13,23 @@ import nrhp from '@assets/nrhp/nrhp.geojson?url';
 import cargoLabelsStyle from "@assets/cargo-dark-matter-gl-style.json?raw";
 
 // base style shit
-const stylesWithLabels = ['Google Hybrid', 'OpenStreetMap', 'Mapbox', 'VFR', 'USGS Topo', 'Skoterleder'];
-const defaultMapStyle = "Google Hybrid";
+export const stylesWithLabels = ['Google Hybrid', 'OpenStreetMap', 'Mapbox', 'VFR', 'USGS Topo', 'Skoterleder'];
+export const defaultMapStyle = "Google Hybrid";
 
 export const getDefaultMapStyle = () => {
-    let storedBaseLayer = localStorage.getItem('base-style');
-    if (!storedBaseLayer) {
-        storedBaseLayer = defaultMapStyle;
+    let storedBaseStyle: string = localStorage.getItem('base-style');
+    // if there is no setting or the style is not a valid id then set to the default
+    if (!storedBaseStyle || !(storedBaseStyle in baseStyleDictionary)) {
+        storedBaseStyle = defaultMapStyle;
         localStorage.setItem('base-style', defaultMapStyle);
     }
 
-    return updateMapStyle(storedBaseLayer);
+    return storedBaseStyle;
 }
 
-export const updateMapStyle = (baseStyleId) => {
-    if (stylesWithLabels.includes(baseStyleId)) {
+export const getUpdatedMapStyle = (baseStyleId: string, hideLabels?: boolean) => {
+    // can definitely update this to have more custom source and layer settings if needed
+    if (stylesWithLabels.includes(baseStyleId) || hideLabels) {
         return {
             "version": 8,
             "name": baseStyleId,
@@ -47,6 +49,8 @@ export const updateMapStyle = (baseStyleId) => {
             }]
         }
     } else {
+        // uses a base style from cargo with the labels for the base layers that do not have labels
+        // https://medium.com/@go2garret/free-basemap-tiles-for-maplibre-18374fab60cb
         const labelStyles = JSON.parse(cargoLabelsStyle);
         labelStyles.name = baseStyleId;
         labelStyles.id = baseStyleId;
@@ -144,8 +148,8 @@ export const baseStyleDictionary: Record<string, string[]> = {
     'OpenStreetMap': openStreetMapTiles,
 }
 
-// format of layerid, country
-export const baseLayerCountries: [string, string][] = [
+// format of styleid, country
+export const baseStyleCountries: [string, string][] = [
     ["Google Hybrid", "all"],
     ["Bing Hybrid", "all"],
     ["ESRI", "all"],

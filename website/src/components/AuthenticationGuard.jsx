@@ -10,10 +10,14 @@ export const AuthenticationGuard = ({ Component, eulaRequired=false }) => {
   const [eulaAccepted, setEulaAccepted] = useState(false);
   
   const checkEulaAcceptance = async () => {
+    // temporary code when not having a local API running
+    setEulaAccepted(true);
+    setEulaLoading(false);
+    return;
+
     const accessToken = await getAccessTokenSilently();
     const eulaAccepted = await retrieveEulaAcceptance(accessToken);
     // on for dev
-    setEulaAccepted(true);
     if(eulaAccepted.data)
         setEulaAccepted(eulaAccepted.data.accepted);
     setEulaLoading(false);

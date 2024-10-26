@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import 'styles/components/sidebar.css';
-import { SettingsContext, IsoProfileTypes } from "providers/SettingsProvider";
+import { SettingsContext, IsoProfileTypes } from "providers/SettingsContext";
 
 const SettingsTab = () => {
     const settings = useContext(SettingsContext);
@@ -41,6 +41,9 @@ const SettingsTab = () => {
             <br /><br />
             <span>Dark mode (requires reload!): </span>
             <input type="checkbox" checked={settings.darkMode} onChange={e => settings.setDarkMode(e.target.checked)} />
+            <br /><br />
+            <span>Hide Labels for Satellite Maps</span>
+            <input type="checkbox" checked={settings.hideLabels} onChange={e => settings.setHideLabels(e.target.checked)} />
         </div>
     )
 };

@@ -59,7 +59,6 @@ import {useAuth0} from "@auth0/auth0-react";
 
 import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
 import Modal from './Modal';
-import { SettingsContext } from 'providers/SettingsProvider';
 
 // mapboxgl.workerClass = MapboxGLWorker;
 

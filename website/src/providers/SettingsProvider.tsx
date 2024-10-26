@@ -1,28 +1,8 @@
 import React, { createContext, useState, useRef, useEffect } from 'react';
-
-export enum IsoProfileTypes {
-    Driving = "driving",
-    Walking = "walking",
-    Transit = "transit",
-    Semitruck = "truck",
-};
-
-export interface SettingsContextType {
-    darkMode: boolean;
-    setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
-    showUls: boolean;
-    setShowUls: React.Dispatch<React.SetStateAction<boolean>>;
-    hideLabels: boolean;
-    setHideLabels: React.Dispatch<React.SetStateAction<boolean>>;
-    isoProfile: IsoProfileTypes;
-    setIsoProfile: React.Dispatch<React.SetStateAction<IsoProfileTypes>>;
-    isoMinutes: number;
-    setIsoMinutes: React.Dispatch<React.SetStateAction<Number>>;
-}
-
-export const SettingsContext = createContext<SettingsContextType>(null!);
+import { IsoProfileTypes, SettingsContext } from './SettingsContext';
 
 const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
+    const [settingsLoaded, setSettingsLoaded] = useState<boolean>(false);
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [showUls, setShowUls] = useState<boolean>(false);
     const [hideLabels, setHideLabels] = useState<boolean>(false);
@@ -30,15 +10,17 @@ const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
     const [isoMinutes, setIsoMinutes] = useState<number>(60);
 
     useEffect(() => {
-        let newSettingsObj = {
-            darkMode,
-            showUls,
-            isoProfile,
-            isoMinutes
-        }
-        localStorage.setItem('settings', JSON.stringify(newSettingsObj));
-        
-    }, [darkMode, showUls, isoProfile, isoMinutes]);
+        if(settingsLoaded) {
+            const newSettingsObj = {
+                darkMode,
+                showUls,
+                hideLabels,
+                isoProfile,
+                isoMinutes
+            }
+            localStorage.setItem('settings', JSON.stringify(newSettingsObj));
+        }        
+    }, [darkMode, showUls, hideLabels, isoProfile, isoMinutes]);
 
     useEffect(() => {
         const storageSettings = localStorage.getItem('settings')
@@ -46,9 +28,11 @@ const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
             const settingsObj = JSON.parse(storageSettings);
             setDarkMode(settingsObj.darkMode ?? false);
             setShowUls(settingsObj.showUls ?? false);
+            setHideLabels(settingsObj.hideLabels ?? false);
             setIsoProfile(settingsObj.isoProfile ?? IsoProfileTypes.Driving);
             setIsoMinutes(settingsObj.isoMinutes ?? 60);
         }
+        setSettingsLoaded(true);
     }, []);
 
     return (

@@ -277,7 +277,7 @@
     display: inline-block;
 }
 
-#base-layer-container {
+#base-style-container {
     margin-left: 10px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -287,7 +287,7 @@
     margin-bottom: 80px;
 }
 
-.base-layer-item {
+.base-style-item {
     aspect-ratio: 1/1;
     color: black;
     width: 120px;
@@ -301,45 +301,45 @@
     border: 2px solid black;
 }
 
-.base-layer-selected {
+.base-style-selected {
     border: 2px solid rgb(0, 110, 200);
 }
 
-.base-layer-img {
+.base-style-img {
     width: 60px;
     height: 60px;
     border-radius: 10px;
 }
 
-.base-layer-esri {
+.base-style-esri {
     background-image: url('../images/esri.png');    
 }
 
-.base-layer-googlehybrid {
+.base-style-googlehybrid {
     background-image: url('../images/googlehybrid.png');
 }
 
-.base-layer-binghybrid {
+.base-style-binghybrid {
     background-image: url('../images/binghybrid.png');
 }
 
-.base-layer-openstreetmap {
+.base-style-openstreetmap {
     background-image: url('../images/openstreetmap.png');
 }
 
-.base-layer-naip {
+.base-style-naip {
     background-image: url('../images/naip.png');
 }
 
-.base-layer-vfr {
+.base-style-vfr {
     background-image: url('../images/vfr.png');
 }
 
-.base-layer-maxar {
+.base-style-maxar {
     background-image: url('../images/maxar.png');
 }
 
-.base-layer-usgstopo {
+.base-style-usgstopo {
     background-image: url('../images/usgstopo.png');
 }
 

@@ -8,23 +8,31 @@ type LayersTabProps = unknown;
 
 const LayersTab = (props: LayersTabProps) => {
     // const { atlas } = useMap();
-    const { baseStyle, updateBaseStyle, selectedRegularLayers, toggleRegularLayers } = useContext(AtlasContext);
+    const { baseStyleSpecification, setBaseStyle, selectedRegularLayers, toggleRegularLayers } = useContext(AtlasContext);
     const [selectedCountry, setSelectedCountry] = useState("all");
 
-    const renderBaseLayers = () => {
+    // can use some code like this to generate the pictures for all of the different base styles
+    // const dataUrl = atlas.getMap().getCanvas().toDataURL();
+    // if(imgRef.current) {
+    //     imgRef.current.src = dataUrl;
+    // }
+    //  <img ref={imgRef} width={'500px'} height={'500px'}/>
+    // requires preserveDrawingBuffer on main map which will decrease performance  
+
+    const renderBaseStyle = () => {
         return (
-            <div id="base-layer-container">
+            <div id="base-style-container">
                 {
-                    utils.baseLayerCountries
+                    utils.baseStyleCountries
                         .filter(([,country]) => filterCountry(country))
-                        .map(([layerId,]) => (
+                        .map(([styleId,]) => (
                         <div
-                            key={layerId} 
-                            className={layerId !== baseStyle.name ? "base-layer-item" : "base-layer-selected base-layer-item"} 
-                            onClick={() => updateBaseStyle(layerId)}
+                            key={styleId} 
+                            className={styleId !== baseStyleSpecification.name ? "base-style-item" : "base-style-selected base-style-item"} 
+                            onClick={() => setBaseStyle(styleId)}
                         >
-                            <div className={"base-layer-" + layerId.toLowerCase().replaceAll(" ", "") + " base-layer-img"}></div>
-                            <span>{layerId}</span>
+                                <div className={"base-style-" + styleId.toLowerCase().replaceAll(" ", "") + " base-style-img"}></div>
+                            <span>{styleId}</span>
                         </div>
                     ))
                 }
@@ -98,8 +106,8 @@ const LayersTab = (props: LayersTabProps) => {
                 <option value="usa">United States Only</option>
                 <option value="eu">EU Only</option>
             </select>
-            <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
-            {renderBaseLayers()}
+            <h3 style={{ "marginTop": "15px" }}>Base Style</h3>
+            {renderBaseStyle()}
             <h3>Regular Layers</h3>
             {renderRegularLayers()}
         </div>
