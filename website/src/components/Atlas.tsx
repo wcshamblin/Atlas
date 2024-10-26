@@ -20,14 +20,6 @@ import { SettingsContext } from 'providers/SettingsContext';
 const Atlas = () => {
     const { atlas } = useMap();
     const { hideLabels } = useContext(SettingsContext);
-    const [viewState, setViewState] = useState<ViewState>({
-        longitude: -100,
-        latitude: 40,
-        zoom: 3.5,
-        bearing: 0,
-        pitch: 0,
-        padding: { top: 0, bottom: 0, left: 0, right: 0}
-    });
     const [displaySidebar, setDisplaySidebar] = useState(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     // const [selectedBaseLayer, setSelectedBaseLayer] = useState<string>(null);
@@ -155,8 +147,6 @@ const Atlas = () => {
         >
             <Map
                 id='atlas'
-                {...viewState}
-                onMove={evt => setViewState(evt.viewState)}
                 // needs to have a transition for the opacity
                 style={{ width: '100%', height: '90vh', opacity: '100%' }}
                 mapStyle={memoizedBaseStyle}
