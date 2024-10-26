@@ -10,7 +10,7 @@ import germany_tall_structures from '@assets/germany_tall_structures/germany_tal
 import germany_tall_structures_polygons from '@assets/germany_tall_structures/germany_tall_structures_polygons.geojson?url';
 import nrhp from '@assets/nrhp/nrhp.geojson?url';
 
-import cargoLabelsStyle from "@assets/cargo-dark-matter-gl-style.json?raw";
+import cartoLabelsStyle from "@assets/carto-dark-matter-gl-style.json?raw";
 
 // base style shit
 export const stylesWithLabels = ['Google Hybrid', 'OpenStreetMap', 'Mapbox', 'VFR', 'USGS Topo', 'Skoterleder'];
@@ -34,24 +34,35 @@ export const getUpdatedMapStyle = (baseStyleId: string, hideLabels?: boolean) =>
             "version": 8,
             "name": baseStyleId,
             "id": baseStyleId,
+            // "projection": { "type": "globe" }, for when we update to maplibre v5
+            "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
             "sources": {
                 [baseStyleId]: {
                     "type": "raster",
                     "maxzoom": 20,
                     "tileSize": 256,
                     "tiles": baseStyleDictionary[baseStyleId]
-                }
+                },
+                maptilerTerrain: {
+                    type: 'raster-dem',
+                    url: `https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
+                    tileSize: 256
+                },
             },
             "layers": [{
                 "id": baseStyleId,
                 "type": "raster",
                 "source": baseStyleId
-            }]
+            }],
+            terrain: {
+                source: 'maptilerTerrain',
+                exaggeration: 1
+            },
         }
     } else {
         // uses a base style from cargo with the labels for the base layers that do not have labels
         // https://medium.com/@go2garret/free-basemap-tiles-for-maplibre-18374fab60cb
-        const labelStyles = JSON.parse(cargoLabelsStyle);
+        const labelStyles = JSON.parse(cartoLabelsStyle);
         labelStyles.name = baseStyleId;
         labelStyles.id = baseStyleId;
         labelStyles.sources[baseStyleId] = {
@@ -60,11 +71,20 @@ export const getUpdatedMapStyle = (baseStyleId: string, hideLabels?: boolean) =>
             "tileSize": 256,
             "tiles": baseStyleDictionary[baseStyleId]
         };
+        labelStyles.sources["maptilerTerrain"] = {
+            type: 'raster-dem',
+            url: `https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
+            tileSize: 256
+        };
         labelStyles.layers.unshift({
             "id": baseStyleId,
             "type": "raster",
             "source": baseStyleId
         });
+        labelStyles.terrain = {
+            source: 'maptilerTerrain',
+            exaggeration: 1
+        }
         return labelStyles;
     }
 }
