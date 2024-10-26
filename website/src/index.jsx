@@ -1,8 +1,8 @@
 import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { App } from "./App";
-import { Auth0ProviderWithNavigate } from "./providers/Auth0ProviderWithNavigate";
+import { App } from "@root/src/App";
+import { Auth0ProviderWithNavigate } from "providers/Auth0ProviderWithNavigate";
 import SettingsProvider from "providers/SettingsProvider";
 import { MapProvider } from "react-map-gl";
 import "./styles/styles.css";

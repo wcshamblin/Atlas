@@ -7,7 +7,7 @@ import path from 'path'
 
 export default defineConfig({
     base: '/',
-    plugins: [react({ jsxRuntime: 'automatic' }), viteTsconfigPaths(), svgr(), eslint(),],
+    plugins: [react({ jsxRuntime: 'automatic' }), viteTsconfigPaths(), svgr(), eslint({emitWarning: false}),],
     server: {
         open: false,
         port: 4040,
@@ -20,6 +20,10 @@ export default defineConfig({
             {
                 find: '@assets',
                 replacement: path.resolve(__dirname, '../assets'),
+            },
+            {
+                find: '@root',
+                replacement: path.resolve(__dirname, './'),
             },
         ]
     }

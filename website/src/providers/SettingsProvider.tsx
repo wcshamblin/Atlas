@@ -12,6 +12,8 @@ export interface SettingsContextType {
     setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
     showUls: boolean;
     setShowUls: React.Dispatch<React.SetStateAction<boolean>>;
+    hideLabels: boolean;
+    setHideLabels: React.Dispatch<React.SetStateAction<boolean>>;
     isoProfile: IsoProfileTypes;
     setIsoProfile: React.Dispatch<React.SetStateAction<IsoProfileTypes>>;
     isoMinutes: number;
@@ -23,6 +25,7 @@ export const SettingsContext = createContext<SettingsContextType>(null!);
 const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [showUls, setShowUls] = useState<boolean>(false);
+    const [hideLabels, setHideLabels] = useState<boolean>(false);
     const [isoProfile, setIsoProfile] = useState<IsoProfileTypes>(IsoProfileTypes.Driving);
     const [isoMinutes, setIsoMinutes] = useState<number>(60);
 
@@ -55,6 +58,8 @@ const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
                 setDarkMode,
                 showUls,
                 setShowUls,
+                hideLabels,
+                setHideLabels,
                 isoProfile,
                 setIsoProfile,
                 isoMinutes,

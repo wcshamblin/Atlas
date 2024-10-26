@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import 'styles/components/sidebar.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -21,14 +21,15 @@ enum SidebarTab {
     Settings = "settings",
 };
 
-const Sidebar = ({ 
+type SidebarProps = {
+    expanded: boolean;
+    setDisplaySidebar: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const Sidebar = ({
     expanded,
-    selectedBaseLayer,
-    setSelectedBaseLayer,
     setDisplaySidebar,
-    selectedRegularLayers,
-    setSelectedRegularLayers,
-}) => {
+}: SidebarProps) => {
     const [selectedTab, setSelectedTab] = useState<SidebarTab>(SidebarTab.Layers);
 
     return expanded ? (
@@ -66,10 +67,6 @@ const Sidebar = ({
                             // />
                         case SidebarTab.Layers:
                             return <LayersTab 
-                                selectedBaseLayer={selectedBaseLayer}
-                                setSelectedBaseLayer={setSelectedBaseLayer}
-                                selectedRegularLayers={selectedRegularLayers}
-                                setSelectedRegularLayers={setSelectedRegularLayers}
                                 // map={map}
                                 // mapStatus={mapStatus}
                                 // setLayoutProperty={setLayoutProperty}

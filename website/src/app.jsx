@@ -1,13 +1,13 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { AuthenticationGuard } from "./components/AuthenticationGuard";
-import { CallbackPage } from "./components/CallbackPage";
-import { HeroBanner } from "./components/HeroBanner";
-import { Profile } from "./components/Profile";
-import { NavBar } from "./components/NavBar";
-import { MobileNavBar } from "./components/MobileNavBar";
-import Map from './components/Map';
-import MapPage from './components/MapPage';
+import { AuthenticationGuard } from "components/AuthenticationGuard";
+import { CallbackPage } from "components/CallbackPage";
+import { HeroBanner } from "components/HeroBanner";
+import { Profile } from "components/Profile";
+import { NavBar } from "components/NavBar";
+import { MobileNavBar } from "components/MobileNavBar";
+import Map from './components/map';
+import Atlas from 'components/Atlas';
 
 export const App = () => {
   return (
@@ -23,7 +23,7 @@ export const App = () => {
           />
           <Route
             path="/map"
-            element={<AuthenticationGuard Component={MapPage} eulaRequired />}
+            element={<AuthenticationGuard Component={Atlas} eulaRequired />}
           />
           <Route path="/callback" element={<CallbackPage />} />
           <Route path="*" element={
