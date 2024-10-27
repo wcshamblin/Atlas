@@ -1,4 +1,3 @@
-import { accessToken } from "mapbox-gl";
 import { callExternalApi } from "./external-api.service";
 
 const apiServerUrl = import.meta.env.VITE_APP_API_SERVER_URL;

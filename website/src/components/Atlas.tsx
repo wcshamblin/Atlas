@@ -15,22 +15,26 @@ import { AtlasContext } from 'providers/AtlasContext';
 import type { StyleSpecification } from 'maplibre-gl';
 
 import * as utils from 'helpers/data-utils';
+import { retrieveObstacles, retrieveTowers, retrieveAntennas } from 'services/message.service';
 import { SettingsContext } from 'providers/SettingsContext';
+import type { ViewStateChangeEvent } from 'react-map-gl/maplibre';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const Atlas = () => {
     const { atlas } = useMap();
-    const { hideLabels, isoMinutes, isoProfile } = useContext(SettingsContext);
+    const { getAccessTokenSilently } = useAuth0();
+    const { hideLabels, isoMinutes, isoProfile, showUls } = useContext(SettingsContext);
     const [displaySidebar, setDisplaySidebar] = useState(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    // const [viewState, setViewState] = useState<ViewState>({
-    //     longitude: -100,
-    //     latitude: 40,
-    //     zoom: 3.5,
-    //     bearing: 0,
-    //     pitch: 0,
-    //     padding: { top: 0, bottom: 0, left: 0, right: 0 }
-    // });
+    const [viewState, setViewState] = useState<ViewState>({
+        longitude: -100,
+        latitude: 40,
+        zoom: 3.5,
+        bearing: 0,
+        pitch: 0,
+        padding: { top: 0, bottom: 0, left: 0, right: 0 }
+    });
 
     const [baseStyle, setBaseStyle] = useState<string>(utils.getDefaultMapStyle());
     const memoizedBaseStyle: StyleSpecification = useMemo(() => {
@@ -79,25 +83,96 @@ const Atlas = () => {
     }, [isoMinutes, isoProfile])
 
     useEffect(() => {
-        if (selectedCats.filter(cat => cat[0] === 'Isochrone' && !cat[2]).length > 0) {
-            loadIsoData();
-        }
+        selectedCats.forEach(([catId, , customParameter]) => {
+            if(!customParameter) {
+                switch (catId) {
+                    case 'Isochrone':
+                        loadIsoData()
+                        break;
+                    case 'All Towers':
+                        loadTowers(viewState);
+                        break;
+                    case 'FAA Obstacles':
+                        loadObstacles(viewState);
+                        break;
+                    case 'Antennas':
+                        loadAntennas(viewState);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        })
     }, [selectedCats])
+
+    const updateLayersAfterMove = (e: ViewStateChangeEvent) => {
+        loadTowers(e.viewState);
+        loadObstacles(e.viewState);
+        loadAntennas(e.viewState);
+    }
+
+    const loadTowers = async (viewState: ViewState) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveTowers(accessToken, viewState.latitude, viewState.longitude, utils.towerSearchRadius).then(
+            (response) => {
+                if (response.data) {
+                    setSelectedCats((oldCats) => {
+                        return oldCats.map(cat => {
+                            if (cat[0] === 'All Towers') {
+                                cat[2] = {
+                                    "allTowersPoints": response.data.towers_points,
+                                    "allTowersPolygons": response.data.towers_polygons
+                                }
+                            }
+                            return cat;
+                        })
+                    });
+                }
+            }
+        )
+    }
+
+    const loadObstacles = async (viewState: ViewState) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveObstacles(accessToken, viewState.latitude, viewState.longitude, utils.towerSearchRadius).then(
+            (response) => {
+                if (response.data && response.data.obstacles) {
+                    setSelectedCats((oldCats) => {
+                        return oldCats.map(cat => {
+                            if (cat[0] === 'FAA Obstacles') {
+                                cat[2] = response.data.obstacles;
+                            }
+                            return cat;
+                        })
+                    });
+                }
+            }
+        )
+    }
+
+    const loadAntennas = async (viewState: ViewState) => {
+        const accessToken = await getAccessTokenSilently();
+        await retrieveAntennas(accessToken, viewState.latitude, viewState.longitude, utils.antennaSearchRadius, showUls).then(
+            (response) => {
+                if (response.data && response.data.antennas) {
+                    setSelectedCats((oldCats) => {
+                        return oldCats.map(cat => {
+                            if (cat[0] === 'Antennas') {
+                                cat[2] = response.data.antennas;
+                            }
+                            return cat;
+                        })
+                    });
+                }
+            }
+        )
+    }
 
     const toggleCat = (catId: string, subLayers?: string[]) => {
         if(selectedCats.map(cat => cat[0]).includes(catId)) {
             setSelectedCats([...selectedCats.filter(cat => cat[0] !== catId)]);
         } else {
             setSelectedCats([...selectedCats, [catId, subLayers ?? null]]);
-        }
-    }
-
-    const getCustomParameters = (catId: string) => {
-        switch (catId) {
-            case 'Isochrone':
-                return memoizedIsoUrl;
-            default:
-                return null;
         }
     }
     
@@ -151,8 +226,8 @@ const Atlas = () => {
         >
             <Map
                 id='atlas'
-                // {...viewState}
-                // onMove={evt => setViewState(evt.viewState)}
+                {...viewState}
+                onMove={evt => setViewState(evt.viewState)}
                 // needs to have a transition for the opacity
                 style={{ width: '100%', height: '90vh', opacity: '100%' }}
                 mapStyle={memoizedBaseStyle}
@@ -160,6 +235,7 @@ const Atlas = () => {
                 // onRender={loadStoredLayers}
                 // onData={loadStoredLayers}
                 onStyleData={testLoadFunc}
+                onMoveEnd={updateLayersAfterMove}
             >
                 {memoizedCats != undefined && memoizedCats}
             </Map>

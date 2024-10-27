@@ -133,7 +133,7 @@ export const lantmaterietTiles = [
 ];
 
 export const vfrTiles = [
-    'https://atlas2.org/api/vfr/{z}/{x}/{y}.png'
+    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/vfr/{z}/{x}/{y}.png`
 ];
 
 export const maxarTiles = [
@@ -145,11 +145,11 @@ export const usgsTopoTiles = [
 ];
 
 export const sentinel2Tiles = [
-    'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png'
+    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/sentinel/{bbox-epsg-3857}.png`
 ];
 
 export const skoterlederTiles = [
-    'https://atlas2.org/api/skoterleder/{z}/{x}/{y}.png'
+    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/skoterleder/{z}/{x}/{y}.png`
 ];
 
 export const baseStyleDictionary: Record<string, string[]> = {
@@ -227,7 +227,7 @@ const googleStreetviewLayer: LayerProps = {
 const parcelOwnershipSource: SourceProps = {
     'type': 'vector',
     'tiles': [
-        'https://atlas2.org/api/parcel/{z}/{x}/{y}'
+        `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/parcel/{z}/{x}/{y}`
     ],
     'minzoom': 12,
     'maxzoom': 18,
@@ -311,6 +311,89 @@ const lightPollutionLayer: LayerProps = {
     'source': 'Light Pollution',
     'paint': {
         'raster-opacity': 0.4
+    }
+}
+
+export const towerSearchRadius = 150000;
+
+const towerRenderZoomLevel = 10.5;
+const towerExtrusionRenderZoomLevel = 11.5;
+
+const faaObstaclesSource: SourceProps = (obstaclePoints?: any) => ({
+    'type': 'geojson',
+    'data': !obstaclePoints ? {} : obstaclePoints
+});
+
+const faaObstaclesLayer: LayerProps = {
+    'id': 'FAA Obstacles',
+    'type': 'symbol',
+    'layout': {
+        'icon-image': 'obstacle-icon',
+        'icon-size': 1,
+    },
+    'source': 'FAA Obstacles',
+    'minzoom': towerRenderZoomLevel,
+    'paint': {
+        'icon-color': '#000000',
+    }
+}
+
+const allTowersSource: SourceProps = (allTowerPoints?: any) => ({
+    'type': 'geojson',
+    'data': !allTowerPoints ? {} : allTowerPoints
+});
+
+const allTowersLayer: LayerProps = {
+    'id': 'All Towers',
+    'type': 'symbol',
+    'layout': {
+        'icon-image': 'tower-icon',
+        'icon-size': 1,
+    },
+    'source': 'All Towers',
+    'minzoom': towerRenderZoomLevel,
+    'paint': {
+        'icon-color': ['get', 'color'],
+    }
+}
+
+const allTowersExtrusionsSource: SourceProps = (allTowerPolygons?: any) => ({
+    'type': 'geojson',
+    'data': !allTowerPolygons ? {} : allTowerPolygons
+});
+
+const allTowersExtrusionsLayer: LayerProps = {
+    'id': 'All Towers Extrusions',
+    'type': 'fill-extrusion',
+    'source': 'All Towers Extrusions',
+    'minzoom': towerExtrusionRenderZoomLevel,
+    'paint': {
+        'fill-extrusion-color': ['get', 'color'],
+        'fill-extrusion-height': ['get', 'overall_height'],
+        'fill-extrusion-base': 0,
+        'fill-extrusion-opacity': 0.8
+    }
+}
+
+const antennaRenderZoomLevel = 13.5;
+export const antennaSearchRadius = 8000;
+
+const antennasSource: SourceProps = (antennaPoints?: any) => ({
+    'type': 'geojson',
+    'data': !antennaPoints ? {} : antennaPoints
+});
+
+const antennasLayer: LayerProps = {
+    'id': 'Antennas',
+    'type': 'symbol',
+    'layout': {
+        'icon-image': 'transmitter-icon',
+        'icon-size': 1,
+    },
+    'source': 'Antennas',
+    'minzoom': antennaRenderZoomLevel,
+    'paint': {
+        'icon-color': ['get', 'color'],
     }
 }
 
@@ -473,7 +556,7 @@ export const regularLayerCategoriesWithCountries: [string, string[], string][] =
     ["Parcel Ownership", ["Parcel Ownership", "Parcel Ownership Labels"], "usa"],
     ["3D Buildings", ["3D Buildings"], "all"],
     ["Light Pollution", ["Light Pollution"], "all"],
-    ["Towers", ["All Towers", "All Tower Extrusions"], "usa"],
+    ["All Towers", ["All Towers", "All Towers Extrusions"], "usa"],
     ["FAA Obstacles", ["FAA Obstacles"], "usa"],
     ["Antennas", ["Antennas"], "usa"],
     ["Long Lines", ["Long Lines"], "usa"],
@@ -511,6 +594,24 @@ export const customCategoryElements = (catId: string, catSubLayers?: string[], c
                 {catSubLayers.includes("Parcel Ownership") && <Layer key={"Parcel Ownership"} {...parcelOwnershipLayer} />}
                 {catSubLayers.includes("Parcel Ownership Labels") && <Layer key={"Parcel Ownership Labels"} {...parcelOwnershipLabelLayer} />}
             </Source>
+        case "FAA Obstacles":
+            return <Source key={"FAA Obstacles"} {...faaObstaclesSource(customParameter)}>
+                <Layer key={"FAA Obstacles"} {...faaObstaclesLayer} />
+            </Source>
+        case "All Towers":
+            return <Fragment key={catId}>
+                {catSubLayers.includes("All Towers") &&
+                    // need to fix issue when customparameter is undefined it leads to errors in the console with bad formatted geojson
+                    <Source key={"All Towers"} {...allTowersSource(customParameter?.allTowersPoints)}>
+                        <Layer key={"All Towers"} {...allTowersLayer} />
+                    </Source>
+                }
+                {catSubLayers.includes("All Towers Extrusions") &&
+                    <Source key={"All Towers Extrusions"} {...allTowersExtrusionsSource(customParameter?.allTowersPolygons)}>
+                        <Layer key={"All Towers Extrusions"} {...allTowersExtrusionsLayer} />
+                    </Source>
+                }
+            </Fragment>
         case "Isochrone":
             return <Source key={"Isochrone"} {...isochroneSource(customParameter)}>
                 <Layer key={"Isochrone"} {...isochroneLayer} />
