@@ -19,15 +19,18 @@ import { SettingsContext } from 'providers/SettingsContext';
 
 const Atlas = () => {
     const { atlas } = useMap();
-    const { hideLabels } = useContext(SettingsContext);
+    const { hideLabels, isoMinutes, isoProfile } = useContext(SettingsContext);
     const [displaySidebar, setDisplaySidebar] = useState(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    // const [selectedBaseLayer, setSelectedBaseLayer] = useState<string>(null);
-    // const memoizedBaseLayer: ReactElement | undefined = useMemo(() => {
-    //     let layerr = utils.getBaseLayerWithId(selectedBaseLayer);
-    //     // console.log(layerr);
-    //     return layerr;
-    // }, [selectedBaseLayer]);
+
+    // const [viewState, setViewState] = useState<ViewState>({
+    //     longitude: -100,
+    //     latitude: 40,
+    //     zoom: 3.5,
+    //     bearing: 0,
+    //     pitch: 0,
+    //     padding: { top: 0, bottom: 0, left: 0, right: 0 }
+    // });
 
     const [baseStyle, setBaseStyle] = useState<string>(utils.getDefaultMapStyle());
     const memoizedBaseStyle: StyleSpecification = useMemo(() => {
@@ -36,9 +39,84 @@ const Atlas = () => {
         return utils.getUpdatedMapStyle(baseStyle, hideLabels);
     }, [baseStyle, hideLabels]);
 
-    const [selectedRegularLayers, setSelectedRegularLayers] = useState<string[]>([]);
-    const [selectedRegularCategories, setSelectedRegularCategories] = useState<[string, string[]][]>([]);
-    const memoizedRegularLayers: ReactElement[] = useMemo(() => selectedRegularLayers.map(layer => utils.getRegularLayerCategoryWithId(layer)), [selectedRegularLayers]);
+    const [selectedCats, setSelectedCats] = useState<[string, string[]?, any?][]>(utils.getStoredRegularLayers());
+    const memoizedCats: ReactElement[] | undefined = useMemo(() => {
+        localStorage.setItem('selected-cats', JSON.stringify(selectedCats))
+        if (selectedCats && selectedCats.length > 0) {
+            return selectedCats.map(cat => {
+                if (cat[1] || cat[2]) {
+                    return utils.customCategoryElements(cat[0], cat[1], cat[2]);
+                } else {
+                    return utils.categoryElements[cat[0]];
+                }
+            });
+        } else {
+            return undefined;
+        }
+    }, [selectedCats]);
+
+    const loadIsoData = () => {
+        const isoUrl = utils.getIsoUrl(41.47746701561283, -81.6652067043115, isoMinutes, isoProfile);
+
+        utils.getIso(isoUrl).then(data => {
+            setSelectedCats((oldCats) => {
+                return oldCats.map(cat => {
+                    if (cat[0] === 'Isochrone') {
+                        cat[2] = data;
+                    }
+                    return cat;
+                })
+            });
+        });
+    }
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadIsoData();
+        }, 100)
+
+        return () => clearTimeout(timer)
+    }, [isoMinutes, isoProfile])
+
+    useEffect(() => {
+        if (selectedCats.filter(cat => cat[0] === 'Isochrone' && !cat[2]).length > 0) {
+            loadIsoData();
+        }
+    }, [selectedCats])
+
+    const toggleCat = (catId: string, subLayers?: string[]) => {
+        if(selectedCats.map(cat => cat[0]).includes(catId)) {
+            setSelectedCats([...selectedCats.filter(cat => cat[0] !== catId)]);
+        } else {
+            setSelectedCats([...selectedCats, [catId, subLayers ?? null]]);
+        }
+    }
+
+    const getCustomParameters = (catId: string) => {
+        switch (catId) {
+            case 'Isochrone':
+                return memoizedIsoUrl;
+            default:
+                return null;
+        }
+    }
+    
+    const toggleSubLayer = (catId: string, subLayerId: string) => {
+        const filteredCatIdx = selectedCats.findIndex(cat => cat[0] === catId);
+        const filteredCat = selectedCats[filteredCatIdx];
+        if (filteredCatIdx !== -1 && filteredCat[1]) {
+            const newCats = [...selectedCats];
+            if (filteredCat[1].includes(subLayerId)) {
+                // if there is only one sublayer and thats the one we are clicking, remove the cat
+                if (filteredCat[1].length === 1) return toggleCat(catId, []);
+                // if there is other ones enabled, remove this one
+                newCats[filteredCatIdx][1] = [...newCats[filteredCatIdx][1].filter(sl => sl !== subLayerId)];
+            } else {
+                newCats[filteredCatIdx][1] = [...newCats[filteredCatIdx][1], subLayerId];
+            }
+            setSelectedCats(newCats);
+        }
+    }
 
     useEffect(() => {
         const handleKeydown = (e) => {
@@ -56,83 +134,8 @@ const Atlas = () => {
         }
     }, [displaySidebar]);
 
-    // const updateBaseStyle = (styleId: string) => {
-    //     setting to show labels or not (hide labels for maps without them)
-    //     if(hideLabels)
-    //     setBaseStyle(styleId);
-    //     localStorage.setItem('base-style', styleId);
-    //     setBaseStyle(utils.getUpdatedMapStyle(styleId, hideLabels));
-    //     setBaseStyle(utils.defaultMapStyle2());
-    //     setSelectedBaseLayer(layerId);
-
-    //     google and osm have labels by default so they need to be hidden on the main mapbox layer
-    //     use this if we switch to the new mapbox standard to fix most issues: https://docs.mapbox.com/mapbox-gl-js/guides/styles/#mapbox-standard-1\
-    //     if we dont switch be aware that 3d buildings are currently hidden for google and osm
-    //     if (['Google Hybrid', 'OpenStreetMap'].includes(layerId)) {
-    //         if (atlasRef.current.getStyle().name !== "Mapbox Satellite") {
-    //             atlasRef.current.getMap().setStyle(sourceUtils.noLabelsMapStyle);
-    //         }
-    //     } else {
-    //         if (atlasRef.current.getStyle().name !== "Mapbox Dark") {
-    //             atlasRef.current.getMap().setStyle(sourceUtils.defaultMapStyle);
-    //         }
-    //     }
-    // }
-
-    const toggleRegularLayers = (layerIds: string[], partlySelected?: boolean) => {
-        let newLayers = [...selectedRegularLayers];
-        layerIds.forEach(layerId => {
-            if (selectedRegularLayers.includes(layerId) || partlySelected) {
-                newLayers = [...newLayers.filter(srl => srl != layerId)];
-            } else {
-                newLayers = [...newLayers, layerId];
-            }
-        })
-        // flyghinder polygons source is not setup
-        setSelectedRegularLayers(newLayers);
-        localStorage.setItem('selected-layers', JSON.stringify(newLayers));
-    }
-
-    const toggleRegularLayerCategories = (categoryId: string, partlySelected?: boolean) => {
-        // by default have all of the categorysublayers in the array when created
-        // if the category is clicked and it already exists, it should be removed
-        // 
-
-        // let newLayers = [...selectedRegularLayers];
-        // layerIds.forEach(layerId => {
-        //     if (selectedRegularLayers.includes(layerId) || partlySelected) {
-        //         newLayers = [...newLayers.filter(srl => srl != layerId)];
-        //     } else {
-        //         newLayers = [...newLayers, layerId];
-        //     }
-        // })
-        // setSelectedRegularLayers(newLayers);
-        // localStorage.setItem('selected-layers', JSON.stringify(newLayers));
-    }
-
-    const toggleCategorySubLayer = () => {
-        // add or remove from array in categoryselected list
-
-    }
-
-    const loadStoredLayers = () => {
-        // console.log("is loaded: ", atlas.isStyleLoaded());
-        // const storageBaseLayer = localStorage.getItem('base-layer');
-        // // atlas.setConfigProperty('basemap', 'showPlaceLabels', true)
-        // if (selectedBaseLayer === null && storageBaseLayer) {
-        //     // updateBaseLayer(storageBaseLayer);
-        // }
-
-        const storageRegularLayers: string[] = JSON.parse(localStorage.getItem('selected-layers'));
-        if (selectedRegularLayers.length === 0 && storageRegularLayers.length > 0) {
-            setSelectedRegularLayers(storageRegularLayers);
-        }
-
-        setIsLoading(false);
-    } 
-
     const testLoadFunc = () => {
-        // atlas.setConfigProperty('basemap', 'showPlaceLabels', true)
+        // atlas.addControl()
         // setIsLoading(false);
     }
 
@@ -141,22 +144,24 @@ const Atlas = () => {
             value={{
                 baseStyleSpecification: memoizedBaseStyle,
                 setBaseStyle,
-                selectedRegularLayers,
-                toggleRegularLayers,
+                selectedCats,
+                toggleCat,
+                toggleSubLayer,
             }}
         >
             <Map
                 id='atlas'
+                // {...viewState}
+                // onMove={evt => setViewState(evt.viewState)}
                 // needs to have a transition for the opacity
                 style={{ width: '100%', height: '90vh', opacity: '100%' }}
                 mapStyle={memoizedBaseStyle}
                 reuseMaps
-                onRender={loadStoredLayers}
+                // onRender={loadStoredLayers}
                 // onData={loadStoredLayers}
-                onClick={testLoadFunc}
+                onStyleData={testLoadFunc}
             >
-                {/* {memoizedBaseLayer !== undefined && memoizedBaseLayer} */}
-                {/* {memoizedRegularLayers} */}
+                {memoizedCats != undefined && memoizedCats}
             </Map>
             <Sidebar
                 expanded={displaySidebar}

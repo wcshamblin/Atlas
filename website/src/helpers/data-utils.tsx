@@ -1,5 +1,5 @@
 import { layer } from '@fortawesome/fontawesome-svg-core';
-import React, { type ReactElement } from 'react';
+import React, { Fragment, type ReactElement } from 'react';
 import { Source, Layer, type SourceProps, type LayerProps } from 'react-map-gl';
 
 // geojson assets
@@ -185,28 +185,8 @@ export const baseStyleCountries: [string, string][] = [
     ["OpenStreetMap", "all"]
 ];
 
-// // ex: setBaseLayer(getBaseLayerWithId('Google Hybrid'));
-// export const getBaseLayerWithId = (id: string) => {
-//     if(!id) return undefined;
-//     return <Source type='raster' maxzoom={20} tileSize={256} tiles={baseLayerDictionary[id]}>
-//         <Layer id='base-layer' type='raster' source={id} />
-//     </Source>
-// }
-
-// // ex: setBaseLayer(getBaseLayerWithTiles('Google Hybrid', googleHybridTiles));
-// export const getBaseLayerWithTiles = (id: string, tiles: string[]) => 
-//     <Source type='raster' maxzoom={20} tileSize={256} tiles={tiles}>
-//         <Layer id='base-layer' type='raster' source={id} />
-//     </Source>
-
-// export const defaultMapStyle = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
-// export const defaultMapStyle = "mapbox://styles/mapbox/standard-satellite";
-// export const defaultMapStyle = "mapbox://styles/mapbox/dark-v11";
-// export const noLabelsMapStyle = "mapbox://styles/mapbox/satellite-v9";
-
-
 // normal layers
-export const openRailwayMapSource: SourceProps = {
+const openRailwayMapSource: SourceProps = {
     'type': 'raster',
     'tiles': [
         'https://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
@@ -221,14 +201,14 @@ export const openRailwayMapSource: SourceProps = {
     'maxzoom': 19
 }
 
-export const openRailwayMapLayer: LayerProps = {
+const openRailwayMapLayer: LayerProps = {
     'id': 'OpenRailwayMap',
     'type': 'raster',
     'source': 'OpenRailwayMap',
     'paint': {}
 };
 
-export const googleStreetviewSource: SourceProps = {
+const googleStreetviewSource: SourceProps = {
     'type': 'raster',
     'tiles': [
         'https://mts2.google.com/mapslt?lyrs=svv&x={x}&y={y}&z={z}&w=256&h=256&hl=en&style=40,18'
@@ -237,14 +217,14 @@ export const googleStreetviewSource: SourceProps = {
     'minzoom': 15
 }
 
-export const googleStreetviewLayer: LayerProps = {
+const googleStreetviewLayer: LayerProps = {
     'id': 'Google StreetView',
     'type': 'raster',
     'source': 'Google StreetView',
     'paint': {}
 };
 
-export const parcelOwnershipSource: SourceProps = {
+const parcelOwnershipSource: SourceProps = {
     'type': 'vector',
     'tiles': [
         'https://atlas2.org/api/parcel/{z}/{x}/{y}'
@@ -253,7 +233,7 @@ export const parcelOwnershipSource: SourceProps = {
     'maxzoom': 18,
 };
 
-export const parcelOwnershipLayer: LayerProps = {
+const parcelOwnershipLayer: LayerProps = {
     'id': 'Parcel Ownership',
     'type': 'line',
     'source': 'Parcel Ownership',
@@ -264,7 +244,7 @@ export const parcelOwnershipLayer: LayerProps = {
     }
 }
 
-export const parcelOwnershipLabelLayer: LayerProps = {
+const parcelOwnershipLabelLayer: LayerProps = {
     'id': 'Parcel Ownership Labels',
     'type': 'symbol',
     'source': 'Parcel Ownership',
@@ -282,22 +262,41 @@ export const parcelOwnershipLabelLayer: LayerProps = {
     'minzoom': 14
 }
 
-export const threeDBuildingLayer: LayerProps = {
+const threeDBuildingSource: SourceProps = {
+    url: `https://api.maptiler.com/tiles/v3/tiles.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`,
+    type: 'vector',
+}
+
+const threeDBuildingLayer: LayerProps = {
     'id': '3D Buildings',
-    'source': 'composite',
+    'source': 'openmaptiles',
     'source-layer': 'building',
-    'filter': ['==', 'extrude', 'true'],
     'type': 'fill-extrusion',
     'minzoom': 15,
+    'filter': ['!=', ['get', 'hide_3d'], true],
     'paint': {
-        'fill-extrusion-color': '#404040',
-        'fill-extrusion-height': ['get', 'height'],
-        'fill-extrusion-base': ['get', 'min_height'],
-        'fill-extrusion-opacity': 0.87
+        'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'render_height'], 0, 'lightgray', 200, 'royalblue', 400, 'lightblue'
+        ],
+        'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            15,
+            0,
+            16,
+            ['get', 'render_height']
+        ],
+        'fill-extrusion-base': ['case',
+            ['>=', ['get', 'zoom'], 16],
+            ['get', 'render_min_height'], 0
+        ]
     }
 }
 
-export const lightPollutionSource: SourceProps = {
+const lightPollutionSource: SourceProps = {
     'type': 'raster',
     'maxzoom': 6,
     'tileSize': 1024,
@@ -306,7 +305,7 @@ export const lightPollutionSource: SourceProps = {
     ]
 };
 
-export const lightPollutionLayer: LayerProps = {
+const lightPollutionLayer: LayerProps = {
     'id': 'Light Pollution',
     'type': 'raster',
     'source': 'Light Pollution',
@@ -315,12 +314,12 @@ export const lightPollutionLayer: LayerProps = {
     }
 }
 
-export const longLinesSource: SourceProps = {
+const longLinesSource: SourceProps = {
     'type': 'geojson',
     'data': long_lines
 };
 
-export const longLinesLayer: LayerProps = {
+const longLinesLayer: LayerProps = {
     'id': 'Long Lines',
     'type': 'circle',
     'source': 'Long Lines',
@@ -330,12 +329,74 @@ export const longLinesLayer: LayerProps = {
     }
 }
 
-export const flyghinderSource: SourceProps = {
+export const getIsoUrl = (latitude: number, longitude: number, isoMinutes: number, isoProfile: string) => `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${latitude},${longitude}&maxTime=${isoMinutes * 60}&travelMode=${isoProfile}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`;
+
+export const getIso = async (isochroneUrl: string) => {
+    // need error logging here
+    const query = await fetch(
+        isochroneUrl,
+        {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
+        }
+    );
+    const data = await query.json();
+    if (data && data.resourceSets.length > 0 && data.resourceSets[0] && data.resourceSets[0].resources.length > 0 && data.resourceSets[0].resources[0].polygons && data.resourceSets[0].resources[0].polygons.length > 0 && data.resourceSets[0].resources[0].polygons[0].coordinates) {
+        let coordinates = data.resourceSets[0].resources[0].polygons[0].coordinates;
+        // for coordinate in coordinates, reverse the order of the coordinates
+        coordinates = coordinates.map((coordinate) => {
+            return coordinate.map((point) => {
+                return [point[1], point[0]];
+            })
+        })
+        
+        return [
+            {
+                "type": "Feature",
+                "properties": {},
+                "geometry": {
+                    "type": "Polygon",
+                    // test sample of coordinates
+                    "coordinates": coordinates
+                }
+            }
+        ]
+    }
+    return [];
+}
+
+const isochroneSource: SourceProps = (isochroneFeatures?: any) => ({
+    'type': 'geojson',
+    'data': {
+        'type': 'FeatureCollection',
+        'features': !isochroneFeatures ? [] : isochroneFeatures
+    }
+})
+
+const isochroneLayer: LayerProps = {
+    'id': 'Isochrone',
+    'type': 'fill',
+    'source': 'Isochrone',
+    'paint': {
+        'fill-color': '#5a3fc0',
+        'fill-opacity': 0.3
+    }
+}
+
+const flyghinderSource: SourceProps = {
     'type': 'geojson',
     'data': flyghinder
 };
 
-export const flyghinderLayer: LayerProps = {
+const flyghinderExtrusionsSource: SourceProps = {
+    'type': 'geojson',
+    'data': flyghinder_polygons
+};
+
+const flyghinderLayer: LayerProps = {
     'id': 'FLYGHINDER 2023',
     'type': 'circle',
     'source': 'FLYGHINDER 2023',
@@ -345,7 +406,7 @@ export const flyghinderLayer: LayerProps = {
     }
 }
 
-export const flyghinderExtrusionsLayer: LayerProps = {
+const flyghinderExtrusionsLayer: LayerProps = {
     'id': 'FLYGHINDER 2023 Extrusions',
     'type': 'fill-extrusion',
     'source': 'FLYGHINDER 2023 Extrusions',
@@ -358,12 +419,17 @@ export const flyghinderExtrusionsLayer: LayerProps = {
     }
 }
 
-export const germanyTallStructuresSource: SourceProps = {
+const germanyTallStructuresSource: SourceProps = {
     'type': 'geojson',
     'data': germany_tall_structures
 };
 
-export const germanyTallStructuresLayer: LayerProps = {
+const germanyTallStructuresExtrusionsSource: SourceProps = {
+    'type': 'geojson',
+    'data': germany_tall_structures_polygons
+};
+
+const germanyTallStructuresLayer: LayerProps = {
     'id': 'Germany Tall Structures',
     'type': 'circle',
     'source': 'Germany Tall Structures',
@@ -373,7 +439,7 @@ export const germanyTallStructuresLayer: LayerProps = {
     }
 }
 
-export const germanyTallStructuresExtrusionsLayer: LayerProps = {
+const germanyTallStructuresExtrusionsLayer: LayerProps = {
     'id': 'Germany Tall Structures Extrusions',
     'type': 'fill-extrusion',
     'source': 'Germany Tall Structures Extrusions',
@@ -386,12 +452,12 @@ export const germanyTallStructuresExtrusionsLayer: LayerProps = {
     }
 }
 
-export const nrhpSource: SourceProps = {
+const nrhpSource: SourceProps = {
     'type': 'geojson',
     'data': nrhp
 };
 
-export const nrhpLayer: LayerProps = {
+const nrhpLayer: LayerProps = {
     'id': 'National Register of Historic Places',
     'type': 'circle',
     'source': 'National Register of Historic Places',
@@ -399,87 +465,6 @@ export const nrhpLayer: LayerProps = {
         'circle-radius': 6,
         'circle-color': ['get', 'color'],
     }
-}
-
-export const regularLayerCategories: Record<string, { source?: SourceProps, layers: LayerProps[] }> = {
-    'OpenRailwayMap': {
-        source: openRailwayMapSource,
-        layers: [openRailwayMapLayer],
-    },
-    'Google StreetView': {
-        source: googleStreetviewSource,
-        layers: [googleStreetviewLayer],
-    },
-    'Parcel Ownership': {
-        source: parcelOwnershipSource,
-        layers: [parcelOwnershipLayer, parcelOwnershipLabelLayer],
-    },
-    '3D Buildings': {
-        layers: [threeDBuildingLayer],
-    },
-    'Light Pollution': {
-        source: lightPollutionSource,
-        layers: [lightPollutionLayer],
-    },
-    //'Towers': {}, // custom
-    //'FAA Obstacles': {}, // custom
-    //'Antennas': {}, // custom
-    'Long Lines': {
-        source: longLinesSource,
-        layers: [longLinesLayer],
-    },
-    //'Shade Map': {}, // custom
-    //'Isochrone': {}, // custom
-    'FLYGHINDER 2023': {
-        source: flyghinderSource,
-        layers: [flyghinderLayer, flyghinderExtrusionsLayer],
-    },
-    'Germany Tall Structures': {
-        source: germanyTallStructuresSource,
-        layers: [germanyTallStructuresLayer, germanyTallStructuresExtrusionsLayer],
-    },
-    'National Register of Historic Places': {
-        source: nrhpSource,
-        layers: [nrhpLayer],
-    },
-}
-
-export const regularLayers: Record<string, LayerProps> = {
-    'OpenRailwayMap': openRailwayMapLayer,
-    'Google StreetView': googleStreetviewLayer,
-    'Parcel Ownership': parcelOwnershipLayer,
-    'Parcel Ownership Labels': parcelOwnershipLabelLayer,
-    '3D Buildings': threeDBuildingLayer,
-    'Light Pollution': lightPollutionLayer,
-    'Long Lines': longLinesLayer,
-    'FLYGHINDER 2023': flyghinderLayer,
-    'FLYGHINDER Extrusions': flyghinderExtrusionsLayer,
-    'Germany Tall Structures': germanyTallStructuresLayer,
-    'Germany Tall Structures Extrusions': germanyTallStructuresExtrusionsLayer,
-    'National Register of Historic Places': nrhpLayer,
-}
-
-export const getRegularLayerCategoryWithId = (id: string, selectedLayers?: string[]) => {
-    let { source, layers } = regularLayerCategories[id];
-    
-    if (selectedLayers) {
-        layers = layers.filter(layer => selectedLayers.includes(layer.id))
-    }
-    const mappedLayers = layers.map(layer => <Layer key={layer.id} {...layer} />);
-
-    if (!source) {
-        return (
-            <React.Fragment key={id}>
-                {mappedLayers}
-            </React.Fragment>
-        );
-    }
-
-    return (
-        <Source key={id} {...source}>
-            {mappedLayers}
-        </Source>
-    )
 }
 
 export const regularLayerCategoriesWithCountries: [string, string[], string][] = [
@@ -492,30 +477,82 @@ export const regularLayerCategoriesWithCountries: [string, string[], string][] =
     ["FAA Obstacles", ["FAA Obstacles"], "usa"],
     ["Antennas", ["Antennas"], "usa"],
     ["Long Lines", ["Long Lines"], "usa"],
-    ["Shade Map", ["Shade Map"], "all"],
     ["Isochrone", ["Isochrone"], "all"],
     ["FLYGHINDER 2023", ["FLYGHINDER 2023", "FLYGHINDER 2023 Extrusions"], "eu"],
     ["Germany Tall Structures", ["Germany Tall Structures", "Germany Tall Structures Extrusions"], "eu"],
     ["National Register of Historic Places", ["National Register of Historic Places"], "usa"],
 ];
 
-export const regularLayerCountries: [string, string][] = [
-    ["All Towers", "usa"],
-    ["All Tower Extrusions", "usa"],
-    ["Google StreetView", "all"],
-    ["3D Buildings", "all"],
-    ["Shade Map", "all"],
-    ["Antennas", "usa"],
-    ["Isochrone", "all"],
-    ["OpenRailwayMap", "all"],
-    ["Long Lines", "usa"],
-    ["FLYGHINDER 2023", "eu"],
-    ["FLYGHINDER 2023 Extrusions", "eu"],
-    ["FAA Obstacles", "usa"],
-    ["Germany Tall Structures", "eu"],
-    ["Germany Tall Structures Extrusions", "eu"],
-    ["National Register of Historic Places", "usa"],
-    ["Parcel Ownership", "usa"],
-    ["Parcel Ownership Labels", "usa"],
-    ["Light Pollution", "all"]
-]
+export const categoryElements: Record<string, ReactElement> = {
+    "OpenRailwayMap": <Source key={"OpenRailwayMap"} {...openRailwayMapSource}>
+        <Layer key={"OpenRailwayMap"} {...openRailwayMapLayer} />
+    </Source>,
+    "Google StreetView": <Source key={"Google StreetView"} {...googleStreetviewSource}>
+        <Layer key={"Google StreetView"} {...googleStreetviewLayer} />
+    </Source>,
+    "3D Buildings": <Source key={"3D Buildings"} {...threeDBuildingSource}>
+        <Layer key={"3D Buildings"} {...threeDBuildingLayer} />
+    </Source>,
+    "Light Pollution": <Source key={"Light Pollution"} {...lightPollutionSource}>
+        <Layer key={"Light Pollution"} {...lightPollutionLayer} />
+    </Source>,
+    "Long Lines": <Source key={"Long Lines"} {...longLinesSource}>
+        <Layer key={"Long Lines"} {...longLinesLayer} />
+    </Source>,
+    "National Register of Historic Places": <Source key={"National Register of Historic Places"} {...nrhpSource}>
+        <Layer key={"National Register of Historic Places"} {...nrhpLayer} />
+    </Source>,
+};
+
+export const customCategoryElements = (catId: string, catSubLayers?: string[], customParameter?: any) => {
+    switch (catId) {
+        case "Parcel Ownership":
+            return <Source key={"Parcel Ownership"} {...parcelOwnershipSource}>
+                {catSubLayers.includes("Parcel Ownership") && <Layer key={"Parcel Ownership"} {...parcelOwnershipLayer} />}
+                {catSubLayers.includes("Parcel Ownership Labels") && <Layer key={"Parcel Ownership Labels"} {...parcelOwnershipLabelLayer} />}
+            </Source>
+        case "Isochrone":
+            return <Source key={"Isochrone"} {...isochroneSource(customParameter)}>
+                <Layer key={"Isochrone"} {...isochroneLayer} />
+            </Source>
+        case "FLYGHINDER 2023":
+            return <Fragment key={catId}>
+                {catSubLayers.includes("FLYGHINDER 2023") && 
+                    <Source key={"FLYGHINDER 2023"} {...flyghinderSource}>
+                        <Layer key={"FLYGHINDER 2023"} {...flyghinderLayer} />
+                    </Source>
+                }
+                {catSubLayers.includes("FLYGHINDER 2023 Extrusions") && 
+                    <Source key={"FLYGHINDER 2023 Extrusions"} {...flyghinderExtrusionsSource}>
+                        <Layer key={"FLYGHINDER 2023 Extrusions"} {...flyghinderExtrusionsLayer} />
+                    </Source>
+                }
+            </Fragment>
+        case "Germany Tall Structures":
+            return <Fragment key={catId}>
+                {catSubLayers.includes("Germany Tall Structures") && 
+                    <Source key={"Germany Tall Structures"} {...germanyTallStructuresSource}>
+                        <Layer key={"Germany Tall Structures"} {...germanyTallStructuresLayer} />
+                    </Source>
+                }
+                {catSubLayers.includes("Germany Tall Structures Extrusions") && 
+                    <Source key={"Germany Tall Structures Extrusions"} {...germanyTallStructuresExtrusionsSource}>
+                        <Layer key={"Germany Tall Structures Extrusions"} {...germanyTallStructuresExtrusionsLayer} />
+                    </Source>
+                }
+            </Fragment>
+        default:
+            break;
+    }
+}
+
+export const getStoredRegularLayers = () => {
+    const storedLayers = localStorage.getItem('selected-cats');
+    if(storedLayers && storedLayers != 'undefined') {
+        const newLayers: [string, string[]?][] = JSON.parse(storedLayers);
+        // need to make a better dictionary or something for this because its not accurate right now
+        return newLayers.filter(sl => (regularLayerCategoriesWithCountries.map(rl => rl[0]).includes(sl[0])));
+    } else {
+        return [];
+    }
+}

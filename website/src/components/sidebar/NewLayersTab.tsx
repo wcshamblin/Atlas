@@ -8,7 +8,7 @@ type LayersTabProps = unknown;
 
 const LayersTab = (props: LayersTabProps) => {
     // const { atlas } = useMap();
-    const { baseStyleSpecification, setBaseStyle, selectedRegularLayers, toggleRegularLayers } = useContext(AtlasContext);
+    const { baseStyleSpecification, setBaseStyle, selectedCats, toggleCat, toggleSubLayer } = useContext(AtlasContext);
     const [selectedCountry, setSelectedCountry] = useState("all");
 
     // can use some code like this to generate the pictures for all of the different base styles
@@ -45,35 +45,35 @@ const LayersTab = (props: LayersTabProps) => {
             <div id="regular-layer-container">
                 {utils.regularLayerCategoriesWithCountries.filter(([, , country]) => filterCountry(country)).map(([catName, subLayers]) => {
                     if (subLayers.length > 1) {
-                        const categoryPartlySelected: boolean = subLayers.some(layerId => selectedRegularLayers.includes(layerId));
+                        const categoryPartlySelected: boolean = selectedCats.filter(cat => cat[0] === catName).length > 0;
                         return (
                             <React.Fragment key={catName}>
                                 <div
                                     className={!categoryPartlySelected ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}
-                                    onClick={() => toggleRegularLayers(utils.regularLayerCategoriesWithCountries.find(([name]) => name === catName)[1], categoryPartlySelected)}
+                                    onClick={() => toggleCat(catName, subLayers)}
                                 >
                                     <input type="radio" checked={categoryPartlySelected} readOnly />
                                     <span>{catName}</span>
                                 </div>
-                                {categoryPartlySelected && subLayers.map(layerId => {
-                                    const isSelected = selectedRegularLayers.includes(layerId);
+                                {categoryPartlySelected && subLayers.map(subLayerId => {
+                                    const isSelected = selectedCats.filter(cat => cat[0] === catName)[0][1]?.includes(subLayerId);
                                     return <div
-                                        key={layerId}
+                                        key={subLayerId}
                                         className={!isSelected ? "regular-layer-many" : "regular-layer-normal-selected regular-layer-many"}
-                                        onClick={() => toggleRegularLayers([layerId])}>
+                                        onClick={() => toggleSubLayer(catName, subLayerId)}>
                                         <input type="radio" checked={isSelected} readOnly ></input>
-                                        <span>{layerId}</span>
+                                        <span>{subLayerId}</span>
                                     </div>
                                 })}
                             </React.Fragment>
                         )
                     } else {
-                        const isSelected = selectedRegularLayers.includes(subLayers[0]);
+                        const isSelected = selectedCats.map(cat => cat[0]).includes(catName);
                         return (
                             <div
                                 key={catName}
                                 className={!isSelected ? "regular-layer-normal" : "regular-layer-normal regular-layer-normal-selected"}
-                                onClick = {() => toggleRegularLayers(subLayers)}
+                                onClick = {() => toggleCat(catName)}
                             >
                                 <input type="radio" checked={isSelected} readOnly ></input>
                                 <span>{catName}</span>

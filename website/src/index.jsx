@@ -14,7 +14,7 @@ root.render(
   <StrictMode>
     <BrowserRouter>
       <MapProvider>
-      <SettingsProvider>
+        <SettingsProvider>
           <Auth0ProviderWithNavigate>
             <App />
           </Auth0ProviderWithNavigate>
