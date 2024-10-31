@@ -7,7 +7,7 @@ const retrieveSunburstToken = async () => {
             method: 'POST',
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Basic ${btoa(`${import.meta.env.VITE_SUNBURST_API_EMAIL}:${import.meta.env.VITE_APP_SUNBURST_API_PASSWORD}`)}`
+                "Authorization": `Basic ${btoa(`${import.meta.env.VITE_SUNBURST_API_EMAIL}:${import.meta.env.VITE_SUNBURST_API_PASSWORD}`)}`
             },
             body: "grant_type=password&type=access"
         });
@@ -18,7 +18,6 @@ const retrieveSunburstToken = async () => {
 }
 
 export const getSunburstData = async (lat, lng, after, token?: string) => {
-    console.log(dayjs(Date.now()).toISOString)
     let bearerToken = token;
     if(!bearerToken) {
         bearerToken = await retrieveSunburstToken();
@@ -29,12 +28,11 @@ export const getSunburstData = async (lat, lng, after, token?: string) => {
         {
             method: 'GET',
             headers: {
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${bearerToken}`
             }
         }
     );
 
-    //console.log("Sunburst retrieved data: ", data);
     return {
         data: await query.json(),
         token: bearerToken,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import 'styles/components/sidebar.css';
+import { useMap } from "react-map-gl";
 
 import SunriseIcon from 'styles/images/sunrise_icon.svg?react';
 import SunsetIcon from 'styles/images/sunset_icon.svg?react';
@@ -20,104 +20,72 @@ import MoonriseIcon from 'styles/images/moonrise.svg?react';
 import MoonsetIcon from 'styles/images/moonset.svg?react';
 import MoonNoonIcon from 'styles/images/moon_noon.svg?react';
 
+import { retrieveAstronomyData } from "services/message.service";
 import { getSunburstData } from 'helpers/sunburst-helper';
+import 'styles/components/sidebar.css';
 
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
-const WeatherTab = ({ 
-    mapStatus,
-    map,
-    pollingPosition,
-    setPollingPosition,
-    mapDatetime,
-    setMapDatetime,
-    astronomyInfo,
-}) => {
+const WeatherTab = () => {
+    const { atlas } = useMap();
     const [sunburstInfo, setSunburstInfo] = useState(null);
     const [sunburstToken, setSunburstToken] = useState(null);
+    const [astronomyInfo, setAstronomyInfo] = useState(null);
 
-    // sunburst home info - update on polling position change or map datetime change
+    const [mapDatetime, setMapDatetime] = useState<dayjs.Dayjs>(dayjs());
+
+    const [pollingPosition, setPollingPosition] = useState<number[]>([]);
+
     useEffect(() => {
-        if (!mapStatus) return; // wait for map to initialize
+        if (!(pollingPosition.length > 1)) return;
 
-        if (!pollingPosition.length) return;
+        retrieveAstronomyData(-(mapDatetime.utcOffset() / 60), mapDatetime.toISOString().split("T")[0], pollingPosition[1], pollingPosition[0]).then((data) => {
+            setAstronomyInfo(data.data);
+        });
 
-        getSunburstData(pollingPosition[1], pollingPosition[0], mapDatetime.toISOString(), sunburstToken).then(({data, token}) => {
+        getSunburstData(pollingPosition[1], pollingPosition[0], mapDatetime.toISOString(), sunburstToken).then(({ data, token }) => {
             setSunburstToken(token);
             setSunburstInfo(data);
         });
     }, [pollingPosition, mapDatetime]);
 
-    const changeDatetimeElement = () => {
-        return (
-            <div id="change-datetime-element">
-                <input
-                    type="datetime-local"
-                    id="datetime-input"
-                    name="datetime-input"
-                    required
-                    value={dayjs(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
-                    onChange={e => {
-                        // if it was cleared, or if the date is invalid, then don't update the map datetime
-                        if (e.target.value === "") return;
-                        setMapDatetime(new Date(e.target.value));
-                    }
-                    }
-                />
-            </div>
-        )
-    }
+    // need to update polling position when home is set
+    // const { homePosition } = useContext(AtlasContext);
+    // useEffect(() => {
+    //     setPollingPosition(homePosition);
+    // }, [homePosition])
 
     const setDateTimeToNow = () => {
         // if within 60 seconds, don't set to now
-        if (Math.abs((new Date()).getTime() - mapDatetime.getTime()) / 1000 < 60) {
-            return;
-        }
-        setMapDatetime(new Date());
-    }
-
-    const setDatetimeToNowButton = () => {
-        return (
-            <div id="set-datetime-to-now-button">
-                <ClockForwardIcon className="clock-forward-icon" onClick={() => setDateTimeToNow()} />
-                <span>Set to now</span>
-            </div>
-        )
-    }
-
-    const changePollingPositionButton = () => {
-        return (
-            <div id="change-polling-position-button">
-                <PollingIcon className="polling-icon" onClick={() => setPollingPositionAsCenter()} />
-                <span>Set polling position</span>
-            </div>
-        )
+        if (Math.abs(mapDatetime.diff()) < 60000) return;
+        setMapDatetime(dayjs());
     }
 
     const setPollingPositionAsCenter = () => {
-        console.log("Current polling position: " + pollingPosition + " - setting to map center: " + map.getCenter());
         // if the polling position is ALREADY SET, check to see if the new polling position even warrants re polling data
         // if it is, then update the polling position
         if (pollingPosition[0] != null && pollingPosition[1] != null) {
-            if (Math.abs(map.getCenter().lng - pollingPosition[0]) > .05 || Math.abs(map.getCenter().lat - pollingPosition[1]) > .05) {
-                setPollingPosition([map.getCenter().lng, map.getCenter().lat]);
+            if (Math.abs(atlas.getCenter().lng - pollingPosition[0]) > .05 || Math.abs(atlas.getCenter().lat - pollingPosition[1]) > .05) {
+                setPollingPosition([atlas.getCenter().lng, atlas.getCenter().lat]);
             }
         } else {
-            setPollingPosition([map.getCenter().lng, map.getCenter().lat]);
+            setPollingPosition([atlas.getCenter().lng, atlas.getCenter().lat]);
         }
         // If the map is zoomed out too far to make sense to poll data, then zoom in
-        if (map.getZoom() < 8.8) {
-            map.flyTo({ center: map.getCenter(), zoom: 8.8 });
+        if (atlas.getZoom() < 8.8) {
+            atlas.flyTo({ center: atlas.getCenter(), zoom: 8.8 });
         }
     }
 
     const renderAstronomyInfo = () => {
         try {
             // sun info
-            let sun_phenomena = astronomyInfo["properties"]["data"]["sundata"];
-            let sunrise_utc = sun_phenomena.find(phen => phen["phen"] === "Rise");
-            let sunset_utc = sun_phenomena.find(phen => phen["phen"] === "Set");
-            let solar_noon_utc = sun_phenomena.find(phen => phen["phen"] === "Upper Transit");
+            const sun_phenomena = astronomyInfo["properties"]["data"]["sundata"];
+            const sunrise_utc = sun_phenomena.find(phen => phen["phen"] === "Rise");
+            const sunset_utc = sun_phenomena.find(phen => phen["phen"] === "Set");
+            const solar_noon_utc = sun_phenomena.find(phen => phen["phen"] === "Upper Transit");
 
             let sunrise_local;
             let sunset_local;
@@ -147,18 +115,18 @@ const WeatherTab = ({
 
             // ["properties"]["data"]["closestphase"] = {'day': 28, 'month': 10, 'phase': 'Full Moon', 'time': '20:24', 'year': 2023}
             // if closestphase is on the same date as map datetime, then use the current phase
-            if (mapDatetime.getDate() === astronomyInfo["properties"]["data"]["closestphase"]["day"] && mapDatetime.getMonth()+1 === astronomyInfo["properties"]["data"]["closestphase"]["month"] && mapDatetime.getFullYear() === astronomyInfo["properties"]["data"]["closestphase"]["year"]) {
+            if (mapDatetime.date() === astronomyInfo["properties"]["data"]["closestphase"]["day"] && mapDatetime.month() + 1 === astronomyInfo["properties"]["data"]["closestphase"]["month"] && mapDatetime.year() === astronomyInfo["properties"]["data"]["closestphase"]["year"]) {
                 current_phase = astronomyInfo["properties"]["data"]["closestphase"]["phase"];
             }
 
-            let illumination = astronomyInfo["properties"]["data"]["fracillum"];
+            const illumination = astronomyInfo["properties"]["data"]["fracillum"];
 
-            let moon_phenomena = astronomyInfo["properties"]["data"]["moondata"];
+            const moon_phenomena = astronomyInfo["properties"]["data"]["moondata"];
 
-            // any of the following may not exit within data
-            let moonset = moon_phenomena.find(phen => phen["phen"] === "Set");
-            let moonrise = moon_phenomena.find(phen => phen["phen"] === "Rise");
-            let moonnoon = moon_phenomena.find(phen => phen["phen"] === "Upper Transit");
+            // any of the following may not exist within data
+            const moonset = moon_phenomena.find(phen => phen["phen"] === "Set");
+            const moonrise = moon_phenomena.find(phen => phen["phen"] === "Rise");
+            const moonnoon = moon_phenomena.find(phen => phen["phen"] === "Upper Transit");
 
             let moonset_local;
             let moonrise_local;
@@ -250,31 +218,31 @@ const WeatherTab = ({
             if (sunburstInfo["features"][0]["properties"]["type"] === "Sunset") {
                 return (
                     <div id="sunrise-sunset-metrics">
-                        <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                        <SunriseIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Sunrise: {sunrise_local}</text>
-                        <br/>
-                        <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                        <br />
+                        <SunnyIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Solar Noon: {solar_noon_local}</text>
-                        <br/>
-                        <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                        <br />
+                        <SunsetIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Sunset: {sunset_local}</text>
                         {renderSunburstInfo()}
-                        <br/>
+                        <br />
                     </div>
                 )
             } else {
                 return (
                     <div id="sunrise-sunset-metrics">
-                        <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                        <SunriseIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Sunrise: {sunrise_local}</text>
-                        <br/>
+                        <br />
                         {renderSunburstInfo()}
-                        <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                        <SunnyIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Solar Noon: {solar_noon_local}</text>
-                        <br/>
-                        <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                        <br />
+                        <SunsetIcon className="sunburst-sunrise-sunset-icon" />
                         <text>Sunset: {sunset_local}</text>
-                        <br/>
+                        <br />
                     </div>
                 )
             }
@@ -282,16 +250,16 @@ const WeatherTab = ({
             console.log("Error rendering sunburst info: " + e);
             return (
                 <div id="sunburst-segment">
-                    <span>Sunrise/Sunset</span><br/>
-                    <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
+                    <span>Sunrise/Sunset</span><br />
+                    <SunriseIcon className="sunburst-sunrise-sunset-icon" />
                     <text>Sunrise: {sunrise_local}</text>
-                    <br/>
-                    <SunnyIcon className="sunburst-sunrise-sunset-icon"/>
+                    <br />
+                    <SunnyIcon className="sunburst-sunrise-sunset-icon" />
                     <text>Solar Noon: {solar_noon_local}</text>
-                    <br/>
-                    <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
+                    <br />
+                    <SunsetIcon className="sunburst-sunrise-sunset-icon" />
                     <text>Sunset: {sunset_local}</text>
-                    <br/>
+                    <br />
                     <text id="sunburst-sunrise-sunset-error">No sunburst data available - check console for details.</text>
                 </div>
             )
@@ -302,7 +270,7 @@ const WeatherTab = ({
         console.log("Sunburst info: " + JSON.stringify(sunburstInfo));
 
         // if the map datetime is more than 4 days in the future, or more than 1 day in the past, then don't render sunburst info
-        if (mapDatetime > new Date(Date.now() + 4 * 24 * 60 * 60 * 1000) || mapDatetime < new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)) {
+        if (mapDatetime > dayjs().add(4, "days") || mapDatetime < dayjs().subtract(1, "days")) {
             return (
                 <div id="astronomy-segment">
                     <div id="sunburst-metrics">
@@ -313,19 +281,19 @@ const WeatherTab = ({
         }
 
         try {
-            let type = sunburstInfo["features"][0]["properties"]["type"];
+            const type = sunburstInfo["features"][0]["properties"]["type"];
             let twilight;
             if (type === "Sunrise") {
                 twilight = "dawn";
             } else {
                 twilight = "dusk";
             }
-            let quality = sunburstInfo["features"][0]["properties"]["quality"];
-            let quality_percent = sunburstInfo["features"][0]["properties"]["quality_percent"];
+            const quality = sunburstInfo["features"][0]["properties"]["quality"];
+            const quality_percent = sunburstInfo["features"][0]["properties"]["quality_percent"];
 
-            let astro_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
-            let nautical_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
-            let civil_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
+            const astro_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["astronomical"])).toLocaleTimeString();
+            const nautical_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["nautical"])).toLocaleTimeString();
+            const civil_time = new Date(Date.parse(sunburstInfo["features"][0]["properties"][twilight]["civil"])).toLocaleTimeString();
 
             let quality_color;
             if (quality_percent >= 75) {
@@ -341,26 +309,26 @@ const WeatherTab = ({
                 quality_color = "red";
             }
 
-            let SunriseSunsetIcon;
-            if (type === "Sunrise") {
-                SunriseSunsetIcon = <SunriseIcon className="sunburst-sunrise-sunset-icon"/>
-            }
-            else {
-                SunriseSunsetIcon = <SunsetIcon className="sunburst-sunrise-sunset-icon"/>
-            }
+            // let SunriseSunsetIcon;
+            // if (type === "Sunrise") {
+            //     SunriseSunsetIcon = <SunriseIcon className="sunburst-sunrise-sunset-icon" />
+            // }
+            // else {
+            //     SunriseSunsetIcon = <SunsetIcon className="sunburst-sunrise-sunset-icon" />
+            // }
 
             return (
-                    <div id="sunburst-metrics">
-                        {/*<text id="regular">Quality: </text><span style={{ color: quality_color }}>{quality} ({quality_percent}%)</span>*/}
-                        <text id="sunburstquality">Quality:</text><text style={{ color: quality_color }}>{quality} ({quality_percent}%)</text>
-                        <br/>
-                        <ClockIcon className="sunburst-clock-icon"/><text>{twilight.charAt(0).toUpperCase() + twilight.slice(1)}: </text><br/>
-                        <div style={{ marginLeft: "20px" }}>
-                            <text>Civil: {civil_time}</text><br/>
-                            <text>Astronomical: {astro_time}</text><br/>
-                            <text>Nautical: {nautical_time}</text><br/>
-                        </div>
+                <div id="sunburst-metrics">
+                    {/*<text id="regular">Quality: </text><span style={{ color: quality_color }}>{quality} ({quality_percent}%)</span>*/}
+                    <text id="sunburstquality">Quality:</text><text style={{ color: quality_color }}>{quality} ({quality_percent}%)</text>
+                    <br />
+                    <ClockIcon className="sunburst-clock-icon" /><text>{twilight.charAt(0).toUpperCase() + twilight.slice(1)}: </text><br />
+                    <div style={{ marginLeft: "20px" }}>
+                        <text>Civil: {civil_time}</text><br />
+                        <text>Astronomical: {astro_time}</text><br />
+                        <text>Nautical: {nautical_time}</text><br />
                     </div>
+                </div>
             )
         } catch (e) {
             console.log("Error rendering sunburst info: " + e);
@@ -379,16 +347,31 @@ const WeatherTab = ({
             <h1>WEATHER</h1>
 
             <div id="weather-controls">
-                {changeDatetimeElement()}
-                {setDatetimeToNowButton()}
-                {changePollingPositionButton()}
+                <div id="change-datetime-element">
+                    <input
+                        type="datetime-local"
+                        id="datetime-input"
+                        name="datetime-input"
+                        required
+                        value={dayjs(mapDatetime).format("YYYY-MM-DDTHH:mm:ss")}
+                        onChange={e => {
+                            // if it was cleared, or if the date is invalid, then don't update the map datetime
+                            if (e.target.value === "") return;
+                            setMapDatetime(dayjs(e.target.value));
+                        }}
+                    />
+                </div>
+                <div id="set-datetime-to-now-button">
+                    <ClockForwardIcon className="clock-forward-icon" onClick={() => setDateTimeToNow()} />
+                    <span>Set to now</span>
+                </div>
+                <div id="change-polling-position-button">
+                    <PollingIcon className="polling-icon" onClick={() => setPollingPositionAsCenter()} />
+                    <span>Set polling position</span>
+                </div>
             </div>
 
-            {pollingPosition ? (
-                <>
-                    {astronomyInfo ? renderAstronomyInfo() : ""}
-                </>
-            ) : ""}
+            {pollingPosition && astronomyInfo && renderAstronomyInfo()}
         </div>
     )
 };

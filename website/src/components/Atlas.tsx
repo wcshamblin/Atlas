@@ -82,12 +82,12 @@ const Atlas = () => {
         return () => clearTimeout(timer)
     }, [isoMinutes, isoProfile])
 
-    useEffect(() => {
+    const loadDataForSelectedCats = (isMove: boolean) => {
         selectedCats.forEach(([catId, , customParameter]) => {
-            if(!customParameter) {
+            if (!customParameter) {
                 switch (catId) {
                     case 'Isochrone':
-                        loadIsoData()
+                        if (!isMove) loadIsoData();
                         break;
                     case 'All Towers':
                         loadTowers(viewState);
@@ -103,12 +103,14 @@ const Atlas = () => {
                 }
             }
         })
+    }
+
+    useEffect(() => {
+        loadDataForSelectedCats(false)
     }, [selectedCats])
 
-    const updateLayersAfterMove = (e: ViewStateChangeEvent) => {
-        loadTowers(e.viewState);
-        loadObstacles(e.viewState);
-        loadAntennas(e.viewState);
+    const updateLayersAfterMove = () => {
+        loadDataForSelectedCats(true);
     }
 
     const loadTowers = async (viewState: ViewState) => {

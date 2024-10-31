@@ -10,9 +10,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import WeatherTab from "./WeatherTab";
-import LayersTab from "./NewLayersTab";
+import LayersTab from "./LayersTab";
 import SettingsTab from "./SettingsTab";
-import CustomMapsTab from "./CustomMapsTab";
+import CustomMapsTab from "./NewCustomMapsTab";
 
 enum SidebarTab {
     Weather = "weather",
@@ -56,39 +56,24 @@ const Sidebar = ({
                 {(() => {
                     switch (selectedTab) {
                         case SidebarTab.Weather:
-                            // return <WeatherTab 
-                            //     map={map}
-                            //     mapStatus={mapStatus}
-                            //     pollingPosition={pollingPosition}
-                            //     setPollingPosition={setPollingPosition}
-                            //     mapDatetime={mapDatetime}
-                            //     setMapDatetime={setMapDatetime}
-                            //     astronomyInfo={astronomyInfo}
-                            // />
+                            return <WeatherTab />
                         case SidebarTab.Layers:
-                            return <LayersTab 
-                                // map={map}
-                                // mapStatus={mapStatus}
-                                // setLayoutProperty={setLayoutProperty}
-                                // displayLabels={displayLabels}
-                                // setShowIsochrone={setShowIsochrone}
-                                // setShowShadeMap={setShowShadeMap}
-                            />
+                            return <LayersTab />                            
                         case SidebarTab.CustomMaps:
-                            // return <CustomMapsTab
-                            //     mapStatus={mapStatus}
-                            //     setLayoutProperty={setLayoutProperty}
-                            //     customMapsData={customMapsData}
-                            //     flyTo={flyTo}
-                            //     currentSelectedCustomMapPoint={currentSelectedCustomMapPoint}
-                            //     setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint}
-                            //     setOpenModal={setOpenModal}
-                            //     setModalType={setModalType}
-                            //     setModalSelectedCustomMapId={setModalSelectedCustomMapId} 
-                            //     setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId}
-                            //     pointFilters={pointFilters}
-                            //     updatePointFilters={updatePointFilters}
-                            // />
+                            return <CustomMapsTab
+                                mapStatus={mapStatus}
+                                setLayoutProperty={setLayoutProperty}
+                                customMapsData={customMapsData}
+                                flyTo={flyTo}
+                                currentSelectedCustomMapPoint={currentSelectedCustomMapPoint}
+                                setCurrentSelectedCustomMapPoint={setCurrentSelectedCustomMapPoint}
+                                setOpenModal={setOpenModal}
+                                setModalType={setModalType}
+                                setModalSelectedCustomMapId={setModalSelectedCustomMapId} 
+                                setModalSelectedCustomMapPointId={setModalSelectedCustomMapPointId}
+                                pointFilters={pointFilters}
+                                updatePointFilters={updatePointFilters}
+                            />
                         case SidebarTab.Settings:
                             return <SettingsTab />
                         default:
