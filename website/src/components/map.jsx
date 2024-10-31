@@ -65,13 +65,13 @@ import Modal from './Modal';
 
 // import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
-mapboxgl.accessToken = import.meta.env.VITE_APP_MAPBOX_API_KEY;
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
 const shadeMap = new ShadeMap({
     date: new Date(),    // display shadows for current date
     color: '#0f1624',    // shade color
     opacity: 0.93,        // opacity of shade colors
-    apiKey: import.meta.env.VITE_APP_SHADE_MAP_API_KEY,
+    apiKey: import.meta.env.VITE_SHADE_MAP_API_KEY,
     terrainSource: {
         tileSize: 256,       // DEM tile size
         maxZoom: 15,         // Maximum zoom of DEM tile set
@@ -214,7 +214,7 @@ function Map() {
         mapbox.current.addSource('Mapbox', {
             'type': 'raster',
             'tiles': [
-                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + import.meta.env.VITE_APP_MAPBOX_API_KEY
+                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + import.meta.env.VITE_MAPBOX_API_KEY
             ],
             'tileSize': 256,
             'maxzoom': 20
@@ -259,7 +259,7 @@ function Map() {
         mapbox.current.addSource('MAXAR', {
             'type': 'raster',
             'tiles': [
-                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + import.meta.env.VITE_APP_HERE_API_KEY
+                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + import.meta.env.VITE_HERE_API_KEY
             ],
             'tileSize': 512
         });
@@ -1803,7 +1803,7 @@ function Map() {
         }
 
         return (
-            <LoadScript googleMapsApiKey={import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY}>
+            <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
                 <StreetViewService onLoad={onLoad} />
             </LoadScript>
         )
@@ -2018,7 +2018,7 @@ function Map() {
     async function getIso() {
 
         const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings.isoMinutes * 60}&travelMode=${settings.isoProfile}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`,
+            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings.isoMinutes * 60}&travelMode=${settings.isoProfile}&key=${import.meta.env.VITE_BING_MAPS_API_KEY}`,
             {
                 method: 'GET',
                 headers: {

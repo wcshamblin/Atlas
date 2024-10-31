@@ -115,7 +115,7 @@ export const esri2014Tiles = [
 ];
 
 export const mapboxTiles = [
-    'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + import.meta.env.VITE_APP_MAPBOX_API_KEY
+    'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + import.meta.env.VITE_MAPBOX_API_KEY
 ];
 
 export const openStreetMapTiles = [
@@ -133,11 +133,11 @@ export const lantmaterietTiles = [
 ];
 
 export const vfrTiles = [
-    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/vfr/{z}/{x}/{y}.png`
+    `${import.meta.env.VITE_API_SERVER_URL}/api/vfr/{z}/{x}/{y}.png`
 ];
 
 export const maxarTiles = [
-    'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + import.meta.env.VITE_APP_HERE_API_KEY
+    'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + import.meta.env.VITE_HERE_API_KEY
 ];
 
 export const usgsTopoTiles = [
@@ -145,11 +145,11 @@ export const usgsTopoTiles = [
 ];
 
 export const sentinel2Tiles = [
-    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/sentinel/{bbox-epsg-3857}.png`
+    `${import.meta.env.VITE_API_SERVER_URL}/api/sentinel/{bbox-epsg-3857}.png`
 ];
 
 export const skoterlederTiles = [
-    `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/skoterleder/{z}/{x}/{y}.png`
+    `${import.meta.env.VITE_API_SERVER_URL}/api/skoterleder/{z}/{x}/{y}.png`
 ];
 
 export const baseStyleDictionary: Record<string, string[]> = {
@@ -227,7 +227,7 @@ const googleStreetviewLayer: LayerProps = {
 const parcelOwnershipSource: SourceProps = {
     'type': 'vector',
     'tiles': [
-        `https://${import.meta.env.VITE_APP_API_SERVER_URL}/api/parcel/{z}/{x}/{y}`
+        `${import.meta.env.VITE_API_SERVER_URL}/api/parcel/{z}/{x}/{y}`
     ],
     'minzoom': 12,
     'maxzoom': 18,
@@ -412,7 +412,7 @@ const longLinesLayer: LayerProps = {
     }
 }
 
-export const getIsoUrl = (latitude: number, longitude: number, isoMinutes: number, isoProfile: string) => `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${latitude},${longitude}&maxTime=${isoMinutes * 60}&travelMode=${isoProfile}&key=${import.meta.env.VITE_APP_BING_MAPS_API_KEY}`;
+export const getIsoUrl = (latitude: number, longitude: number, isoMinutes: number, isoProfile: string) => `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${latitude},${longitude}&maxTime=${isoMinutes * 60}&travelMode=${isoProfile}&key=${import.meta.env.VITE_BING_MAPS_API_KEY}`;
 
 export const getIso = async (isochroneUrl: string) => {
     // need error logging here
