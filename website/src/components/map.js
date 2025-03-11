@@ -617,7 +617,7 @@ function Map() {
                 'source-layer': 'building',
                 'filter': ['==', 'extrude', 'true'],
                 'type': 'fill-extrusion',
-                'minzoom': 15,
+                'minzoom': 12,
                 'paint': {
                     'fill-extrusion-color': '#404040',
                     'fill-extrusion-height': ['get', 'height'],
@@ -815,16 +815,16 @@ function Map() {
         }
     };
 
-    const getMap = async (mapName) => {
-        const accessToken = await getAccessTokenSilently();
-        const { data, error } = await fetchMap(accessToken, mapName);
-        if (data) {
-            // ok here we need to look at customMaps and get the map from the dict and then modify it
-        }
-        if (error) {
-            console.log(error);
-        }
-    }
+    // const getMap = async (mapName) => {
+    //     const accessToken = await getAccessTokenSilently();
+    //     const { data, error } = await fetchMap(accessToken, mapName);
+    //     if (data) {
+    //         // ok here we need to look at customMaps and get the map from the dict and then modify it
+    //     }
+    //     if (error) {
+    //         console.log(error);
+    //     }
+    // }
 
     useEffect(() => {
         if (mapbox.current) return; // initialize map only once
@@ -1428,6 +1428,9 @@ function Map() {
                     <a href={"https://livingatlas.arcgis.com/wayback/#mapCenter=" + rightClickPopupPosition[0] + "%2C" + rightClickPopupPosition[1] + "%2C17"} target="_blank" rel="noreferrer">
                         <FontAwesomeIcon icon={faExternalLinkAlt} /> ArcGIS Wayback
                     </a><br />
+                    <a href={"https://earth.google.com/web/@" + rightClickPopupPosition[1] + "," + rightClickPopupPosition[0] + ",356.91683106a,21152.84581396d,1y,0h,0t,0r/"} target="_blank" rel="noreferrer">
+                    <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Earth
+                    </a>
                 </div>
                     <div id="rightclickpopupbuttons">
                         <button id="rightclickpopupbutton" onClick={() => {
