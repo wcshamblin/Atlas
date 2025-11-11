@@ -15,6 +15,7 @@ from database.database import delete_map_by_id, get_home, get_point_by_id, \
     set_eula_acceptance, verify_user_permissions, update_map_name, update_map_description, update_map_legend, \
     update_map_categories, update_map_colors, update_map_icons
 from sentinel_fetching import get_sentinel_image
+from sentinel_fetching_with_metadata import search_available_images
 from datetime import datetime
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
@@ -1071,6 +1072,57 @@ def get_sentinel(response: Response, bbox: str, date: str = "None"):
     response.headers["Content-Disposition"] = "attachment; filename=sentinel.png"
 
     return Response(content=image, media_type="image/png")
+
+@app.get("/sentinel-metadata/{year}/{month}")
+def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
+    """
+    Get Sentinel-2 metadata for all available images in a given month.
+    Returns cloud cover percentages and dates for calendar visualization.
+    
+    Args:
+        year: Year (e.g., 2024)
+        month: Month (1-12)
+        bbox: Bounding box as comma-separated values (minx,miny,maxx,maxy) in EPSG:3857
+    
+    Returns:
+        Dictionary with date -> cloud_cover mapping
+    """
+    try:
+        bbox_list = [float(x) for x in bbox.split(",")]
+        
+        # Calculate start and end dates for the month
+        from calendar import monthrange
+        _, last_day = monthrange(year, month)
+        start_date = datetime(year, month, 1)
+        end_date = datetime(year, month, last_day, 23, 59, 59)
+        
+        # Search for all images in the month (no cloud cover filter)
+        images = search_available_images(bbox_list, end_date, max_cloud_cover=100, days_range=(end_date - start_date).days + 5)
+        
+        if not images:
+            return {"dates": {}}
+        
+        # Group images by date and keep the one with lowest cloud cover for each date
+        date_cloud_map = {}
+        for img in images:
+            img_datetime = datetime.fromisoformat(img['properties']['datetime'].replace('Z', '+00:00'))
+            # Only include images from the requested month
+            if img_datetime.year == year and img_datetime.month == month:
+                date_str = img_datetime.strftime('%Y-%m-%d')
+                cloud_cover = img['properties'].get('eo:cloud_cover', 100)
+                
+                # Keep the lowest cloud cover for each date
+                if date_str not in date_cloud_map or cloud_cover < date_cloud_map[date_str]:
+                    date_cloud_map[date_str] = cloud_cover
+        
+        return {"dates": date_cloud_map}
+        
+    except ValueError as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"status": "error", "message": f"Invalid parameters: {str(e)}"}
+    except Exception as e:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"status": "error", "message": f"Error fetching metadata: {str(e)}"}
 
 @app.get("/parcel/{z}/{x}/{y}")
 def get_regrid_parcels(response: Response, z: int, x: int, y: int):
