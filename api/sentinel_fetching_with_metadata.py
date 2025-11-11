@@ -9,6 +9,7 @@ import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
+from dateutil import parser as dateutil_parser
 
 def sentinelhub_compliance_hook(response):
     response.raise_for_status()
@@ -102,7 +103,16 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
         features = result.get('features', [])
         
         # Sort by cloud cover (ascending) and date (descending)
-        features.sort(key=lambda x: (x['properties'].get('eo:cloud_cover', 100), -datetime.datetime.fromisoformat(x['properties']['datetime'].replace('Z', '+00:00')).timestamp()))
+        # Use dateutil parser to handle variable precision milliseconds
+        def sort_key(x):
+            try:
+                dt = dateutil_parser.parse(x['properties']['datetime'])
+                return (x['properties'].get('eo:cloud_cover', 100), -dt.timestamp())
+            except:
+                # If parsing fails, put it at the end
+                return (100, 0)
+        
+        features.sort(key=sort_key)
         
         return features
         
@@ -117,7 +127,16 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
         response.raise_for_status()
         result = response.json()
         features = result.get('features', [])
-        features.sort(key=lambda x: (x['properties'].get('eo:cloud_cover', 100), -datetime.datetime.fromisoformat(x['properties']['datetime'].replace('Z', '+00:00')).timestamp()))
+        
+        # Sort by cloud cover (ascending) and date (descending)
+        def sort_key(x):
+            try:
+                dt = dateutil_parser.parse(x['properties']['datetime'])
+                return (x['properties'].get('eo:cloud_cover', 100), -dt.timestamp())
+            except:
+                return (100, 0)
+        
+        features.sort(key=sort_key)
         return features
         
     except Exception as e:
