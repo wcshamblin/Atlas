@@ -70,6 +70,7 @@ const Sidebar = ({
     const [selectedPart, setSelectedPart] = useState("layers");
     const [isoMinutesLive, setIsoMinutesLive] = useState(null);
     const [selectedCountry, setSelectedCountry] = useState("");
+    const [parcelSearchQuery, setParcelSearchQuery] = useState("");
 
     useEffect(() => {
         if (isoMinutesLive == null) {
@@ -217,6 +218,63 @@ const Sidebar = ({
         }
     }, [currentSelectedCustomMapPoint]);
 
+    // Update parcel layer styling when search query changes
+    useEffect(() => {
+        if (!map) return;
+        if (!map.getLayer('Parcel ownership')) return;
+
+        // If parcel layer is not visible, reset search query
+        if (!layers["Parcel ownership"].visible) {
+            if (parcelSearchQuery !== "") {
+                setParcelSearchQuery("");
+            }
+            return;
+        }
+
+        if (parcelSearchQuery.trim() === "") {
+            // Reset to default color and width when search is empty
+            map.setPaintProperty('Parcel ownership', 'line-color', '#00a97d');
+            map.setPaintProperty('Parcel ownership', 'line-width', 1);
+            // Reset label color if labels layer exists
+            if (map.getLayer('Parcel ownership labels')) {
+                map.setPaintProperty('Parcel ownership labels', 'text-color', '#8affe0');
+            }
+        } else {
+            // Highlight matching parcels in red with 3x wider outline
+            const searchLower = parcelSearchQuery.toLowerCase();
+            const matchCondition = [
+                'all',
+                ['has', 'owner'],
+                ['!=', ['get', 'owner'], ''],
+                ['in', searchLower, ['downcase', ['coalesce', ['get', 'owner'], '']]],
+            ];
+            
+            map.setPaintProperty('Parcel ownership', 'line-color', [
+                'case',
+                matchCondition,
+                '#ff0000',  // Red for matches
+                '#00a97d'   // Default color for non-matches
+            ]);
+            
+            map.setPaintProperty('Parcel ownership', 'line-width', [
+                'case',
+                matchCondition,
+                3,  // 3x wider for matches
+                1   // Default width for non-matches
+            ]);
+            
+            // Highlight matching labels in red
+            if (map.getLayer('Parcel ownership labels')) {
+                map.setPaintProperty('Parcel ownership labels', 'text-color', [
+                    'case',
+                    matchCondition,
+                    '#ff0000',  // Red for matches
+                    '#8affe0'   // Default color for non-matches
+                ]);
+            }
+        }
+    }, [parcelSearchQuery, map, layers]);
+
     const SunburstQualityInfoButton = () => {
         const [hover, setHover] = useState(false);
 
@@ -259,6 +317,24 @@ const Sidebar = ({
                         changeSentinelDate(new Date(e.target.value));
                         }
                     }
+                />
+            </div>
+        )
+    }
+
+    const parcelSearchElement = () => {
+        return (
+            <div id="parcel-search-element">
+                <span id="parcel-search-label">Parcel owner search</span>
+                <input
+                    type="text"
+                    id="parcel-search-input"
+                    name="parcel-search-input"
+                    placeholder="Search owner names..."
+                    value={parcelSearchQuery}
+                    onChange={e => {
+                        setParcelSearchQuery(e.target.value);
+                    }}
                 />
             </div>
         )
@@ -932,6 +1008,8 @@ const Sidebar = ({
                                     {renderBaseLayers()}
                                     {/*only render sentinel datetime element if layer is visible*/}
                                     {baseLayers["Sentinel 2-L2A"].visible ? sentinelDatetimeElement() : ""}
+                                    {/*only render parcel search element if layer is visible*/}
+                                    {layers["Parcel ownership"].visible ? parcelSearchElement() : ""}
                                     <h3>Regular Layers</h3>
                                     {renderRegularLayers()}
                                 </div>

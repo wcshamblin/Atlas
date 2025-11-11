@@ -95,6 +95,30 @@
     padding-right: 5px;
 }
 
+#parcel-search-label {
+    font-size: 16px;
+    margin-bottom: 2px;
+    color: black;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+#parcel-search-input {
+    height: 35px;
+    border: 1px solid black;
+    border-radius: 5px;
+    font-size: 17px;
+    width: 273px;
+    padding-left: 10px;
+}
+
+#parcel-search-element {
+    margin-top: 65px;
+    margin-left: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
 #datetime-input {
     height: 30px;
     border: 1px solid black;
