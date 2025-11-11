@@ -17,6 +17,7 @@ from database.database import delete_map_by_id, get_home, get_point_by_id, \
 from sentinel_fetching import get_sentinel_image
 from sentinel_fetching_with_metadata import search_available_images
 from datetime import datetime
+from dateutil import parser as dateutil_parser
 from database.timeconversion import from_str_to_datetime, from_datetime_to_str
 import re
 from math import sqrt, sin, cos
@@ -1105,15 +1106,22 @@ def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
         # Group images by date and keep the one with lowest cloud cover for each date
         date_cloud_map = {}
         for img in images:
-            img_datetime = datetime.fromisoformat(img['properties']['datetime'].replace('Z', '+00:00'))
-            # Only include images from the requested month
-            if img_datetime.year == year and img_datetime.month == month:
-                date_str = img_datetime.strftime('%Y-%m-%d')
-                cloud_cover = img['properties'].get('eo:cloud_cover', 100)
+            try:
+                # Use dateutil parser which handles variable precision milliseconds
+                img_datetime = dateutil_parser.parse(img['properties']['datetime'])
                 
-                # Keep the lowest cloud cover for each date
-                if date_str not in date_cloud_map or cloud_cover < date_cloud_map[date_str]:
-                    date_cloud_map[date_str] = cloud_cover
+                # Only include images from the requested month
+                if img_datetime.year == year and img_datetime.month == month:
+                    date_str = img_datetime.strftime('%Y-%m-%d')
+                    cloud_cover = img['properties'].get('eo:cloud_cover', 100)
+                    
+                    # Keep the lowest cloud cover for each date
+                    if date_str not in date_cloud_map or cloud_cover < date_cloud_map[date_str]:
+                        date_cloud_map[date_str] = cloud_cover
+            except Exception as e:
+                # Log parsing error but continue processing other images
+                print(f"Error parsing image datetime: {e}")
+                continue
         
         return {"dates": date_cloud_map}
         
