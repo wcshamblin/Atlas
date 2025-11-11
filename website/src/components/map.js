@@ -1,7 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react';
-import ReactDOM from 'react-dom/client';
 
 import Sidebar from '../components/sidebar';
+import Modal from './modal';
+import { GetStreetView, DisplayStreetViewDiv } from './StreetViewComponent';
+import { renderRightClickPopup } from './RightClickPopup';
+import { renderCustomMapPopup } from './CustomMapPopup';
+import { coordinatesGeocoder, mobileAndTabletCheck, displayLabelsUtil } from './map-utils';
+import { addMapSources } from './map-sources';
+import { setRoute, getIso, retrieveSunburstToken, getSunburstData } from './map-hooks';
+import { setupAllEventHandlers } from './map-event-handlers';
 
 import mapboxgl from 'mapbox-gl';
 
@@ -15,20 +22,8 @@ import '../styles/components/sidebar.css';
 import '../styles/components/layerswitcher.css'
 import '../styles/components/rightclickpopup.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
-import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import 'mapbox-gl/dist/mapbox-gl.css';
 import 'react-datetime-picker/dist/DateTimePicker.css';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {
-    faArrowLeft, faExternalLinkAlt,
-    faFloppyDisk,
-    faHome,
-    faInfo,
-    faMapMarkerAlt,
-    faPenToSquare,
-    faRoute,
-    faTrash
-} from '@fortawesome/free-solid-svg-icons'
 
 // api imports
 import {
@@ -46,15 +41,9 @@ import {
 
 import {useAuth0} from "@auth0/auth0-react";
 
-import {GoogleMap, LoadScript, StreetViewPanorama, StreetViewService} from '@react-google-maps/api';
-import Modal from './modal';
-
 /* eslint-disable import/first */
 // eslint-disable-next-line import/no-webpack-loader-syntax
 mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
-
-
-// import ScriptLoaded from "@react-google-maps/api/src/docs/ScriptLoaded";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_API_KEY;
 
@@ -78,12 +67,8 @@ const shadeMap = new ShadeMap({
     debug: (msg) => { console.log(new Date().toISOString(), msg) },
 })
 
-// detect mobile browsers
-window.mobileAndTabletCheck = function() {
-    let check = false;
-    (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
-    return check;
-};
+// detect mobile browsers - use imported function
+window.mobileAndTabletCheck = mobileAndTabletCheck;
 
 function Map() {
     const { getAccessTokenSilently } = useAuth0();
@@ -161,646 +146,17 @@ function Map() {
 
 
     const addSources = () => {
-        mapbox.current.addSource('Google Hybrid', {
-            'type': 'raster',
-            'tiles': [
-                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-                'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-                'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
-            ],
-            'tileSize': 256
-        });
-
-        mapbox.current.addSource('Bing Hybrid', {
-            'type': 'raster',
-            'tiles': [
-                'https://ecn.t0.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z',
-                'https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z',
-                'https://ecn.t2.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z',
-                'https://ecn.t3.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587&mkt=en-gb&n=z'
-            ],
-            'tileSize': 256,
-            'maxzoom': 20
-        });
-
-        // https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/2168/20/411560/294463?blankTile=false
-        mapbox.current.addSource('ESRI', {
-            'type': 'raster',
-            'tiles': [
-                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false',
-                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false',
-                'https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/mapserver/tile/{z}/{y}/{x}?blankTile=false'
-            ],
-            'tileSize': 256,
-            'maxzoom': 20
-        });
-        
-        mapbox.current.addSource('ESRI (2014)', {
-            'type': 'raster',
-            'tiles': [
-                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false',
-                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false',
-                'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-            ],
-            'tileSize': 256,
-            'maxzoom': 20
-        });
-
-        mapbox.current.addSource('Mapbox', {
-            'type': 'raster',
-            'tiles': [
-                'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + process.env.REACT_APP_MAPBOX_API_KEY
-            ],
-            'tileSize': 256,
-            'maxzoom': 20
-        });
-
-        mapbox.current.addSource('Lantmäteriet', {
-            'type': 'raster',
-            'tiles': [
-                'https://minkarta.lantmateriet.se/map/ortofoto?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Ortofoto_0.5%2COrtofoto_0.4%2COrtofoto_0.25%2COrtofoto_0.16&TILED=true&STYLES=&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX={bbox-epsg-3857}'
-            ],
-            'tileSize': 256,
-            'maxzoom': 20
-        });
-
-        
-        mapbox.current.addSource('OpenStreetMap', {
-            'type': 'raster',
-            'tiles': [
-                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            ],
-            'tileSize': 256
-        });
-
-        mapbox.current.addSource('NAIP', {
-            'type': 'raster',
-            'tiles': [
-                'https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/USDA_CONUS_PRIME/ImageServer/tile/{z}/{y}/{x}'
-            ],
-            'tileSize': 256
-        });
-
-        mapbox.current.addSource('VFR', {
-            'type': 'raster',
-            'tiles': [
-                'https://atlas2.org/api/vfr/{z}/{x}/{y}.png'
-            ],
-            'tileSize': 256
-        });
-
-        mapbox.current.addSource('MAXAR', {
-            'type': 'raster',
-            'tiles': [
-                'https://maps.hereapi.com/v3/background/mc/{z}/{x}/{y}/png?size=512&style=explore.satellite.day&apiKey=' + process.env.REACT_APP_HERE_API_KEY
-            ],
-            'tileSize': 512
-        });
-
-        mapbox.current.addSource('USGS Topo', {
-            'type': 'raster',
-            'tiles': [
-                'https://caltopo.s3.amazonaws.com/topo/{z}/{x}/{y}.png'
-            ],
-            'tileSize': 256
-        });
-
-        mapbox.current.addSource('Sentinel 2-L2A', {
-            'type': 'raster',
-            'tiles': [
-                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png'
-            ],
-            'tileSize': 256,
-            'maxzoom': 18
-        });
-
-        mapbox.current.addSource("Skoterleder", {
-            'type': 'raster',
-            'tiles': [
-                'https://atlas2.org/api/skoterleder/{z}/{x}/{y}.png'
-            ],
-            'tileSize': 256,
-            'maxzoom': 14
-        });
-        mapbox.current.addLayer({
-            'id': 'Skoterleder',
-            'type': 'raster',
-            'source': 'Skoterleder',
-            'paint': {}
-        });
-
-
-        mapbox.current.addSource("Light Pollution", {
-            'type': 'raster',
-            'tiles': [
-                'https://djlorenz.github.io/astronomy/image_tiles/tiles2024/tile_{z}_{x}_{y}.png'
-            ],
-            'tileSize': 1024,
-            'maxzoom': 6
-        });
-        mapbox.current.addLayer({
-            'id': 'Light Pollution',
-            'type': 'raster',
-            'source': 'Light Pollution',
-            'paint': {
-                'raster-opacity': 0.4
-            }
-        });
-
-
-        mapbox.current.addSource('Parcel ownership', {
-            'type': 'vector',
-            'tiles': [
-                'https://atlas2.org/api/parcel/{z}/{x}/{y}'
-            ],
-            'minzoom': 12,
-            'maxzoom': 18
-        });
-        // add parcel layers with labels from vector source layer "owner"
-        mapbox.current.addLayer({
-            'id': 'Parcel ownership',
-            'type': 'line',
-            'source': 'Parcel ownership',
-            'source-layer': 'parcels',
-            'paint': {
-                'line-color': '#00a97d',
-                'line-width': 1,
-            }
-        });
-        // labels layer for parcels, from "mvt_id"
-        mapbox.current.addLayer({
-            'id': 'Parcel ownership labels',
-            'type': 'symbol',
-            'source': 'Parcel ownership',
-            'source-layer': 'parcels',
-            'layout': {
-                'text-field': '{owner}',
-                "text-font": ["Open Sans Regular"],
-                'text-size': 15,
-                'visibility': 'visible'
-            },
-            'paint': {
-                'text-color': '#8affe0',
-            },
-            // set minzoom to 16 to avoid cluttering the map
-            'minzoom': 14
-        });
-
-
-        // all towers source
-        mapbox.current.addSource('All Towers', {
-            'type': 'geojson',
-            'data': allTowersPoints
-        });
-
-        mapbox.current.on('mouseenter', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'All Towers', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.loadImage('https://i.imgur.com/qfS0mnq.png', (error, image) => {
-            if (error) throw error;
-            mapbox.current.addImage('tower-icon', image, { sdf: true });
-        });
-
-        // all towers layer
-        mapbox.current.addLayer({
-            'id': 'All Towers',
-            'type': 'symbol',
-            'layout': {
-                'icon-image': 'tower-icon',
-                'icon-size': 1,
-            },
-            'source': 'All Towers',
-            'minzoom': towerRenderZoomLevel,
-            'paint': {
-                'icon-color': ['get', 'color'],
-            }
-        });
-
-        // all towers extrusion source
-        mapbox.current.addSource('All Tower Extrusions', {
-            'type': 'geojson',
-            'data': allTowerPolygons
-        });
-
-        // all towers extrusion layer
-        mapbox.current.addLayer({
-            'id': 'All Tower Extrusions',
-            'type': 'fill-extrusion',
-            'source': 'All Tower Extrusions',
-            'minzoom': towerExtrusionRenderZoomLevel,
-            'paint': {
-                'fill-extrusion-color': ['get', 'color'],
-                'fill-extrusion-height': ['get', 'overall_height'],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.8
-            }
-        });
-
-        // antennas source
-        mapbox.current.addSource('Antennas', {
-            'type': 'geojson',
-            'data': antennaPoints
-        });
-
-        mapbox.current.on('mouseenter', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Antennas', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.loadImage('https://i.imgur.com/s2Wgdgx.png', (error, image) => {
-            if (error) throw error;
-            mapbox.current.addImage('transmitter-icon', image, { sdf: true });
-        });
-
-        // antennas layer
-        mapbox.current.addLayer({
-            'id': 'Antennas',
-            'type': 'symbol',
-            'layout': {
-                'icon-image': 'transmitter-icon',
-                'icon-size': 1,
-            },
-            'source': 'Antennas',
-            'minzoom': antennaRenderZoomLevel,
-            'paint': {
-                'icon-color': ['get', 'color'],
-            }
-        });
-
-        // obstacles source
-        mapbox.current.addSource('FAA Obstacles', {
-            'type': 'geojson',
-            'data': obstaclePoints
-        });
-
-        // obstacles layer
-        mapbox.current.on('mouseenter', 'FAA Obstacles', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-
-        mapbox.current.on('mouseleave', 'FAA Obstacles', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.loadImage('https://i.imgur.com/kFZOjAw.png', (error, image) => {
-            if (error) throw error;
-            mapbox.current.addImage('obstacle-icon', image, { sdf: true });
-        });
-
-        mapbox.current.addLayer({
-            'id': 'FAA Obstacles',
-            'type': 'symbol',
-            'layout': {
-                'icon-image': 'obstacle-icon',
-                'icon-size': 1,
-            },
-            'source': 'FAA Obstacles',
-            'minzoom': towerRenderZoomLevel,
-            'paint': {
-                'icon-color': '#000000',
-            }
-        });
-
-        // routing source
-        mapbox.current.addSource('Routing', {
-            'type': 'geojson',
-            'data': routingLine
-        });
-
-        // routing layer
-        mapbox.current.addLayer({
-            id: 'Routing',
-            type: 'line',
-            source: 'Routing',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#33ac3d',
-                'line-width': 10,
-                'line-opacity': 0.75
-            }
-        });
-
-        // add long lines 
-        let long_lines = require('./long-lines.geojson');
-        mapbox.current.addSource('Long Lines', {
-            'type': 'geojson',
-            'data': long_lines
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Long Lines',
-            'type': 'circle',
-            'source': 'Long Lines',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
-        // add FLYGHINDER
-        let flyghinder = require('./flyghinder.geojson');
-        mapbox.current.addSource('FLYGHINDER 2023', {
-            'type': 'geojson',
-            'data': flyghinder
-        });
-
-        mapbox.current.addLayer({
-            'id': 'FLYGHINDER 2023',
-            'type': 'circle',
-            'source': 'FLYGHINDER 2023',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': '#62b031',
-            }
-        });
-        
-        // add FLYGHINDER extrusions
-        let flyghinder_extrusions = require('./flyghinder_polygons.geojson');
-        mapbox.current.addSource('FLYGHINDER 2023 Extrusions', {
-            'type': 'geojson',
-            'data': flyghinder_extrusions
-        });
-
-        mapbox.current.addLayer({
-            'id': 'FLYGHINDER 2023 Extrusions',
-            'type': 'fill-extrusion',
-            'source': 'FLYGHINDER 2023 Extrusions',
-            'minzoom': 12,
-            'paint': {
-                'fill-extrusion-color': "#62b031",
-                'fill-extrusion-height': ['get', 'height_meters'],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.8
-            }
-        });
-
-        // add germany tallest objects
-        let germany_tallest = require('./germany_tall_structures.geojson');
-        mapbox.current.addSource('Germany Tall Structures', {
-            'type': 'geojson',
-            'data': germany_tallest
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Germany Tall Structures',
-            'type': 'circle',
-            'source': 'Germany Tall Structures',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': '#62b031',
-            }
-        });
-
-        // add germany tallest objects extrusions
-        let germany_tallest_extrusions = require('./germany_tall_structures_polygons.geojson');
-        mapbox.current.addSource('Germany Tall Structures Extrusions', {
-            'type': 'geojson',
-            'data': germany_tallest_extrusions
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Germany Tall Structures Extrusions',
-            'type': 'fill-extrusion',
-            'source': 'Germany Tall Structures Extrusions',
-            'minzoom': 12,
-            'paint': {
-                'fill-extrusion-color': "#62b031",
-                'fill-extrusion-height': ['get', 'height_meters'],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.8
-            }
-        });
-
-        // add National Register Of Historic Places (NRHP)
-        let nrhp = require('./nrhp.geojson');
-        mapbox.current.addSource('National Register of Historic Places', {
-            'type': 'geojson',
-            'data': nrhp
-        });
-
-        mapbox.current.addLayer({
-            'id': 'National Register of Historic Places',
-            'type': 'circle',
-            'source': 'National Register of Historic Places',
-            'paint': {
-                'circle-radius': 6,
-                'circle-color': ['get', 'color'],
-            }
-        });
-
-        // google street view overlay should only be visible when zoom level is above 12
-        mapbox.current.addSource('Google StreetView', {
-            'type': 'raster',
-            'tiles': [
-                'https://mts2.google.com/mapslt?lyrs=svv&x={x}&y={y}&z={z}&w=256&h=256&hl=en&style=40,18'
-            ],
-            'tileSize': 256,
-            'minzoom': 15
-        });
-
-        // 3d buildings layer
-        mapbox.current.addLayer(
-            {
-                'id': '3D Buildings',
-                'source': 'composite',
-                'source-layer': 'building',
-                'filter': ['==', 'extrude', 'true'],
-                'type': 'fill-extrusion',
-                'minzoom': 12,
-                'paint': {
-                    'fill-extrusion-color': '#404040',
-                    'fill-extrusion-height': ['get', 'height'],
-                    'fill-extrusion-base': ['get', 'min_height'],
-                    'fill-extrusion-opacity': 0.87
-                }
-            },
+        addMapSources(
+            mapbox.current,
+            allTowersPoints,
+            allTowerPolygons,
+            antennaPoints,
+            obstaclePoints,
+            routingLine,
+            towerRenderZoomLevel,
+            towerExtrusionRenderZoomLevel,
+            antennaRenderZoomLevel
         );
-
-        // openRailwayMap source
-        mapbox.current.addSource('OpenRailwayMap', {
-            'type': 'raster',
-            'tiles': [
-                'https://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
-                'https://b.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
-                'https://c.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
-            ],
-            //server returns 512px img for 256 tiles
-            'tileSize': 512,
-            // 'tilePixelRatio': 2
-            // 'tileSize': 256,
-            'minzoom': 2,
-            'maxzoom': 19
-        });
-
-
-        // openRailwayMap layer
-        mapbox.current.addLayer(
-            {
-                'id': 'OpenRailwayMap',
-                'type': 'raster',
-                'source': 'OpenRailwayMap',
-                'paint': {}
-            },
-        );
-
-        // isochrone source
-        mapbox.current.addSource('Isochrone', {
-            'type': 'geojson',
-            'data': {
-                'type': 'FeatureCollection',
-                'features': []
-            }
-        });
-
-        mapbox.current.addLayer({
-            'id': 'Google StreetView',
-            'type': 'raster',
-            'source': 'Google StreetView',
-            'paint': {}
-        });
-
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Google Hybrid',
-                'type': 'raster',
-                'source': 'Google Hybrid',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Bing Hybrid',
-                'type': 'raster',
-                'source': 'Bing Hybrid',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'ESRI',
-                'type': 'raster',
-                'source': 'ESRI',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'ESRI (2014)',
-                'type': 'raster',
-                'source': 'ESRI (2014)',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Mapbox',
-                'type': 'raster',
-                'source': 'Mapbox',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Lantmäteriet',
-                'type': 'raster',
-                'source': 'Lantmäteriet',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'OpenStreetMap',
-                'type': 'raster',
-                'source': 'OpenStreetMap',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'NAIP',
-                'type': 'raster',
-                'source': 'NAIP',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'VFR',
-                'type': 'raster',
-                'source': 'VFR',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'MAXAR',
-                'type': 'raster',
-                'source': 'MAXAR',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'USGS Topo',
-                'type': 'raster',
-                'source': 'USGS Topo',
-                'paint': {}
-            },
-        );
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Sentinel 2-L2A',
-                'type': 'raster',
-                'source': 'Sentinel 2-L2A',
-                'paint': {}
-            }
-        )
-
-        mapbox.current.addLayer(
-            {
-                'id': 'Isochrone',
-                'type': 'fill',
-                'source': 'Isochrone',
-                'paint': {
-                    'fill-color': '#5a3fc0',
-                    'fill-opacity': 0.3
-                }
-            },
-        );
-
-        // layer hierarchies... streetview and isochrone should be on top.
-        mapbox.current.moveLayer('Isochrone');
-        mapbox.current.moveLayer('Google StreetView');
-        mapbox.current.moveLayer('All Towers');
-        mapbox.current.moveLayer('Light Pollution');
-        mapbox.current.moveLayer('Antennas');
-        mapbox.current.moveLayer('Routing');
-        mapbox.current.moveLayer('OpenRailwayMap');
-        mapbox.current.moveLayer('Parcel ownership');
-        mapbox.current.moveLayer('Parcel ownership labels');
     }
 
     // get maps from api
@@ -915,289 +271,17 @@ function Map() {
             setRoutingLine(null);
         });
 
-        mapbox.current.on('click', 'FLYGHINDER 2023', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.designation;
-            const number = e.features[0].properties.number;
-            const height_feet = e.features[0].properties.height_feet;
-            const height_meters = e.features[0].properties.height_meters;
-            const elevation_feet = e.features[0].properties.elevation_feet;
-            const elevation_meters = e.features[0].properties.elevation_meters;
-            const types_of_obstacles = e.features[0].properties.types_of_obstacles;
-            
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML("<text id='towerpopuptitle'>" + name + " n:" + number + "</text>" +
-                    "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
-                    "Elevation: " + elevation_meters + "m (" + elevation_feet + "ft)<br>" +
-                    "Types of obstacles: " + types_of_obstacles + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-        mapbox.current.on('mouseenter', 'FLYGHINDER 2023', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'FLYGHINDER 2023', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.on('click', 'Germany Tall Structures', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            // round to 6 decimal places
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.name;
-            const height_feet = e.features[0].properties.height_feet;
-            const height_meters = e.features[0].properties.height_meters;
-            const year = e.features[0].properties.year;
-            const type = e.features[0].properties.type;
-            const regards = e.features[0].properties.regards;
-
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML("<text id='towerpopuptitle'>" + name + "</text>" +
-                    "<text id='towerpopuptext'>Height: " + height_meters + "m (" + height_feet + "ft)<br>" +
-                    "Type: " + type + "<br>" +
-                    (year ? "Constructed in " + year + "<br>" : "") +
-                    regards + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-        mapbox.current.on('mouseenter', 'Germany Tall Structures', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Germany Tall Structures', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-        
-
-        mapbox.current.on('click', 'Long Lines', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.Name;
-            const description = e.features[0].properties.description;
-            const type = e.features[0].properties.type;
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>Long Lines: " + name + "</text>" +
-                    // "<text id='towerpopupstat'>height:</text>" +
-                    "<text id='towerpopuptext'>" + description + "</text>" +
-                    "<text id='towerpopupstat'>Type: " + type + "</text>" +
-                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-        mapbox.current.on('mouseenter', 'Long Lines', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-        mapbox.current.on('mouseleave', 'Long Lines', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.on('click', 'National Register of Historic Places', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.name;
-            const type = e.features[0].properties.type;
-            const src_date = e.features[0].properties.src_date;
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>" + name + "</text>" +
-                    "<text id='towerpopuptext'>Type: " + type + "</text>" +
-                    "<text id='towerpopupstat'>Source date: " + src_date + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-        mapbox.current.on('mouseenter', 'National Register of Historic Places', () => {
-            mapbox.current.getCanvas().style.cursor = 'pointer';
-        });
-
-        mapbox.current.on('mouseleave', 'National Register of Historic Places', () => {
-            mapbox.current.getCanvas().style.cursor = '';
-        });
-
-        mapbox.current.on('click', 'All Towers', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.name;
-            // convert to feet with 2 decimal places
-            const overall_height = (e.features[0].properties.overall_height * 3.28084).toFixed(2);
-            const support_height = (e.features[0].properties.height_support * 3.28084).toFixed(2);
-            const structure_type = e.features[0].properties.structure_type;
-            const description = "Overall height: " + overall_height + " ft" + "<br>" + "Support height: " + support_height + " ft";
-
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>Tower: " + name + "</text>" +
-                    // "<text id='towerpopupstat'>height:</text>" +
-                    "<text id='towerpopuptext'>" + description + "<br>" +
-                    "Structure type: " + structure_type + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-
-        mapbox.current.on('click', 'Antennas', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const name = e.features[0].properties.name;
-            const transmitter_type = e.features[0].properties.transmitter_type;
-            const facility_id = e.features[0].properties.facility_id;
-            const erp = e.features[0].properties.erp;
-            const status = e.features[0].properties.status;
-            const last_update = e.features[0].properties.last_update;
-            let description = "";
-
-            if (transmitter_type === "TV") {
-                // display safe zone
-                description = "Transmitter type: " + transmitter_type + "<br>" +
-                    "Facility ID: " + facility_id + "<br>" +
-                    "Status: " + status + "<br>" +
-                    "Channel: " + e.features[0].properties.channel + "<br>" +
-                    "ERP: " + erp + " kW" + "<br>" +
-                    "Polarization: " + e.features[0].properties.polarization + "<br>" +
-                    "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
-                    "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
-                    "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
-                    "RabbitEars: " + "<a id='rabbitearslink' target=_blank href='" + e.features[0].properties.RabbitEars + "'>" + facility_id + "</a>" + "<br>" +
-                    "Last updated: " + last_update;
-            } else if (transmitter_type === "FM") {
-                description = "Transmitter type: " + transmitter_type + "<br>" +
-                    "Facility ID: " + facility_id + "<br>" +
-                    "Status: " + status + "<br>" +
-                    "Channel: " + e.features[0].properties.channel + "<br>" +
-                    "ERP: " + erp + " kW" + "<br>" +
-                    "Polarization: " + e.features[0].properties.polarization + "<br>" +
-                    "Height AGL: " + e.features[0].properties.height_agl + " ft" + "<br>" +
-                    "Safe zone controlled: " + e.features[0].properties.safe_distance_controlled_feet + " ft" + "<br>" +
-                    "Safe zone uncontrolled: " + e.features[0].properties.safe_distance_uncontrolled_feet + " ft" + "<br>" +
-                    "Last updated: " + last_update;
-            } else if (transmitter_type === "AM") {
-                description = "Transmitter type: " + transmitter_type + "<br>" +
-                    "Application ID: " + facility_id + "<br>" +
-                    "Status: " + status + "<br>" +
-                    "Nominal power: " + erp + " kW" + "<br>" +
-                    "Hours of operation: " + e.features[0].properties.hours_operation + "<br>" +
-                    "Towers in array: " + e.features[0].properties.towers_in_array + "<br>" +
-                    "Safe zone controlled: 🕱" + "<br>" +
-                    "Safe zone uncontrolled: 🕱" + "<br>" +
-                    "Last updated: " + last_update;
-            } else if (e.features[0].properties.data_type === "ULS") {
-                description = "Transmitter type: " + transmitter_type + "<br>" +
-                    "Call Sign: " + facility_id;
-            }
-
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>Antenna: " + name + "</text>" +
-                    // "<text id='towerpopupstat'>height:</text>" +
-                    "<text id='towerpopuptext'>" + description + "</text>" +
-                    // "<text id='towerpopuptext'>ASR: " + "<a href='https://wireless2.fcc.gov/UlsApp/AsrSearch/asrRegistration.jsp?regKey='>" + e.features[0].name + "</a>" + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-        // oas_number, type_code, agl, amsl, lighting, marking, study, date
-        mapbox.current.on('click', 'FAA Obstacles', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            coordinates[0] = coordinates[0].toFixed(6);
-            coordinates[1] = coordinates[1].toFixed(6);
-            const oas_number = e.features[0].properties.oas_number;
-            const type_code = e.features[0].properties.type_code;
-            const agl = e.features[0].properties.agl;
-            const amsl = e.features[0].properties.amsl;
-            const lighting = e.features[0].properties.lighting;
-            const marking = e.features[0].properties.marking;
-            const study = e.features[0].properties.study;
-            const date = e.features[0].properties.date;
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(
-                    "<text id='towerpopuptitle'>FAA Obstacle: " + oas_number + "</text>" +
-                    "<text id='towerpopuptext'>Type: " + type_code + "<br>" +
-                    "AGL: " + agl + " ft" + "<br>" +
-                    "AMSL: " + amsl + " ft" + "<br>" +
-                    "Lighting: " + lighting + "<br>" +
-                    "Marking: " + marking + "<br>" +
-                    "Study: " + study + "<br>" +
-                    "Date: " + date + "</text>" +
-                    "<text id='popupcoords'>" + coordinates[1] + ", " + coordinates[0] + "</text>")
-                .addTo(mapbox.current);
-        });
-
-        // on left click
-        mapbox.current.on('click', (e) => {
-            let lat = e.lngLat.lat;
-            let lng = e.lngLat.lng;
-            console.log("Left click at: " + lat + ", " + lng);
-
-            // if mobile, close side bar
-            if (window.mobileAndTabletCheck()) {
-                setDisplaySidebar(false);
-            }
-
-            if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') === 'visible' && mapbox.current.getZoom() >= 14) {
-                setStreetViewPosition([lat, lng]);
-                setDisplayStreetView(true);
-            }
-        });
-
-        // on right click
-        if (window.mobileAndTabletCheck()) {
-            init_mobile_contextmenu();
-        } else {
-            mapbox.current.on('contextmenu', (e) => {
-                setRightClickPopupPosition([e.lngLat.lng, e.lngLat.lat])
-                setShowRightClickPopup(true);
-                setRightClickPopupState("default");
-            });
-        }
-
-        function init_mobile_contextmenu() {
-            let iosTimeout = null;
-            let clearIosTimeout = () => { clearTimeout(iosTimeout); };
-
-            mapbox.current.on('touchstart', (e) => {
-                if (e.originalEvent.touches.length > 1) {
-                    return;
-                }
-                iosTimeout = setTimeout(() => {
-                    setRightClickPopupPosition([e.lngLat.lng, e.lngLat.lat])
-                    setShowRightClickPopup(true);
-                    setRightClickPopupState("default");
-                }, 250);
-            });
-            mapbox.current.on('touchend', clearIosTimeout);
-            mapbox.current.on('touchcancel', clearIosTimeout);
-            mapbox.current.on('touchmove', clearIosTimeout);
-            mapbox.current.on('pointerdrag', clearIosTimeout);
-            mapbox.current.on('pointermove', clearIosTimeout);
-            mapbox.current.on('moveend', clearIosTimeout);
-            mapbox.current.on('gesturestart', clearIosTimeout);
-            mapbox.current.on('gesturechange', clearIosTimeout);
-            mapbox.current.on('gestureend', clearIosTimeout);
-        }
+        // Setup all event handlers using extracted module
+        setupAllEventHandlers(
+            mapbox.current,
+            window.mobileAndTabletCheck,
+            setDisplaySidebar,
+            setStreetViewPosition,
+            setDisplayStreetView,
+            setRightClickPopupPosition,
+            setShowRightClickPopup,
+            setRightClickPopupState
+        );
 
         mapbox.current.on('moveend', () => {
             let zoomlevel = mapbox.current.getZoom();
@@ -1267,473 +351,52 @@ function Map() {
         else setSettings({ "showUls": false, "isoMinutes": 60, "isoProfile": "driving", "darkMode": false});
     }, []);
 
-    const renderCoordinatesSegment = (coordinates) => {
-        console.log("rendering coordinates segment with coordinates: ", coordinates);
-        let lat = coordinates[1].toFixed(6);
-        let lng = coordinates[0].toFixed(6);
-
-        return <button id="coordinatesbutton" onClick={() => {
-            navigator.clipboard.writeText(lat + ", " + lng);
-        }}><text id="popupcoords">{lat}, {lng}</text></button>
-    }
-
-    // const renderButtons = () => {
-
-    const renderRightClickPopup = (state) => {
-        const placeholder = document.createElement('div');
-
-        if (state === "default") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("external");
-                    }}><FontAwesomeIcon icon={faExternalLinkAlt} />
-                    </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        console.log("setting home position to ", rightClickPopupPosition);
-                        setHomePosition(rightClickPopupPosition[1], rightClickPopupPosition[0]);
-                        setShowRightClickPopup(false);
-                    }}><FontAwesomeIcon icon={faHome} />
-                    </button>
-                    {homeIsSet && <button id="rightclickpopupbutton" onClick={() => {
-                        setRoutingLineEnd(rightClickPopupPosition);
-                        setRightClickPopupState("routing");
-                    }}><FontAwesomeIcon icon={faRoute} />
-                    </button>
-                    }
-                    {customMaps && customMaps.maps.length > 0 && <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("new-point");
-                    }}><FontAwesomeIcon icon={faMapMarkerAlt} />
-                    </button>}
-                </div>
-                {renderCoordinatesSegment([rightClickPopupPosition][0])}
-            </div>);
-
-
-        } if (state === "new-point") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <select id='newpointmapselect' 
-                    onChange={async (e) => {
-                        console.log("changing map to ", e.target.value);
-                        // set the popup to have inputs for the selected map
-                        setRightClickPopupState("new-point");
-                        setNewPointMap(e.target.value);
-                    }}
-                    // if newPointMap is not empty, set the default value to the map that was selected
-                    defaultValue={newPointMap}
-                >
-                    <option value={""}>Select a map</option>
-                    {customMaps.maps.map((map) => {
-                        return <option value={map.id}>{map.name}</option>
-                    })}
-                </select><br />
-
-                {newPointMap !== "" && customMaps.maps.map((map) => {
-                    if (map.id === newPointMap) {
-                        return <div>
-                            <input type="text" id='custompopupname' placeholder="Name" /><br />
-                            <textarea id='custompopupdescription' placeholder="Description" /><br />
-
-                            <div id='custompopupselects'>
-                                <select id='custompopupcategory'>
-                                    <option value={""}>Select a category</option>
-                                    {map.categories.map(category => {
-                                        return <option value={category.id}>{category.name}</option>
-                                    })
-                                    }
-                                </select><br />
-
-                                <select id='custompopupcolor'>
-                                    <option value={""}>Select a color</option>
-                                    {map.colors.map(color => {
-                                        return <option value={color.id}>{color.name}</option>
-                                    })
-                                    }
-                                </select><br />
-
-                                <select id='custompopupicon'>
-                                    <option value={""}>Select an icon</option>
-                                    {map.icons.map(icon => {
-                                        return <option value={icon.id}>{icon.name}</option>
-                                    })
-                                    }
-                                </select><br />
-                            </div>
-                        </div>
-                    }
-                })
-                }
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        // save new point
-                        saveNewPoint(document.getElementById("newpointmapselect").value, {
-                            name: document.getElementById("custompopupname").value,
-                            description: document.getElementById("custompopupdescription").value,
-                            category: document.getElementById("custompopupcategory").value,
-                            color: document.getElementById("custompopupcolor").value,
-                            icon: document.getElementById("custompopupicon").value,
-                            lat: rightClickPopupPosition[1],
-                            lng: rightClickPopupPosition[0]
-                        });
-
-                    }}><FontAwesomeIcon icon={faFloppyDisk} />
-                    </button>
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("default");
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-
-                </div>
-                {renderCoordinatesSegment([rightClickPopupPosition][0])}
-            </div>);
-
-        } if (state === "routing") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id="rightclickpopup-routing-state">Calculating...</text>
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("default");
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                {renderCoordinatesSegment([rightClickPopupPosition][0])}
-            </div>);
-        } if (state === "routing-complete") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id="rightclickpopup-routing-state">Routing Info:</text><br />
-                <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes<br />
-                    {routingDistance} miles</text><br />
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setRightClickPopupState("default");
-                        setRoutingLine(null);
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
-            </div>
-            );
-        } if (state === "external") {
-            // window.open("http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]);
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id="rightclickpopup-routing-state">External Maps</text><br />
-                <div id="rightclickpopupexternallinks">
-                {/* links */}
-                    <a href={"http://maps.google.com/maps?t=k&q=loc:" + rightClickPopupPosition[1] + "+" + rightClickPopupPosition[0]} target="_blank" rel="noreferrer">
-                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Maps
-                    </a><br/>
-                    <a href={"https://www.bing.com/maps?cp=" + rightClickPopupPosition[1] + "~" + rightClickPopupPosition[0] + "&lvl=17.5&style=h"} target="_blank" rel="noreferrer">
-                        <FontAwesomeIcon icon={faExternalLinkAlt} /> Bing Maps
-                    </a><br />
-                    <a href={"https://livingatlas.arcgis.com/wayback/#mapCenter=" + rightClickPopupPosition[0] + "%2C" + rightClickPopupPosition[1] + "%2C17"} target="_blank" rel="noreferrer">
-                        <FontAwesomeIcon icon={faExternalLinkAlt} /> ArcGIS Wayback
-                    </a><br />
-                    <a href={"https://earth.google.com/web/@" + rightClickPopupPosition[1] + "," + rightClickPopupPosition[0] + ",356.91683106a,21152.84581396d,1y,0h,0t,0r/"} target="_blank" rel="noreferrer">
-                    <FontAwesomeIcon icon={faExternalLinkAlt} /> Google Earth
-                    </a>
-                </div>
-                    <div id="rightclickpopupbuttons">
-                        <button id="rightclickpopupbutton" onClick={() => {
-                            setRightClickPopupState("default");
-                            setRoutingLine(null);
-                        }}><FontAwesomeIcon icon={faArrowLeft} />
-                        </button>
-                    </div>
-                    {renderCoordinatesSegment([rightClickPopupPosition][0])}
-            </div>
-            );
-        }
-
-        rightClickPopup.setDOMContent(placeholder);
+    // Use imported popup render function
+    const renderRightClickPopupWrapper = (state) => {
+        renderRightClickPopup(
+            state,
+            rightClickPopupPosition,
+            setRightClickPopupState,
+            setHomePosition,
+            setShowRightClickPopup,
+            homeIsSet,
+            setRoutingLineEnd,
+            customMaps,
+            newPointMap,
+            setNewPointMap,
+            saveNewPoint,
+            routingDuration,
+            routingDistance,
+            setRoutingLine,
+            rightClickPopup
+        );
     }
 
     useEffect(() => {
         if (rightClickPopupState === "new-point") {
-            renderRightClickPopup("new-point");
+            renderRightClickPopupWrapper("new-point");
         }
     }, [newPointMap]);
 
-    const renderCustomMapPopup = (state, properties, coordinates) => {
-        console.log("rendering custom map popup with state ", state, " and properties ", properties, " and coordinates ", coordinates);
-        const placeholder = document.createElement('div');
-
-        if (state === "default") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id='custompopupname'>{properties.name}</text><br />
-                <text id='custompopupdescription'>{properties.description}</text><br />
-                <div id='custompopupdetail'>
-                    Category: {properties.categories.filter(cat => cat.id == properties.category)[0]?.name}<br />
-                    Icon: {properties.icons.filter(icon => icon.id == properties.icon)[0]?.name}<br />
-                    Map: {properties.mapName}</div>
-
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("info");
-                    }}><FontAwesomeIcon icon={faInfo} />
-                    </button>
-                    {properties.editable && <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("edit");
-                    }}><FontAwesomeIcon icon={faPenToSquare} />
-                    </button>}
-                    {homeIsSet && <button id="rightclickpopupbutton" onClick={() => {
-                        setRoutingLineEnd(coordinates);
-                        setCustomMapPopupState("routing");
-                    }}><FontAwesomeIcon icon={faRoute} />
-                    </button>
-                    }
-                </div>
-                {renderCoordinatesSegment(coordinates)}
-            </div>);
-        }
-
-        if (state === "edit") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <input type="text" id='custompopupname' defaultValue={properties.name} /><br />
-                <textarea id='custompopupdescription' defaultValue={properties.description}></textarea><br />
-
-                <div id='custompopupselects'>
-
-                    <select id='custompopupcategory' defaultValue={properties.categories.filter(cat => cat.id == properties.category)[0]?.id}>
-                        {properties.categories.map(category => {
-                            return <option value={category.id}>{category.name}</option>
-                        })}
-                    </select><br />
-
-                    <select id='custompopupcolor' defaultValue={properties.colors.filter(color => color.hex == properties.color)[0]?.id}>
-                        {properties.colors.map(color => {
-                            return <option value={color.id}>{color.name}</option>
-                        })
-                        }
-                    </select><br />
-
-                    <select id='custompopupicon' defaultValue={properties.icons.filter(icon => icon.id == properties.icon)[0]?.id}>
-                        {properties.icons.map(icon => {
-                            return <option value={icon.id}>{icon.name}</option>
-                        })
-                        }
-                    </select><br />
-                </div>
-
-                <div id="rightclickpopupbuttons">
-
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        // call save function // should query API and then edit our local data if successful
-                        savePoint(properties.mapId, properties.id, {
-                            name: document.getElementById("custompopupname").value,
-                            description: document.getElementById("custompopupdescription").value,
-                            category: document.getElementById("custompopupcategory").value,
-                            color: document.getElementById("custompopupcolor").value,
-                            icon: document.getElementById("custompopupicon").value
-                        });
-
-                        // close the popup
-                        setShowCustomMapPopup(false);
-                    }}><FontAwesomeIcon icon={faFloppyDisk} />
-                    </button>
-                    
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        // close the popup
-                        setShowCustomMapPopup(false);
-
-                        // now delete
-                        removePoint(properties.mapId, properties.id);
-                    }}><FontAwesomeIcon icon={faTrash} />
-                    </button>
-
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("default");
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                {renderCoordinatesSegment(coordinates)}
-            </div>);
-        }
-
-        if (state === "info") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <table id="custompopupinfotable">
-                    <tr>
-                        <td>Creator</td>
-                        <td>{properties.creator}</td>
-                    </tr>
-                    <tr>
-                        <td>Creation Date</td>
-                        <td>{properties.creation_date}</td>
-                    </tr>
-                    <tr>
-                        <td>Editor</td>
-                        <td>{properties.editor}</td>
-                    </tr>
-                    <tr>
-                        <td>Edit Date</td>
-                        <td>{properties.edit_date}</td>
-                    </tr>
-                    <tr>
-                        <td>ID</td>
-                        <td>{properties.id}</td>
-                    </tr>
-                    <tr>
-
-                        <td>Map</td>
-                        <td>{properties.mapName}</td>
-                    </tr>
-                    <tr>
-                        <td>Map ID</td>
-                        <td>{properties.mapId}</td>
-                    </tr>
-                </table>
-
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("default");
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                {renderCoordinatesSegment(coordinates)}
-            </div>);
-        }
-
-        if (state === "routing") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id="rightclickpopup-routing-state">Calculating...</text>
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("default");
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                {renderCoordinatesSegment(coordinates)}
-            </div>);
-        }
-
-        if (state === "routing-complete") {
-            ReactDOM.createRoot(placeholder).render(<div id="rightclickpopup">
-                <text id="rightclickpopup-routing-state">Routing Info:</text><br />
-                <text id="routing-information">{Math.floor(routingDuration / 60)} hours, {routingDuration % 60} minutes<br />
-                    {routingDistance} miles</text><br />
-                <div id="rightclickpopupbuttons">
-                    <button id="rightclickpopupbutton" onClick={() => {
-                        setCustomMapPopupState("default");
-                        setRoutingLine(null);
-                    }}><FontAwesomeIcon icon={faArrowLeft} />
-                    </button>
-                </div>
-                {renderCoordinatesSegment(coordinates)}
-            </div>);
-        }
-
-        customMapPopup.setDOMContent(placeholder);
+    // Use imported custom map popup render function
+    const renderCustomMapPopupWrapper = (state, properties, coordinates) => {
+        renderCustomMapPopup(
+            state,
+            properties,
+            coordinates,
+            customMapPopup,
+            setCustomMapPopupState,
+            homeIsSet,
+            setRoutingLineEnd,
+            savePoint,
+            setShowCustomMapPopup,
+            removePoint,
+            routingDuration,
+            routingDistance,
+            setRoutingLine
+        );
     }
 
-    function ConvertDMSToDD(degrees, minutes, seconds, direction) {
-        let dd = degrees + minutes/60 + seconds/(60*60);
-
-        if (direction.toUpperCase() === "S" || direction.toUpperCase() === "W") {
-            dd = dd * -1;
-        } // Don't do anything for N or E
-        return dd;
-    }
-
-    function coordinateFeature(lng, lat) {
-        return {
-            center: [lng, lat],
-            geometry: {
-                type: 'Point',
-                coordinates: [lng, lat]
-            },
-            place_name: lat + ', ' + lng,
-            place_type: ['coordinate'],
-            properties: {},
-            type: 'Feature'
-        };
-    }
-
-
-    const coordinatesGeocoder = function (query) {
-        let matches;
-        let lat;
-        let lng;
-        
-        // match  36°42'29.25"N 79°22'21.34"W
-        // match 35°12'01.4"N 78°50'03.2"W
-        // 35.20005178613768, -78.83495385015117
-        // (35.20005178613768, -78.83495385015117)
-        matches = query.match(
-            /(?:((?:[-+]?\d{1,2}[.]\d+)\s?,\s*(?:[-+]?\d{1,3}[.]\d+))|(\d{1,3}°\d{1,3}'\d{1,3}\.\d{1,2}\"[N|S]\s\d{1,3}°\d{1,3}'\d{1,3}\.\d{1,2}\"[E|W]))/i
-        );
-
-        if (matches) {
-            try {
-                if (matches[0].includes(",")) {
-                    lat = parseFloat(matches[0].split(",")[0]).toFixed(6);
-                    lng = parseFloat(matches[0].split(",")[1]).toFixed(6);
-                } else {
-                    // it's a dms
-                    let parts =  matches[0].split(/(\d+)°(\d+)'(\d+\.\d+)\"([NS]) (\d+)°(\d+)'(\d+\.\d+)\"([EW])/i);
-                    lat = ConvertDMSToDD(parseInt(parts[1]), parseInt(parts[2]), parseFloat(parts[3]), parts[4]).toFixed(6);
-                    lng = ConvertDMSToDD(parseInt(parts[5]), parseInt(parts[6]), parseFloat(parts[7]), parts[8]).toFixed(6);
-                }
-                return [coordinateFeature(lng, lat)];
-            } catch (e) {
-                console.log("error parsing coordinates: " + e);
-            }
-        }
-
-        // try to match 35°12'00"N 78°50'03"W
-        matches = query.match(
-            /(\d+)°(\d+)'(\d+)\"([NS]) (\d+)°(\d+)'(\d+)\"([EW])/i
-        );
-
-        if (matches) {
-            try {
-                lat = ConvertDMSToDD(parseInt(matches[1]), parseInt(matches[2]), parseFloat(matches[3]), matches[4]).toFixed(6);
-                lng = ConvertDMSToDD(parseInt(matches[5]), parseInt(matches[6]), parseFloat(matches[7]), matches[8]).toFixed(6);
-                return [coordinateFeature(lng, lat)];
-            } catch (e) {
-                console.log("error parsing coordinates: " + e);
-            }
-        }
-
-        // now try to match 33.32492° N, 81.59102° W
-        matches = query.match(
-            /(-?\d+(\.\d+)?)°\s*([NS])\s*,\s*(-?\d+(\.\d+)?)°\s*([EW])/i
-        );
-
-        if (matches) {
-            try {
-                lat = parseFloat(matches[1]).toFixed(6);
-                lng = parseFloat(matches[4]).toFixed(6);
-                if (matches[3].toUpperCase() === "S") {
-                    lat = lat * -1;
-                }
-                if (matches[6].toUpperCase() === "W") {
-                    lng = lng * -1;
-                }
-                return [coordinateFeature(lng, lat)];
-            } catch (e) {
-                console.log("error parsing coordinates: " + e);
-            }
-        }
-
-        return null;
-    };
-
-    // create a function to make a directions request
-    async function setRoute(end) {
-        const query = await fetch(
-            `https://api.mapbox.com/directions/v5/mapbox/${isoProfile}/${homeMarkerPosition[0]},${homeMarkerPosition[1]};${end[0]},${end[1]}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`,
-            { method: 'GET' }
-        );
-        const json = await query.json();
-        const data = json.routes[0];
-        const route = data.geometry.coordinates;
-        let duration = data.duration;
-
-        setRoutingDuration(Math.round(duration / 60));
-        // one decimal place, in miles (input is in meters)
-        setRoutingDistance((data.distance / 1609.344).toFixed(1));
-        setRoutingLine(route);
-    }
 
     async function savePoint(mapId, pointId, pointData) {
         console.log("saving point");
@@ -1798,101 +461,6 @@ function Map() {
     }
 
 
-    const getStreetView = () => {
-        console.log("getting streetview");
-
-        let lat = streetViewPosition[0];
-        let lng = streetViewPosition[1];
-
-        if (!streetViewPosition.length) {
-            setDisplayStreetView(false);
-            setStreetViewPresent(false);
-            return;
-        }
-        if (mapbox.current.getLayoutProperty('Google StreetView', 'visibility') !== 'visible') {
-            setDisplayStreetView(false);
-            setStreetViewPresent(false);
-            return;
-        }
-
-        // // check if streetview is available within 50 feet of the click
-        const onLoad = (streetViewService) => {
-            streetViewService.getPanorama({
-                location: { lat: lat, lng: lng },
-                radius: 10,
-            }, (data, status) => {
-                if (status === "OK") {
-                    console.log("streetview available");
-                    setStreetViewPresent(true);
-                } else {
-                    console.log("streetview not available");
-                    setStreetViewPresent(false);
-                    setDisplayStreetView(false);
-                }
-            });
-        }
-
-        return (
-            <LoadScript 
-                googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
-                libraries={['places', 'geometry']}
-            >
-                <StreetViewService onLoad={onLoad} />
-            </LoadScript>
-        )
-    }
-
-    const displayStreetViewDiv = () => {
-        let lat = streetViewPosition[0];
-        let lng = streetViewPosition[1];
-
-        return (
-            <>
-                <div id="modal-background"></div>
-                <div id="streetview" style={{ display: "block" }}>
-                    <LoadScript 
-                        googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
-                        libraries={['places', 'geometry']}
-                    >
-                        <GoogleMap
-                            mapContainerStyle={{ height: "100%", width: "100%" }}
-                            center={{ lat: lat, lng: lng }}
-                            zoom={14}
-                        >
-                            <StreetViewPanorama
-                                position={{ lat: lat, lng: lng }}
-                                visible={displayStreetView}
-                                // turn off all controls
-                                options={{
-                                    addressControl: true,
-                                    fullscreenControl: false,
-                                    linksControl: false,
-                                    motionTracking: false,
-                                    motionTrackingControl: false,
-                                    motionTrackingControlOptions: false,
-                                    panControl: true,
-                                    zoomControl: false,
-                                    enableCloseButton: false,
-                                    imageDateControl: true
-                                }}
-                                // heading and pitch
-                                pov={{
-                                    heading: 0,
-                                    pitch: 0
-                                }}
-                            />
-                        </GoogleMap>
-                    </LoadScript>
-                    <button id="closestreetview" onClick={() => {
-                        setDisplayStreetView(false)
-                        setStreetViewPosition([])
-                        setStreetViewPresent(false)
-                    }}>X</button>
-                </div>
-            </>
-            
-        )
-    }
 
     const updateAllTowers = async (lat, lng) => {
         const accessToken = await getAccessTokenSilently();
@@ -1953,7 +521,7 @@ function Map() {
         // set the position of the popup
         console.log("changing right click popup position to ", rightClickPopupPosition);
         rightClickPopup.setLngLat(rightClickPopupPosition);
-        renderRightClickPopup(rightClickPopupState);
+        renderRightClickPopupWrapper(rightClickPopupState);
     }, [rightClickPopupPosition]);
 
     // right click state useeffect
@@ -1961,7 +529,7 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
         if (!showRightClickPopup) return; // if we don't want to show the popup, then don't do anything
 
-        renderRightClickPopup(rightClickPopupState);
+        renderRightClickPopupWrapper(rightClickPopupState);
     }, [rightClickPopupState]);
 
 
@@ -2010,7 +578,7 @@ function Map() {
 
         console.log("Custom map popup state changed to ", customMapPopupState, " with properties ", customMapPopupProperties);
 
-        renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
+        renderCustomMapPopupWrapper(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
 
     }, [customMapPopupState]);
 
@@ -2021,7 +589,7 @@ function Map() {
 
         console.log("Custom map popup properties changed to ", customMapPopupProperties);
 
-        renderCustomMapPopup(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
+        renderCustomMapPopupWrapper(customMapPopupState, customMapPopupProperties, customMapPopupPosition);
     }, [customMapPopupProperties]);
 
     // isochrone API fetch
@@ -2046,7 +614,7 @@ function Map() {
             return;
         }
 
-        getIso().then((data) => {
+        getIso(homeMarkerPosition, settings).then((data) => {
             console.log(data)
             // set the layer to be visible
             mapbox.current.setLayoutProperty('Isochrone', 'visibility', 'visible');
@@ -2056,44 +624,6 @@ function Map() {
 
 
 
-    // curl https://dev.virtualearth.net/REST/v1/Routes/Isochrones\?waypoint\=47.65431,-122.1291891\&maxTime\=\7200\&key\=AsFnJ6P5VNWfmjEsdjkH2SJjeIwplOKzfdiewwZCX7jBUX7ixSp64VfDjw6mMzBz
-    async function getIso() {
-
-        const query = await fetch(
-            `https://dev.virtualearth.net/REST/v1/Routes/Isochrones?waypoint=${homeMarkerPosition[1]},${homeMarkerPosition[0]}&maxTime=${settings["isoMinutes"] * 60}&travelMode=${settings["isoProfile"]}&key=${process.env.REACT_APP_BING_MAPS_API_KEY}`,
-            {
-                method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                }
-            }
-        );
-        let data = await query.json();
-        let coordinates = data.resourceSets[0].resources[0].polygons[0].coordinates;
-        // for coordinate in coordinates, reverse the order of the coordinates
-        coordinates = coordinates.map((coordinate) => {
-            return coordinate.map((point) => {
-                return [point[1], point[0]];
-            })
-        })
-
-        data = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "type": "Polygon",
-                        // test sample of coordinates
-                        "coordinates": coordinates
-                    }
-                }
-            ]
-        }
-        return data;
-    }
 
     // routing API useeffect
     useEffect(() => {
@@ -2110,7 +640,7 @@ function Map() {
         }
 
         // call the routing function and set data
-        setRoute(routingLineEnd).then(r => {
+        setRoute(homeMarkerPosition, routingLineEnd, isoProfile, setRoutingDuration, setRoutingDistance, setRoutingLine).then(r => {
             console.log("setting route data");
         });
     }, [routingLineEnd]);
@@ -2491,7 +1021,7 @@ function Map() {
         if (!mapbox.current) return; // wait for map to initialize
 
         if (!sunburstToken) {
-            retrieveSunburstToken().then(() => {
+            retrieveSunburstTokenWrapper().then(() => {
                 console.log("Sunburst token retrieved: ", sunburstToken);
             });
             return;
@@ -2521,44 +1051,13 @@ function Map() {
     }, [pollingPosition, mapDatetime]);
 
     const displayLabels = display => {
-        if (!mapbox.current) return;
-        mapbox.current.style.stylesheet.layers.forEach(function (layer) {
-            if (layer.type === 'symbol' && layer["layout"] && layer["layout"]["text-field"])
-                mapbox.current.setLayoutProperty(layer.id, "visibility", display ? "visible" : "none");
-        });
+        displayLabelsUtil(mapbox.current, display);
     }
 
-    async function retrieveSunburstToken() {
-        const query = await fetch(
-            `https://sunburst.sunsetwx.com/v1/login`,
-            {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": `Basic ${btoa(`${process.env.REACT_APP_SUNBURST_API_EMAIL}:${process.env.REACT_APP_SUNBURST_API_PASSWORD}`)}`
-                },
-                body: "grant_type=password&type=access"
-            });
-
-        const data = await query.json();
-        setSunburstToken(data.access_token);
-    }
-
-    // sunburst API fetch
-    const getSunburstData = async (lat, lng, after, token) => {
-        const query = await fetch(
-            `https://sunburst.sunsetwx.com/v1/quality?geo=${lat},${lng}&after=${after}`,
-            {
-                method: 'GET',
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        );
-
-        const data = await query.json();
-        console.log("Sunburst retrieved data: ", data);
-        return data;
+    // Use imported retrieveSunburstToken and getSunburstData from map-hooks
+    const retrieveSunburstTokenWrapper = async () => {
+        const token = await retrieveSunburstToken();
+        setSunburstToken(token);
     }
 
     const getCustomMapPoints = async (mapID) => {
@@ -2568,21 +1067,6 @@ function Map() {
         return await retrieveCustomMapPoints(accessToken, mapID);
     }
 
-
-    const getWeatherInfo = async (lat, lng, datetime) => {
-        let weatherToken = process.env.REACT_APP_WEATHER_API_TOKEN;
-
-        let query = await fetch(
-            `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&dt=${datetime}&appid=${weatherToken}`,
-            {
-                method: 'GET',
-            }
-        );
-
-        let data = await query.json();
-        console.log("Weather retrieved data: ", data);
-        return data;
-    }
 
     const setLayoutProperty = (layer, name, value) => {
         mapbox.current.setLayoutProperty(layer, name, value)
@@ -2634,8 +1118,8 @@ function Map() {
             />
             <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0]?.points?.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} getMaps={getMaps} />
 
-            {displayStreetView ? getStreetView() : ""}
-            {streetViewPresent ? displayStreetViewDiv() : ""}
+            {displayStreetView ? <GetStreetView streetViewPosition={streetViewPosition} setStreetViewPresent={setStreetViewPresent} setDisplayStreetView={setDisplayStreetView} /> : ""}
+            {streetViewPresent ? <DisplayStreetViewDiv streetViewPosition={streetViewPosition} displayStreetView={displayStreetView} setDisplayStreetView={setDisplayStreetView} setStreetViewPosition={setStreetViewPosition} setStreetViewPresent={setStreetViewPresent} /> : ""}
         </>
     );
 }
