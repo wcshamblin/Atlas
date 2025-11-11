@@ -1,10 +1,7 @@
 import React from "react";
-import { Auth0Features } from "../components/auth0-features";
-import { HeroBanner } from "../components/hero-banner";
-import { PageLayout } from "../components/page-layout";
+import { Navigate } from "react-router-dom";
 
-export const HomePage = () => (
-  <PageLayout>
-    <HeroBanner />
-  </PageLayout>
-);
+export const HomePage = () => {
+  // Always redirect to map page - let it handle authentication
+  return <Navigate to="/map" replace />;
+};

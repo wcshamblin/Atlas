@@ -295,7 +295,7 @@ function Map() {
         mapbox.current.addSource("Light Pollution", {
             'type': 'raster',
             'tiles': [
-                'https://djlorenz.github.io/astronomy/lp2022/overlay/tiles/tile_{z}_{x}_{y}.png'
+                'https://djlorenz.github.io/astronomy/image_tiles/tiles2024/tile_{z}_{x}_{y}.png'
             ],
             'tileSize': 1024,
             'maxzoom': 6
@@ -1833,7 +1833,10 @@ function Map() {
         }
 
         return (
-            <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+            <LoadScript 
+                googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
+                libraries={['places', 'geometry']}
+            >
                 <StreetViewService onLoad={onLoad} />
             </LoadScript>
         )
@@ -1847,34 +1850,39 @@ function Map() {
             <>
                 <div id="modal-background"></div>
                 <div id="streetview" style={{ display: "block" }}>
-                    <GoogleMap
-                        mapContainerStyle={{ height: "100%", width: "100%" }}
-                        center={{ lat: lat, lng: lng }}
-                        zoom={14}
+                    <LoadScript 
+                        googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
+                        libraries={['places', 'geometry']}
                     >
-                        <StreetViewPanorama
-                            position={{ lat: lat, lng: lng }}
-                            visible={displayStreetView}
-                            // turn off all controls
-                            options={{
-                                addressControl: true,
-                                fullscreenControl: false,
-                                linksControl: false,
-                                motionTracking: false,
-                                motionTrackingControl: false,
-                                motionTrackingControlOptions: false,
-                                panControl: true,
-                                zoomControl: false,
-                                enableCloseButton: false,
-                                imageDateControl: true
-                            }}
-                            // heading and pitch
-                            pov={{
-                                heading: 0,
-                                pitch: 0
-                            }}
-                        />
-                    </GoogleMap>
+                        <GoogleMap
+                            mapContainerStyle={{ height: "100%", width: "100%" }}
+                            center={{ lat: lat, lng: lng }}
+                            zoom={14}
+                        >
+                            <StreetViewPanorama
+                                position={{ lat: lat, lng: lng }}
+                                visible={displayStreetView}
+                                // turn off all controls
+                                options={{
+                                    addressControl: true,
+                                    fullscreenControl: false,
+                                    linksControl: false,
+                                    motionTracking: false,
+                                    motionTrackingControl: false,
+                                    motionTrackingControlOptions: false,
+                                    panControl: true,
+                                    zoomControl: false,
+                                    enableCloseButton: false,
+                                    imageDateControl: true
+                                }}
+                                // heading and pitch
+                                pov={{
+                                    heading: 0,
+                                    pitch: 0
+                                }}
+                            />
+                        </GoogleMap>
+                    </LoadScript>
                     <button id="closestreetview" onClick={() => {
                         setDisplayStreetView(false)
                         setStreetViewPosition([])

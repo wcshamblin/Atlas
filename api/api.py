@@ -62,13 +62,13 @@ class PointPost(BaseModel):
 
 
 class PointPut(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    color: Optional[str]
-    icon: Optional[str]
-    category: Optional[str]
-    lat: Optional[float]
-    lng: Optional[float]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    category: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 
 class MapPost(BaseModel):
@@ -859,16 +859,16 @@ def post_map_point(response: Response, map_id: str, point: PointPost, token: str
                         lng=point.lng)
 
     # verify Point data makes sense for the map
-    if next((x for x in map["categories"] if x["id"] is new_point.get_category()), None) is not None:
+    if next((x for x in map["categories"] if x["id"] == new_point.get_category()), None) is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Category not allowed for this map"}
     
     # we're expecting a hex color code
-    if next((x for x in map["colors"] if x["id"] is new_point.get_color()), None) is not None:
+    if next((x for x in map["colors"] if x["id"] == new_point.get_color()), None) is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Color not allowed for this map"}
     
-    if next((x for x in map["icons"] if x["id"] is new_point.get_icon()), None) is not None:
+    if next((x for x in map["icons"] if x["id"] == new_point.get_icon()), None) is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": "Icon not allowed for this map"}
   

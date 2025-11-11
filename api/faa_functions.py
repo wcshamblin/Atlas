@@ -3,6 +3,15 @@ import psycopg2
 connection = psycopg2.connect(user="postgres", password="postgres_2034", dbname="fccdata", host="localhost", port="5432")
 faacursor = connection.cursor()
 
+try:
+    faacursor.execute("CREATE EXTENSION postgis;")
+    connection.commit()
+    faacursor.execute("CREATE EXTENSION postgis_topology;")
+    connection.commit()
+except Exception:
+    connection.rollback()
+    pass
+
 
 # declarations
 obstacle_declaration = "st_x        |        st_y        |         x         |        y         | objectid | oas_number | verified | country | state |       city       |   lat_dms    |   long_dms    |  lat_dd   |  long_dd   |     type_code      | quantity | agl | amsl | lighting | horizontal | vertical | marking |     study      | action |  date   |                   location_point"

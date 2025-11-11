@@ -8,9 +8,17 @@ def sentinelhub_compliance_hook(response):
     response.raise_for_status()
     return response
 
+# client 1
+# sh-ab15c4e1-32e4-4cd0-8105-18b495d02b0c
+# tkkIaIzMkaRsaes999isP0u6lJzvpoBi
+
+# client 2
+# sh-553b3744-5018-4b06-b8dd-321de62503f1
+# c2y4Jod1wv5lM5umDAXAdrWQLGmUVASz
+
 # Your client credentials
-client_id = 'sh-ab15c4e1-32e4-4cd0-8105-18b495d02b0c'
-client_secret = 'tkkIaIzMkaRsaes999isP0u6lJzvpoBi'
+client_id = 'sh-553b3744-5018-4b06-b8dd-321de62503f1'
+client_secret = 'c2y4Jod1wv5lM5umDAXAdrWQLGmUVASz'
 
 client = BackendApplicationClient(client_id=client_id)
 oauth = OAuth2Session(client=client)
