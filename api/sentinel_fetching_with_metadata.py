@@ -6,6 +6,7 @@ particularly cloud cover percentage.
 
 import datetime
 import requests
+import math
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
@@ -43,8 +44,7 @@ function evaluatePixel(sample) {
 
 def convert_bbox_3857_to_4326_approximate(bbox_3857):
     """
-    Approximate conversion from EPSG:3857 (Web Mercator) to EPSG:4326 (WGS84)
-    For accurate conversion, use pyproj library in production.
+    Convert from EPSG:3857 (Web Mercator) to EPSG:4326 (WGS84)
     
     Args:
         bbox_3857: [min_x, min_y, max_x, max_y] in EPSG:3857
@@ -53,9 +53,12 @@ def convert_bbox_3857_to_4326_approximate(bbox_3857):
         [min_lon, min_lat, max_lon, max_lat] in EPSG:4326
     """
     def mercator_to_latlon(x, y):
-        lon = x / 20037508.34 * 180
-        lat = y / 20037508.34 * 180
-        lat = 180 / 3.14159265359 * (2 * 3.14159265359**((lat + 90) / 360) - 3.14159265359 / 2)
+        # Convert x to longitude
+        lon = (x / 20037508.34) * 180.0
+        
+        # Convert y to latitude using inverse Mercator projection
+        lat = math.atan(math.sinh(y * math.pi / 20037508.34)) * 180.0 / math.pi
+        
         return lon, lat
     
     min_lon, min_lat = mercator_to_latlon(bbox_3857[0], bbox_3857[1])
@@ -81,13 +84,8 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
     end_date = date
     start_date = date - datetime.timedelta(days=days_range)
     
-    print(f"[SEARCH] Searching for images from {start_date} to {end_date} (days_range={days_range})")
-    print(f"[SEARCH] Input bbox_3857: {bbox_3857}")
-    
     # Convert bbox to lat/lon for catalog API
     bbox_4326 = convert_bbox_3857_to_4326_approximate(bbox_3857)
-    
-    print(f"[SEARCH] Converted bbox_4326: {bbox_4326}")
     
     catalog_url = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
     
@@ -99,23 +97,13 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
         "filter": f"eo:cloud_cover <= {max_cloud_cover}"
     }
     
-    print(f"[SEARCH] Catalog request: {search_request}")
-    
     try:
         response = oauth.post(catalog_url, json=search_request)
-        print(f"[SEARCH] Response status: {response.status_code}")
         response.raise_for_status()
         result = response.json()
         
-        print(f"[SEARCH] Response keys: {result.keys()}")
-        
         # Extract and format the features
         features = result.get('features', [])
-        
-        print(f"[SEARCH] Found {len(features)} features")
-        if features:
-            print(f"[SEARCH] First feature datetime: {features[0]['properties'].get('datetime')}")
-            print(f"[SEARCH] First feature cloud_cover: {features[0]['properties'].get('eo:cloud_cover')}")
         
         # Sort by cloud cover (ascending) and date (descending)
         # Use dateutil parser to handle variable precision milliseconds
@@ -129,26 +117,19 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
         
         features.sort(key=sort_key)
         
-        print(f"[SEARCH] Returning {len(features)} features after sorting")
-        
         return features
         
     except TokenExpiredError:
-        print(f"[SEARCH] Token expired, refreshing...")
         oauth.fetch_token(
             token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
             client_secret=client_secret, 
             include_client_id=True
         )
-        print(f"[SEARCH] Token refreshed, retrying request...")
         # Retry
         response = oauth.post(catalog_url, json=search_request)
-        print(f"[SEARCH] Retry response status: {response.status_code}")
         response.raise_for_status()
         result = response.json()
         features = result.get('features', [])
-        
-        print(f"[SEARCH] Retry found {len(features)} features")
         
         # Sort by cloud cover (ascending) and date (descending)
         def sort_key(x):
@@ -159,13 +140,10 @@ def search_available_images(bbox_3857, date, max_cloud_cover=100, days_range=13)
                 return (100, 0)
         
         features.sort(key=sort_key)
-        print(f"[SEARCH] Retry returning {len(features)} features after sorting")
         return features
         
     except Exception as e:
-        print(f"[SEARCH] Error searching catalog: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error searching catalog: {e}")
         return None
 
 
