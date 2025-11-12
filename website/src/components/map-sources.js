@@ -156,6 +156,18 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
         'maxzoom': 18
     });
     
+    // Add fill layer first (renders behind the line layer)
+    mapbox.addLayer({
+        'id': 'Parcel ownership fill',
+        'type': 'fill',
+        'source': 'Parcel ownership',
+        'source-layer': 'parcels',
+        'paint': {
+            'fill-color': 'rgba(0, 0, 0, 0)', // Transparent by default
+            'fill-opacity': 1,
+        }
+    });
+    
     mapbox.addLayer({
         'id': 'Parcel ownership',
         'type': 'line',
@@ -623,6 +635,7 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
     mapbox.moveLayer('Antennas');
     mapbox.moveLayer('Routing');
     mapbox.moveLayer('OpenRailwayMap');
+    mapbox.moveLayer('Parcel ownership fill');  // Move fill layer first (renders behind line)
     mapbox.moveLayer('Parcel ownership');
     mapbox.moveLayer('Parcel ownership labels');
 }

@@ -238,12 +238,19 @@ const Sidebar = ({
             // Reset to default color and width when search is empty
             map.setPaintProperty('Parcel ownership', 'line-color', '#00a97d');
             map.setPaintProperty('Parcel ownership', 'line-width', 1);
+            // Reset fill to transparent
+            if (map.getLayer('Parcel ownership fill')) {
+                console.log('Resetting parcel fill to transparent');
+                map.setPaintProperty('Parcel ownership fill', 'fill-color', 'rgba(0, 0, 0, 0)');
+            } else {
+                console.log('Parcel ownership fill layer not found');
+            }
             // Reset label color if labels layer exists
             if (map.getLayer('Parcel ownership labels')) {
                 map.setPaintProperty('Parcel ownership labels', 'text-color', '#8affe0');
             }
         } else {
-            // Highlight matching parcels in red with 3x wider outline
+            // Highlight matching parcels in red
             const searchLower = parcelSearchQuery.toLowerCase();
             const matchCondition = [
                 'all',
@@ -259,12 +266,21 @@ const Sidebar = ({
                 '#00a97d'   // Default color for non-matches
             ]);
             
-            map.setPaintProperty('Parcel ownership', 'line-width', [
-                'case',
-                matchCondition,
-                3,  // 3x wider for matches
-                1   // Default width for non-matches
-            ]);
+            // Keep all borders at normal width
+            map.setPaintProperty('Parcel ownership', 'line-width', 1);
+            
+            // Fill matching parcels with transparent light red
+            if (map.getLayer('Parcel ownership fill')) {
+                console.log('Setting parcel fill to red for matches');
+                map.setPaintProperty('Parcel ownership fill', 'fill-color', [
+                    'case',
+                    matchCondition,
+                    'rgba(255, 0, 0, 0.2)',  // Light transparent red for matches
+                    'rgba(0, 0, 0, 0)'       // Transparent for non-matches
+                ]);
+            } else {
+                console.log('Parcel ownership fill layer not found when trying to set fill');
+            }
             
             // Highlight matching labels in red
             if (map.getLayer('Parcel ownership labels')) {
@@ -679,8 +695,13 @@ const Sidebar = ({
 
     const resetLayers = () => {
         Object.keys(layers).forEach(layer => {
-            if (layer != 'Shade Map')
+            if (layer != 'Shade Map') {
                 setLayoutProperty(layer, 'visibility', 'none');
+                // Also reset the fill layer for Parcel ownership
+                if (layer == "Parcel ownership") {
+                    setLayoutProperty('Parcel ownership fill', 'visibility', 'none');
+                }
+            }
         });
     }
 
@@ -694,6 +715,11 @@ const Sidebar = ({
         } else {
             setLayoutProperty(name, 'visibility', visible ? 'visible' : 'none');
             layers[name].visible = visible;
+            
+            // Also control the fill layer for Parcel ownership
+            if (name == "Parcel ownership") {
+                setLayoutProperty('Parcel ownership fill', 'visibility', visible ? 'visible' : 'none');
+            }
         }
 
         localStorage.setItem('selected-layers', JSON.stringify(Object.entries(layers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
