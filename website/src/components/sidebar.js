@@ -34,6 +34,7 @@ import {ReactComponent as MoonsetIcon} from '../styles/images/moonset.svg';
 import {ReactComponent as MoonNoonIcon} from '../styles/images/moon_noon.svg';
 
 import moment from 'moment';
+import SentinelCalendar from './SentinelCalendar';
 
 const Sidebar = ({ 
     mapStatus,
@@ -141,6 +142,8 @@ const Sidebar = ({
     const [customMapsLayers, setCustomMapsLayers] = useState({});
     const [customMapsLayersLoaded, setCustomMapsLayersLoaded] = useState(false);
     const [sentinelDate, setSentinelDate] = useState(new Date())
+    const [sentinelCloudCoverData, setSentinelCloudCoverData] = useState({});
+    const [currentEffectiveSentinelDate, setCurrentEffectiveSentinelDate] = useState(null);
 
     useEffect(() => {
         if (!customMapsData) return;
@@ -301,22 +304,16 @@ const Sidebar = ({
         return (
             <div id="change-datetime-element-sentinel">
                 <span id="sentinel-datetime-label">Sentinel 2 image acquisition date</span>
-                <input
-                    type="datetime-local"
-                    id="datetime-input-sentinel"
-                    name="datetime-input"
-                    required
-                    value={moment(sentinelDate).format("YYYY-MM-DDTHH:mm:ss")}
-                    onChange={e => {
-                        console.log("Sentinel datetime changed: " + e.target.value);
-                        // if it was cleared, or if the date is invalid, then use the current time
-                        if (e.target.value === "") {
-                            changeSentinelDate(new Date());
-                            return;
-                        }
-                        changeSentinelDate(new Date(e.target.value));
-                        }
-                    }
+                <SentinelCalendar
+                    value={sentinelDate}
+                    onChange={(date) => {
+                        console.log("Sentinel date changed: " + date);
+                        changeSentinelDate(date);
+                    }}
+                    map={map}
+                    onCloudCoverDataChange={(data) => {
+                        setSentinelCloudCoverData(data);
+                    }}
                 />
             </div>
         )
@@ -921,14 +918,61 @@ const Sidebar = ({
         setModalSelectedCustomMapPointId("");
     }
 
-    function changeSentinelDate(date) {
-        // if the date is in the future, set it to today
-        if (date > new Date()) {
-            date = new Date();
+    // Helper function to convert Date to YYYY-MM-DD in local timezone
+    function dateToLocalDateString(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Helper function to find the most recent date with Sentinel data <= the target date
+    function findEffectiveSentinelDate(targetDate, cloudCoverData) {
+        if (!cloudCoverData || Object.keys(cloudCoverData).length === 0) {
+            // No cloud cover data available, use the target date
+            return dateToLocalDateString(targetDate);
         }
 
+        const targetDateStr = dateToLocalDateString(targetDate);
+        const availableDates = Object.keys(cloudCoverData).sort().reverse(); // Sort descending
+        
+        // Find the most recent date that is <= target date
+        for (const dateStr of availableDates) {
+            if (dateStr <= targetDateStr) {
+                return dateStr;
+            }
+        }
+        
+        // If no date found (all dates are after target), use the target date
+        return targetDateStr;
+    }
+
+    function changeSentinelDate(date) {
+        // Create a new date object set to 23:59:59 of the selected date
+        // This ensures that timezone conversions don't shift us to the previous day
+        const adjustedDate = new Date(date);
+        adjustedDate.setHours(23, 59, 59, 999);
+        
+        // if the adjusted date is in the future, use current date/time instead
+        const now = new Date();
+        const dateToUse = adjustedDate > now ? now : adjustedDate;
+        
+        // Find the effective date (most recent date with actual data)
+        const effectiveDateStr = findEffectiveSentinelDate(dateToUse, sentinelCloudCoverData);
+        
+        // Check if the effective date is the same as what we're currently displaying
+        if (currentEffectiveSentinelDate === effectiveDateStr) {
+            console.log(`Sentinel image already showing data for ${effectiveDateStr}, no reload needed`);
+            // Still update the selected date for UI purposes
+            setSentinelDate(dateToUse);
+            return;
+        }
+        
+        console.log(`Updating Sentinel image to ${effectiveDateStr} (selected: ${dateToLocalDateString(dateToUse)})`);
+        
         // set state
-        setSentinelDate(date);
+        setSentinelDate(dateToUse);
+        setCurrentEffectiveSentinelDate(effectiveDateStr);
 
         // remove source, then add it back
         map.removeLayer('Sentinel 2-L2A');
@@ -937,7 +981,7 @@ const Sidebar = ({
         map.addSource('Sentinel 2-L2A', {
             'type': 'raster',
             'tiles': [
-                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png?date=' + date.toISOString().split('T')[0]
+                'https://atlas2.org/api/sentinel/{bbox-epsg-3857}.png?date=' + effectiveDateStr
             ],
             'tileSize': 256,
             'maxzoom': 18
