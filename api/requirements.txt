@@ -9,4 +9,5 @@ PyJWT==2.10.1
 cryptography==46.0.3
 firebase-admin==7.1.0
 python-multipart==0.0.20
+python-dateutil==2.9.0.post0
 
