@@ -1090,7 +1090,6 @@ def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
     """
     try:
         bbox_list = [float(x) for x in bbox.split(",")]
-        print(f"[METADATA] Request for {year}-{month:02d}, bbox: {bbox_list}")
         
         # Calculate start and end dates for the month
         from calendar import monthrange
@@ -1098,32 +1097,18 @@ def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
         start_date = datetime(year, month, 1)
         end_date = datetime(year, month, last_day, 23, 59, 59)
         
-        days_range = (end_date - start_date).days + 5
-        print(f"[METADATA] Searching from {start_date} to {end_date} (days_range: {days_range})")
-        
         # Search for all images in the month (no cloud cover filter)
-        images = search_available_images(bbox_list, end_date, max_cloud_cover=100, days_range=days_range)
-        
-        print(f"[METADATA] search_available_images returned: {images is not None}")
-        if images is not None:
-            print(f"[METADATA] Number of images returned: {len(images)}")
+        images = search_available_images(bbox_list, end_date, max_cloud_cover=100, days_range=(end_date - start_date).days + 5)
         
         if not images:
-            print(f"[METADATA] No images found, returning empty dates")
             return {"dates": {}}
         
         # Group images by date and keep the one with lowest cloud cover for each date
         date_cloud_map = {}
-        processed_count = 0
-        filtered_count = 0
-        
         for img in images:
             try:
                 # Use dateutil parser which handles variable precision milliseconds
                 img_datetime = dateutil_parser.parse(img['properties']['datetime'])
-                processed_count += 1
-                
-                print(f"[METADATA] Image {processed_count}: datetime={img_datetime}, year={img_datetime.year}, month={img_datetime.month}, cloud_cover={img['properties'].get('eo:cloud_cover')}")
                 
                 # Only include images from the requested month
                 if img_datetime.year == year and img_datetime.month == month:
@@ -1133,28 +1118,17 @@ def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
                     # Keep the lowest cloud cover for each date
                     if date_str not in date_cloud_map or cloud_cover < date_cloud_map[date_str]:
                         date_cloud_map[date_str] = cloud_cover
-                        print(f"[METADATA] Added/Updated date: {date_str} with cloud_cover: {cloud_cover}%")
-                else:
-                    filtered_count += 1
-                    print(f"[METADATA] Filtered out (wrong month): {img_datetime}")
             except Exception as e:
                 # Log parsing error but continue processing other images
-                print(f"[METADATA] Error parsing image datetime: {e}")
+                print(f"Error parsing image datetime: {e}")
                 continue
-        
-        print(f"[METADATA] Processed {processed_count} images, filtered {filtered_count}, returning {len(date_cloud_map)} dates")
-        print(f"[METADATA] Final result: {date_cloud_map}")
         
         return {"dates": date_cloud_map}
         
     except ValueError as e:
-        print(f"[METADATA] ValueError: {e}")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"status": "error", "message": f"Invalid parameters: {str(e)}"}
     except Exception as e:
-        print(f"[METADATA] Exception: {e}")
-        import traceback
-        traceback.print_exc()
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"status": "error", "message": f"Error fetching metadata: {str(e)}"}
 
