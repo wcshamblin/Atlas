@@ -133,7 +133,7 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
     mapbox.addSource("Light Pollution", {
         'type': 'raster',
         'tiles': [
-            'https://djlorenz.github.io/astronomy/lp2022/overlay/tiles/tile_{z}_{x}_{y}.png'
+            'https://djlorenz.github.io/astronomy/image_tiles/tiles2024/tile_{z}_{x}_{y}.png'
         ],
         'tileSize': 1024,
         'maxzoom': 6
