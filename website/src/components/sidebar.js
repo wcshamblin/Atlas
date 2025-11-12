@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import '../styles/components/sidebar.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -72,6 +72,10 @@ const Sidebar = ({
     const [isoMinutesLive, setIsoMinutesLive] = useState(null);
     const [selectedCountry, setSelectedCountry] = useState("");
     const [parcelSearchQuery, setParcelSearchQuery] = useState("");
+    
+    // Ref to store scroll position
+    const sidebarContentRef = useRef(null);
+    const savedScrollPosition = useRef(0);
 
     useEffect(() => {
         if (isoMinutesLive == null) {
@@ -84,6 +88,33 @@ const Sidebar = ({
             return () => clearTimeout(timer)
         }
     }, [isoMinutesLive]);
+
+    // Save scroll position continuously as user scrolls
+    useEffect(() => {
+        const handleScroll = () => {
+            if (sidebarContentRef.current) {
+                savedScrollPosition.current = sidebarContentRef.current.scrollTop;
+            }
+        };
+
+        const currentRef = sidebarContentRef.current;
+        if (currentRef) {
+            currentRef.addEventListener('scroll', handleScroll);
+        }
+
+        return () => {
+            if (currentRef) {
+                currentRef.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [expanded]);
+
+    // Restore scroll position when sidebar expands (useLayoutEffect runs before paint)
+    useLayoutEffect(() => {
+        if (expanded && sidebarContentRef.current) {
+            sidebarContentRef.current.scrollTop = savedScrollPosition.current;
+        }
+    }, [expanded]);
 
     const [baseLayers, setBaseLayers] = useState({
         "Google Hybrid": { "visible": true, "country": "all" },
@@ -1042,7 +1073,7 @@ const Sidebar = ({
                 </div>
             </div>
 
-            <div id="sidebar-content">
+            <div id="sidebar-content" ref={sidebarContentRef}>
                 {(() => {
                     switch (selectedPart) {
                         case 'weather':
