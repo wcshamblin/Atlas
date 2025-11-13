@@ -1052,22 +1052,52 @@ def get_astronomy_info(response: Response, lat: float, lng: float, date: str, tz
 
 @app.get("/sentinel/{bbox}.png")
 def get_sentinel(response: Response, bbox: str, date: str = "None"):
-    bbox = [float(x) for x in bbox.split(",")]
+    bbox_list = [float(x) for x in bbox.split(",")]
 
     # ISO-8601 2024-01-01T00:00:00Z
+    # Track whether date was explicitly provided
+    date_was_explicit = (date != "None")
+    
     # if date is not provided, use the current date
-    if date == "None":
+    if not date_was_explicit:
         date = datetime.utcnow()
+        logging.info(f"Sentinel request with no date, using current date: {date}")
     else:
         # check if date is valid
         try:
             date = datetime.strptime(date, "%Y-%m-%d")
+            logging.info(f"Sentinel request with explicit date: {date}")
         except ValueError:
             response.status_code = status.HTTP_400_BAD_REQUEST
             return {"status": "error", "message": "Invalid date"}   
     
+    # Determine the days_range and window centering: 
+    # When no date is provided, use 13 days backward to get most recent available image
+    # When date is explicit, use 1 day centered around that date to get image from that specific date
+    if date_was_explicit:
+        days_range = 1  # Very narrow window (requested date only, ±0.5 days)
+        center_window = True
+    else:
+        days_range = 13  # Wide backward window to find most recent image
+        center_window = False  # Backward-looking from current date
+    
+    # Search for available images to log what we're actually getting
+    # Note: search_available_images doesn't support center_window, so we approximate for logging
+    search_days = days_range if not center_window else days_range * 2
+    available_images = search_available_images(bbox_list, date, max_cloud_cover=100, days_range=search_days)
+    if available_images and len(available_images) > 0:
+        best_image = available_images[0]
+        actual_date = best_image['properties']['datetime']
+        cloud_cover = best_image['properties'].get('eo:cloud_cover', 'unknown')
+        logging.info(f"Sentinel returning image from {actual_date} with {cloud_cover}% cloud cover (days_range={days_range}, centered={center_window})")
+        # Add custom header with the actual image date
+        response.headers["X-Sentinel-Date"] = actual_date
+        response.headers["X-Sentinel-Cloud-Cover"] = str(cloud_cover)
+    else:
+        logging.warning(f"No Sentinel images found for bbox={bbox_list}, date={date}, days_range={days_range}")
+    
     # get sentinel images
-    image = get_sentinel_image(bbox, date)
+    image = get_sentinel_image(bbox_list, date, days_range=days_range, center_window=center_window)
 
     response.headers["Content-Type"] = "image/png"
     response.headers["Content-Disposition"] = "attachment; filename=sentinel.png"
@@ -1096,6 +1126,11 @@ def get_sentinel_metadata(response: Response, year: int, month: int, bbox: str):
         _, last_day = monthrange(year, month)
         start_date = datetime(year, month, 1)
         end_date = datetime(year, month, last_day, 23, 59, 59)
+        
+        # Cap end_date at current time to avoid searching for future images
+        now = datetime.utcnow()
+        if end_date > now:
+            end_date = now
         
         # Search for all images in the month (no cloud cover filter)
         images = search_available_images(bbox_list, end_date, max_cloud_cover=100, days_range=(end_date - start_date).days + 5)
