@@ -132,6 +132,23 @@ const Sidebar = ({
         "OpenStreetMap": { "visible": false, "country": "all" },
     });
 
+    const [combineLayersMode, setCombineLayersMode] = useState(false);
+    const [baseLayerOpacity, setBaseLayerOpacity] = useState({
+        "Google Hybrid": 1.0,
+        "Bing Hybrid": 1.0,
+        "ESRI": 1.0,
+        "ESRI (2014)": 1.0,
+        "NAIP": 1.0,
+        "MAXAR": 1.0,
+        "Mapbox": 1.0,
+        "Sentinel 2-L2A": 1.0,
+        "VFR": 1.0,
+        "Lantmäteriet": 1.0,
+        "Skoterleder": 1.0,
+        "USGS Topo": 1.0,
+        "OpenStreetMap": 1.0,
+    });
+
     const layerCategories = {
         "OpenRailwayMap": ["OpenRailwayMap"],
         "Google Streetview": ["Google StreetView"],
@@ -205,12 +222,41 @@ const Sidebar = ({
     useEffect(() => {
         if (mapStatus) {
             console.log("Using base layer: " + localStorage.getItem('base-layer'))
-            if (!localStorage.getItem('base-layer'))
-                localStorage.setItem('base-layer', Object.entries(baseLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)[0]);
+            
+            if (combineLayersMode) {
+                // Load combined layers
+                if (localStorage.getItem('base-layers-combined')) {
+                    const combinedLayers = JSON.parse(localStorage.getItem('base-layers-combined'));
+                    // First hide all layers
+                    Object.keys(baseLayers).forEach(layer => {
+                        setLayoutProperty(layer, 'visibility', 'none');
+                        baseLayers[layer].visible = false;
+                    });
+                    // Then show the selected ones with their opacity
+                    combinedLayers.forEach(layerName => {
+                        setLayoutProperty(layerName, 'visibility', 'visible');
+                        baseLayers[layerName].visible = true;
+                        if (map && map.getLayer(layerName)) {
+                            try {
+                                map.setPaintProperty(layerName, 'raster-opacity', baseLayerOpacity[layerName]);
+                                console.log(`Initial load: Set opacity for ${layerName} to ${baseLayerOpacity[layerName]}`);
+                            } catch (e) {
+                                console.error(`Initial load: Failed to set opacity for ${layerName}:`, e);
+                            }
+                        }
+                    });
+                    setBaseLayers({ ...baseLayers });
+                }
+            } else {
+                // Single layer mode (original behavior)
+                if (!localStorage.getItem('base-layer'))
+                    localStorage.setItem('base-layer', Object.entries(baseLayers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)[0]);
+                
+                updateBaseLayers(localStorage.getItem('base-layer'));
+            }
+
             if (!localStorage.getItem('selected-layers'))
                 localStorage.setItem('selected-layers', JSON.stringify(Object.entries(layers).filter(([key, val]) => val.visible === true).map(([key, val]) => key)));
-
-            updateBaseLayers(localStorage.getItem('base-layer'));
 
             resetLayers();
 
@@ -226,9 +272,68 @@ const Sidebar = ({
     }, [selectedCountry]);
 
     useEffect(() => {
+        localStorage.setItem('combine-layers-mode', combineLayersMode);
+        
+        // When switching modes, update layer visibility appropriately
+        if (mapStatus && map) {
+            if (combineLayersMode) {
+                // Switching to combine mode - load combined layers if available
+                if (localStorage.getItem('base-layers-combined')) {
+                    const combinedLayers = JSON.parse(localStorage.getItem('base-layers-combined'));
+                    Object.keys(baseLayers).forEach(layer => {
+                        const shouldBeVisible = combinedLayers.includes(layer);
+                        setLayoutProperty(layer, 'visibility', shouldBeVisible ? 'visible' : 'none');
+                        baseLayers[layer].visible = shouldBeVisible;
+                        if (shouldBeVisible && map.getLayer(layer)) {
+                            try {
+                                map.setPaintProperty(layer, 'raster-opacity', baseLayerOpacity[layer]);
+                                console.log(`Restored opacity for ${layer} to ${baseLayerOpacity[layer]}`);
+                            } catch (e) {
+                                console.error(`Failed to restore opacity for ${layer}:`, e);
+                            }
+                        }
+                    });
+                    setBaseLayers({ ...baseLayers });
+                }
+            } else {
+                // Switching to single layer mode - use the saved single layer
+                const singleLayer = localStorage.getItem('base-layer');
+                if (singleLayer) {
+                    Object.keys(baseLayers).forEach(layer => {
+                        const shouldBeVisible = layer === singleLayer;
+                        setLayoutProperty(layer, 'visibility', shouldBeVisible ? 'visible' : 'none');
+                        baseLayers[layer].visible = shouldBeVisible;
+                        // Reset opacity to 1.0 for single layer mode
+                        if (shouldBeVisible && map.getLayer(layer)) {
+                            try {
+                                map.setPaintProperty(layer, 'raster-opacity', 1.0);
+                            } catch (e) {
+                                console.error(`Failed to reset opacity for ${layer}:`, e);
+                            }
+                        }
+                    });
+                    setBaseLayers({ ...baseLayers });
+                }
+            }
+        }
+    }, [combineLayersMode]);
+
+    useEffect(() => {
+        localStorage.setItem('base-layer-opacity', JSON.stringify(baseLayerOpacity));
+    }, [baseLayerOpacity]);
+
+    useEffect(() => {
         if (localStorage.getItem('selected-country-filter'))
             setSelectedCountry(localStorage.getItem('selected-country-filter'));
         else setSelectedCountry("all");
+        
+        // Load combine layers mode
+        if (localStorage.getItem('combine-layers-mode'))
+            setCombineLayersMode(localStorage.getItem('combine-layers-mode') === 'true');
+        
+        // Load base layer opacity
+        if (localStorage.getItem('base-layer-opacity'))
+            setBaseLayerOpacity(JSON.parse(localStorage.getItem('base-layer-opacity')));
     }, [])
 
     // update custom map layers with local storage visibility when we know they're loaded
@@ -712,16 +817,69 @@ const Sidebar = ({
 
 
     const updateBaseLayers = name => {
-        Object.keys(baseLayers).forEach(layer => {
-            setLayoutProperty(layer, 'visibility', layer === name ? 'visible' : 'none');
-            baseLayers[layer].visible = layer === name ? true : false;
-        });
+        if (combineLayersMode) {
+            // Toggle mode - allow multiple layers
+            const newVisibility = !baseLayers[name].visible;
+            setLayoutProperty(name, 'visibility', newVisibility ? 'visible' : 'none');
+            baseLayers[name].visible = newVisibility;
+            
+            // Update opacity for the layer when making it visible
+            if (newVisibility && map && map.getLayer(name)) {
+                try {
+                    map.setPaintProperty(name, 'raster-opacity', baseLayerOpacity[name]);
+                    console.log(`Set initial opacity for ${name} to ${baseLayerOpacity[name]}`);
+                } catch (e) {
+                    console.error(`Failed to set initial opacity for ${name}:`, e);
+                }
+            }
+            
+            // Check if any layer that hides labels is visible
+            const hideLabels = Object.keys(baseLayers).some(layer => 
+                baseLayers[layer].visible && (layer === "OpenStreetMap" || layer === "Google Hybrid")
+            );
+            displayLabels(!hideLabels);
+            
+            localStorage.setItem('base-layers-combined', JSON.stringify(
+                Object.entries(baseLayers)
+                    .filter(([key, val]) => val.visible)
+                    .map(([key, val]) => key)
+            ));
+        } else {
+            // Single selection mode (original behavior)
+            Object.keys(baseLayers).forEach(layer => {
+                setLayoutProperty(layer, 'visibility', layer === name ? 'visible' : 'none');
+                baseLayers[layer].visible = layer === name ? true : false;
+                // Reset opacity to full in single layer mode
+                if (layer === name && map && map.getLayer(layer)) {
+                    try {
+                        map.setPaintProperty(layer, 'raster-opacity', 1.0);
+                    } catch (e) {
+                        console.error(`Failed to reset opacity for ${layer}:`, e);
+                    }
+                }
+            });
 
-        displayLabels(!(name == "OpenStreetMap" || name == "Google Hybrid"));
+            displayLabels(!(name == "OpenStreetMap" || name == "Google Hybrid"));
 
-        localStorage.setItem('base-layer', name);
+            localStorage.setItem('base-layer', name);
+        }
 
         setBaseLayers({ ...baseLayers });
+    }
+
+    const updateBaseLayerOpacity = (name, opacity) => {
+        const newOpacity = { ...baseLayerOpacity, [name]: opacity };
+        setBaseLayerOpacity(newOpacity);
+        
+        // Update the map layer opacity if it's currently visible and is a raster layer
+        if (baseLayers[name].visible && map && map.getLayer(name)) {
+            try {
+                map.setPaintProperty(name, 'raster-opacity', opacity);
+                console.log(`Set opacity for ${name} to ${opacity}`);
+            } catch (e) {
+                console.error(`Failed to set opacity for ${name}:`, e);
+            }
+        }
     }
 
     const resetLayers = () => {
@@ -797,18 +955,32 @@ const Sidebar = ({
 
     const renderBaseLayers = () => {
         return (
-            <div id="base-layer-container">
-                {
-                    Object.entries(baseLayers).filter(([, val]) => filterCountry(val)).map(([layerName, val]) => (
-                        <div className={!val.visible ? "base-layer-item" : "base-layer-selected base-layer-item"} onClick={() => updateBaseLayers(layerName)}>
-                            <div className={"base-layer-" + layerName.toLowerCase().replaceAll(" ", "") + " base-layer-img"}></div>
-                            <span>{layerName}</span>
-                        </div>
-                    ))
-                }
-                {/*
-                    Object.entries(baseLayers).map(([layerName, val]) => <p className={!val.visible ? "black" : "selected black"} onClick={() => updateBaseLayers(layerName)}>{layerName}</p>)
-                */}
+            <div>
+                <div id="base-layer-container">
+                    {
+                        Object.entries(baseLayers).filter(([, val]) => filterCountry(val)).map(([layerName, val]) => (
+                            <div key={layerName}>
+                                <div className={!val.visible ? "base-layer-item" : "base-layer-selected base-layer-item"} onClick={() => updateBaseLayers(layerName)}>
+                                    <div className={"base-layer-" + layerName.toLowerCase().replaceAll(" ", "") + " base-layer-img"}></div>
+                                    <span>{layerName}</span>
+                                </div>
+                                {combineLayersMode && val.visible && (
+                                    <div className="base-layer-opacity-control">
+                                        <input 
+                                            type="range" 
+                                            min="0.15" 
+                                            max="1" 
+                                            step="0.05" 
+                                            value={baseLayerOpacity[layerName]} 
+                                            onChange={(e) => updateBaseLayerOpacity(layerName, parseFloat(e.target.value))}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    }
+                </div>
             </div>
         )
     }
@@ -1105,7 +1277,18 @@ const Sidebar = ({
                                         <option value="usa">United States Only</option>
                                         <option value="eu">EU Only</option>
                                     </select>
-                                    <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
+                                    <div id="base-layers-header-container">
+                                        <h3 style={{ "marginTop": "15px" }}>Base Layers</h3>
+                                        <div id="combine-layers-checkbox-header">
+                                            <label htmlFor="combine-layers-toggle">Combine</label>
+                                            <input 
+                                                type="checkbox" 
+                                                id="combine-layers-toggle"
+                                                checked={combineLayersMode} 
+                                                onChange={(e) => setCombineLayersMode(e.target.checked)}
+                                            />
+                                        </div>
+                                    </div>
                                     {renderBaseLayers()}
                                     {/*only render sentinel datetime element if layer is visible*/}
                                     {baseLayers["Sentinel 2-L2A"].visible ? sentinelDatetimeElement() : ""}
