@@ -1005,7 +1005,7 @@ def put_map_point(response: Response, map_id: str, point_id: str, point: PointPu
 
 
 @app.get("/fcc/towers/nearby/{lat}/{lng}/{radius}")
-def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, token: str = Depends(token_auth_scheme)):
+def get_towers_nearby(response: Response, lat: float, lng: float, radius: float, min_height: float = 0, max_height: float = 999999, token: str = Depends(token_auth_scheme)):
     result = VerifyToken(token.credentials).verify()
 
     if result.get("status"):
@@ -1013,7 +1013,7 @@ def get_towers_nearby(response: Response, lat: float, lng: float, radius: float,
         return result
 
     # find towers
-    towers_polygons, towers_points = retrieve_fcc_tower_objects(lat, lng, radius) #feet
+    towers_polygons, towers_points = retrieve_fcc_tower_objects(lat, lng, radius, min_height, max_height) #feet
 
     return {"status": "success", "message": "Towers retrieved", "towers_polygons": towers_polygons, "towers_points": towers_points}
 
