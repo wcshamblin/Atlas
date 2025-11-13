@@ -127,7 +127,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
         'id': 'Skoterleder',
         'type': 'raster',
         'source': 'Skoterleder',
-        'paint': {}
+        'paint': {
+            'raster-opacity': 1.0
+        }
     });
 
     mapbox.addSource("Light Pollution", {
@@ -512,7 +514,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'Google Hybrid',
             'type': 'raster',
             'source': 'Google Hybrid',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -521,7 +525,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'Bing Hybrid',
             'type': 'raster',
             'source': 'Bing Hybrid',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -530,7 +536,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'ESRI',
             'type': 'raster',
             'source': 'ESRI',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -539,7 +547,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'ESRI (2014)',
             'type': 'raster',
             'source': 'ESRI (2014)',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -548,7 +558,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'Mapbox',
             'type': 'raster',
             'source': 'Mapbox',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -557,7 +569,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'Lantmäteriet',
             'type': 'raster',
             'source': 'Lantmäteriet',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -566,7 +580,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'OpenStreetMap',
             'type': 'raster',
             'source': 'OpenStreetMap',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -575,7 +591,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'NAIP',
             'type': 'raster',
             'source': 'NAIP',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -584,7 +602,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'VFR',
             'type': 'raster',
             'source': 'VFR',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -593,7 +613,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'MAXAR',
             'type': 'raster',
             'source': 'MAXAR',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -602,7 +624,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'USGS Topo',
             'type': 'raster',
             'source': 'USGS Topo',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         },
     );
 
@@ -611,7 +635,9 @@ export const addMapSources = (mapbox, allTowersPoints, allTowerPolygons, antenna
             'id': 'Sentinel 2-L2A',
             'type': 'raster',
             'source': 'Sentinel 2-L2A',
-            'paint': {}
+            'paint': {
+                'raster-opacity': 1.0
+            }
         }
     )
 

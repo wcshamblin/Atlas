@@ -369,6 +369,83 @@
     background-image: url('../images/usgstopo.png');
 }
 
+.base-layer-opacity-control {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    padding: 5px 0px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.base-layer-opacity-control label {
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+
+.base-layer-opacity-control input[type="range"] {
+    width: 81%;
+    cursor: pointer;
+}
+
+#base-layers-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-right: 15px;
+}
+
+#combine-layers-checkbox-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    margin-top: 0px;
+    margin-right: 20px;
+    position: relative;
+    top: -5px;
+}
+
+#combine-layers-checkbox-header label {
+    font-size: 1.17em;
+    font-weight: bold;
+    font-family: inherit;
+    color: black;
+    cursor: pointer;
+    margin: 0;
+}
+
+#combine-layers-checkbox-header input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    border: 3px solid black;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: white;
+    position: relative;
+}
+
+#combine-layers-checkbox-header input[type="checkbox"]:checked {
+    background-color: rgb(0, 110, 200);
+}
+
+#combine-layers-checkbox-header input[type="checkbox"]:checked::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 #regular-layer-container {
     margin-left: 10px;
     margin-bottom: 10px;
