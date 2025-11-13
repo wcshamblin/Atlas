@@ -142,7 +142,7 @@ def calculate_safe_zone(kilowatts: float, gain: int, freq: float, ground_reflect
         "safe_distance_uncontrolled_feet": round(dx2, 4)
     }
 
-def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
+def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float, min_height: float = 0, max_height: float = 999999):
     offset = 0.0001
     results = retrieve_fcc_towers(lat, lng, radius) #feet
 
@@ -166,6 +166,10 @@ def retrieve_fcc_tower_objects(lat: float, lng: float, radius: float):
             height_support = float(tower[tower_declaration.index("height_of_structure")])
         except ValueError:
             height_support = 0
+
+        # Filter by height (in feet)
+        if overall_height < min_height or overall_height > max_height:
+            continue
 
 
         # circular shapes
