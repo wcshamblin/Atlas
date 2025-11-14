@@ -215,3 +215,14 @@ div#map {
 .mapboxgl-ctrl-geocoder .mapboxgl-ctrl-geocoder--pin-right > .mapboxgl-ctrl-geocoder--button {
   display: block;
 }
+
+/* Prevent mobile zoom on input focus by ensuring font-size is at least 16px */
+@media screen and (max-width: 768px) {
+  .mapboxgl-ctrl-geocoder {
+    font-size: 16px;
+  }
+  
+  .mapboxgl-ctrl-geocoder--input {
+    font-size: 16px;
+  }
+}
