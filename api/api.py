@@ -1013,7 +1013,7 @@ def get_towers_nearby(response: Response, lat: float, lng: float, radius: float,
         return result
 
     # find towers
-    towers_polygons, towers_points = retrieve_fcc_tower_objects(lat, lng, radius, min_height, max_height) #feet
+    towers_polygons, towers_points = retrieve_fcc_tower_objects(lat, lng, radius, min_height, max_height) #meters
 
     return {"status": "success", "message": "Towers retrieved", "towers_polygons": towers_polygons, "towers_points": towers_points}
 
