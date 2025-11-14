@@ -76,8 +76,9 @@ def get_tower_description(tower_type: str):
 
 def create_circle_polygon(lat: float, lng: float, radius: float):
     # radius should be in feet
+    # Generate octagon (8 points) for efficiency
     polygon_coordinates = []
-    for i in range(0, 360, 5):
+    for i in range(0, 360, 45):
         polygon_coordinates.append([lng + radius * cos(i), lat + radius * sin(i)])
     return polygon_coordinates
 
@@ -301,17 +302,15 @@ def retrieve_fcc_tv_antennas(lat: float, lng: float, radius: float):
     # create a dictionary with the facility_id as the key
     antennas_dict = {}
     for antenna in antennas_out:
-        if antennas_dict.get(antenna["facility_id"]):
-            # convert last_update to datetime
-            # 05/16/2023
-            if datetime.strptime(antenna["last_update"], "%m/%d/%Y") > datetime.strptime(antennas_dict[antenna["facility_id"]]["last_update"], "%m/%d/%Y"):
-                antennas_dict[antenna["facility_id"]] = antenna
+        facility_id = antenna["facility_id"]
+        if facility_id in antennas_dict:
+            # convert last_update to datetime (05/16/2023 format)
+            if datetime.strptime(antenna["last_update"], "%m/%d/%Y") > datetime.strptime(antennas_dict[facility_id]["last_update"], "%m/%d/%Y"):
+                antennas_dict[facility_id] = antenna
         else:
-            antennas_dict[antenna["facility_id"]] = antenna
+            antennas_dict[facility_id] = antenna
     
-    antennas_out = list(antennas_dict.values())
-
-    return antennas_out
+    return list(antennas_dict.values())
 
 def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
     # radius should be in feet
@@ -389,17 +388,15 @@ def retrieve_fcc_fm_antennas(lat: float, lng: float, radius: float):
     # create a dictionary with the facility_id as the key
     antennas_dict = {}
     for antenna in antennas_out:
-        if antennas_dict.get(antenna["facility_id"]):
-            # convert last_update to datetime
-            # 05/16/2023
-            if datetime.strptime(antenna["last_update"], "%Y-%m-%d") > datetime.strptime(antennas_dict[antenna["facility_id"]]["last_update"], "%Y-%m-%d"):
-                antennas_dict[antenna["facility_id"]] = antenna
+        facility_id = antenna["facility_id"]
+        if facility_id in antennas_dict:
+            # convert last_update to datetime (YYYY-MM-DD format)
+            if datetime.strptime(antenna["last_update"], "%Y-%m-%d") > datetime.strptime(antennas_dict[facility_id]["last_update"], "%Y-%m-%d"):
+                antennas_dict[facility_id] = antenna
         else:
-            antennas_dict[antenna["facility_id"]] = antenna
+            antennas_dict[facility_id] = antenna
     
-    antennas_out = list(antennas_dict.values())
-
-    return antennas_out
+    return list(antennas_dict.values())
 
 def retrieve_fcc_am_antennas(lat: float, lng: float, radius: float):
     antennas = retrieve_fcc_antennas(lat, lng, radius, "am_locations")
@@ -541,23 +538,25 @@ def retrieve_fcc_antenna_objects(lat, lng, radius, uls=False):
 
     # if we have any antennas that are within 5 feet of eachother, we should displace them to 10 feet apart
     # this is to prevent overlapping antennas from being on top of eachother
-    # 47.4622422504934, -120.35777773708105
-    # change-^^-polling
+    # Optimize by grouping coordinates first instead of O(n²) nested loop
     
-    # for antenna in antennas, if two antennas have the same coords (round to 5 decimal places), move one of them
-    changer = 1
-    for i in range(len(antennas["features"])):
-        for j in range(i+1, len(antennas["features"])):
-            if round(antennas["features"][i]["geometry"]["coordinates"][0], 5) == round(antennas["features"][j]["geometry"]["coordinates"][0], 5) and round(antennas["features"][i]["geometry"]["coordinates"][1], 5) == round(antennas["features"][j]["geometry"]["coordinates"][1], 5):
-                changer += 1
-
+    coord_groups = {}
+    for i, antenna in enumerate(antennas["features"]):
+        coord_key = (round(antenna["geometry"]["coordinates"][0], 5), round(antenna["geometry"]["coordinates"][1], 5))
+        if coord_key not in coord_groups:
+            coord_groups[coord_key] = []
+        coord_groups[coord_key].append(i)
+    
+    # Only process groups with multiple antennas at same location
+    for coord_key, indices in coord_groups.items():
+        if len(indices) > 1:
+            for changer, idx in enumerate(indices[1:], start=2):
                 # if we have an odd number, move the antenna to the right
-                if changer%2 == 1:
-                    antennas["features"][j]["geometry"]["coordinates"][0] += changer * 0.00003
-
+                if changer % 2 == 1:
+                    antennas["features"][idx]["geometry"]["coordinates"][0] += changer * 0.00003
                 # if we have an even number, move the antenna to the left
                 else:
-                    antennas["features"][j]["geometry"]["coordinates"][0] -= changer * 0.00003
+                    antennas["features"][idx]["geometry"]["coordinates"][0] -= changer * 0.00003
     
     # sort antennas by power output, this way if there are multiple antennas at the same location, the most powerful one will be displayed
     antennas["features"].sort(key=lambda x: x["properties"]["erp"], reverse=True)
