@@ -230,15 +230,19 @@ export const acceptEula = async (accessToken) => {
     }
 }
 
-export const retrieveTowers = async (accessToken, lat, lng, radius) => {
+export const retrieveTowers = async (accessToken, lat, lng, radius, minHeight = 0, maxHeight = 999999, signal = null) => {
     const config = {
-        url: `${apiServerUrl}/fcc/towers/nearby/${lat}/${lng}/${radius}`,
+        url: `${apiServerUrl}/fcc/towers/nearby/${lat}/${lng}/${radius}?min_height=${minHeight}&max_height=${maxHeight}`,
         method: "GET",
         headers: {
         "content-type": "application/json",
         Authorization: `Bearer ${accessToken}`,
         },
     };
+
+    if (signal) {
+        config.signal = signal;
+    }
 
     const { data, error } = await callExternalApi({ config });
 
@@ -248,7 +252,7 @@ export const retrieveTowers = async (accessToken, lat, lng, radius) => {
     }
 }
 
-export const retrieveObstacles = async (accessToken, lat, lng, radius) => {
+export const retrieveObstacles = async (accessToken, lat, lng, radius, signal = null) => {
     const config = {
         url: `${apiServerUrl}/faa/obstacles/nearby/${lat}/${lng}/${radius}`,
         method: "GET",
@@ -258,6 +262,10 @@ export const retrieveObstacles = async (accessToken, lat, lng, radius) => {
         },
     };
 
+    if (signal) {
+        config.signal = signal;
+    }
+
     const { data, error } = await callExternalApi({ config });
 
     return {
@@ -266,7 +274,7 @@ export const retrieveObstacles = async (accessToken, lat, lng, radius) => {
     }
 }
 
-export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
+export const retrieveAntennas = async (accessToken, lat, lng, radius, uls, signal = null) => {
     const config = {
         url: `${apiServerUrl}/fcc/antennas/nearby/${lat}/${lng}/${radius}/${uls}`,
         method: "GET",
@@ -275,6 +283,10 @@ export const retrieveAntennas = async (accessToken, lat, lng, radius, uls) => {
             Authorization: `Bearer ${accessToken}`,
         },
     };
+
+    if (signal) {
+        config.signal = signal;
+    }
 
     const { data, error } = await callExternalApi({ config });
 

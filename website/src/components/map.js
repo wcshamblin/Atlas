@@ -118,6 +118,15 @@ function Map() {
 
     const [obstaclePoints, setObstaclePoints] = useState(null);
 
+    // Tower height filter state
+    const [towerHeightFilter, setTowerHeightFilter] = useState({ min: 0, max: 2067 });
+    const towerHeightFilterRef = useRef({ min: 0, max: 2067 });
+
+    // AbortController refs for cancelling pending requests
+    const towerAbortControllerRef = useRef(null);
+    const antennaAbortControllerRef = useRef(null);
+    const obstacleAbortControllerRef = useRef(null);
+
     const [mapDatetime, setMapDatetime] = useState(new Date());
 
     const [pollingPosition, setPollingPosition] = useState([]);
@@ -138,11 +147,11 @@ function Map() {
     const settingsRef = useRef({});
     const [settings, setSettings] = useState({});
 
-    const towerRenderZoomLevel = 10.5;
+    const towerRenderZoomLevel = 9.5;
     const towerExtrusionRenderZoomLevel = 11.5;
     const antennaRenderZoomLevel = 13.5;
     const antennaSearchRadius = 8000;
-    const towerSearchRadius = 150000;
+    const towerSearchRadius = 217000;
 
 
     const addSources = () => {
@@ -287,8 +296,13 @@ function Map() {
             let zoomlevel = mapbox.current.getZoom();
             if (zoomlevel >= (towerRenderZoomLevel - .1)) {
                 if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
-                    // update all towers from the center of the map
-                    updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
+                    // update all towers from the center of the map, using current filter values from ref
+                    updateAllTowers(
+                        mapbox.current.getCenter().lat, 
+                        mapbox.current.getCenter().lng, 
+                        towerHeightFilterRef.current.min, 
+                        towerHeightFilterRef.current.max
+                    );
                 }
                 if (mapbox.current.getLayoutProperty('FAA Obstacles', 'visibility') === 'visible') {
                     updateObstacles(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng);
@@ -344,6 +358,21 @@ function Map() {
             localStorage.setItem('settings', JSON.stringify(settings));
         }
     }, [settings]);
+
+    // Cleanup: cancel any pending requests when component unmounts
+    useEffect(() => {
+        return () => {
+            if (towerAbortControllerRef.current) {
+                towerAbortControllerRef.current.abort();
+            }
+            if (antennaAbortControllerRef.current) {
+                antennaAbortControllerRef.current.abort();
+            }
+            if (obstacleAbortControllerRef.current) {
+                obstacleAbortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (localStorage.getItem('settings'))
@@ -462,37 +491,89 @@ function Map() {
 
 
 
-    const updateAllTowers = async (lat, lng) => {
+    const updateAllTowers = async (lat, lng, minHeightFeet = 0, maxHeightFeet = 2067) => {
+        // Cancel any pending tower request
+        if (towerAbortControllerRef.current) {
+            towerAbortControllerRef.current.abort();
+        }
+        
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        towerAbortControllerRef.current = abortController;
+        
         const accessToken = await getAccessTokenSilently();
-        console.log("updateAllTowers");
-        await retrieveTowers(accessToken, lat, lng, towerSearchRadius).then(
-            (response) => {
-                if (response.data) {
-                    setAllTowerPolygons(response.data.towers_polygons);
-                    setAllTowersPoints(response.data.towers_points);
-                }
+        // Convert feet to meters for the API (database stores heights in meters)
+        const minHeightMeters = minHeightFeet * 0.3048;
+        const maxHeightMeters = maxHeightFeet * 0.3048;
+        console.log("updateAllTowers with height filter:", { 
+            minFeet: minHeightFeet, 
+            maxFeet: maxHeightFeet,
+            minMeters: minHeightMeters,
+            maxMeters: maxHeightMeters 
+        });
+        
+        try {
+            const response = await retrieveTowers(accessToken, lat, lng, towerSearchRadius, minHeightMeters, maxHeightMeters, abortController.signal);
+            if (response.data) {
+                setAllTowerPolygons(response.data.towers_polygons);
+                setAllTowersPoints(response.data.towers_points);
             }
-        )
+        } catch (error) {
+            // Ignore abort errors, they're expected when cancelling
+            if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                console.error("Error updating towers:", error);
+            }
+        }
     }
 
     const updateAntennas = async (lat, lng) => {
+        // Cancel any pending antenna request
+        if (antennaAbortControllerRef.current) {
+            antennaAbortControllerRef.current.abort();
+        }
+        
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        antennaAbortControllerRef.current = abortController;
+        
         const accessToken = await getAccessTokenSilently();
-        await retrieveAntennas(accessToken, lat, lng, antennaSearchRadius, settingsRef.current["showUls"]).then(
-            (response) => {
-                if (response.data)
-                    setAntennaPoints(response.data.antennas);
+        
+        try {
+            const response = await retrieveAntennas(accessToken, lat, lng, antennaSearchRadius, settingsRef.current["showUls"], abortController.signal);
+            if (response.data) {
+                setAntennaPoints(response.data.antennas);
             }
-        )
+        } catch (error) {
+            // Ignore abort errors, they're expected when cancelling
+            if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                console.error("Error updating antennas:", error);
+            }
+        }
     }
 
     const updateObstacles = async (lat, lng) => {
+        // Cancel any pending obstacle request
+        if (obstacleAbortControllerRef.current) {
+            obstacleAbortControllerRef.current.abort();
+        }
+        
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        obstacleAbortControllerRef.current = abortController;
+        
         const accessToken = await getAccessTokenSilently();
-        await retrieveObstacles(accessToken, lat, lng, towerSearchRadius).then(
-            (response) => {
-                if (response.data)
-                    setObstaclePoints(response.data.obstacles);
+        
+        try {
+            const response = await retrieveObstacles(accessToken, lat, lng, towerSearchRadius, abortController.signal);
+            if (response.data) {
+                setObstaclePoints(response.data.obstacles);
             }
-        )
+        } catch (error) {
+            // Ignore abort errors, they're expected when cancelling
+            if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                console.error("Error updating obstacles:", error);
+            }
+        }
     }
 
     const updateSettings = (settingName, settingValue) => {
@@ -1050,6 +1131,25 @@ function Map() {
         });
     }, [pollingPosition, mapDatetime]);
 
+    // Keep ref in sync with state
+    useEffect(() => {
+        towerHeightFilterRef.current = towerHeightFilter;
+    }, [towerHeightFilter]);
+
+    // Tower height filter useEffect - reload towers when filter changes
+    useEffect(() => {
+        if (!mapbox.current) return; // wait for map to initialize
+        
+        // Check if towers layer is visible and if we're zoomed in enough
+        const zoomlevel = mapbox.current.getZoom();
+        if (zoomlevel >= (towerRenderZoomLevel - .1)) {
+            if (mapbox.current.getLayoutProperty('All Towers', 'visibility') === 'visible') {
+                console.log("Tower height filter changed, reloading towers");
+                updateAllTowers(mapbox.current.getCenter().lat, mapbox.current.getCenter().lng, towerHeightFilter.min, towerHeightFilter.max);
+            }
+        }
+    }, [towerHeightFilter]);
+
     const displayLabels = display => {
         displayLabelsUtil(mapbox.current, display);
     }
@@ -1115,6 +1215,8 @@ function Map() {
                 updateSettings={updateSettings}
                 pointFilters={pointFilters}
                 updatePointFilters={updatePointFilters}
+                towerHeightFilter={towerHeightFilter}
+                setTowerHeightFilter={setTowerHeightFilter}
             />
             <Modal getAccessToken={getAccessTokenSilently} modalOpen={openModal} modalType={modalType} map={customMaps ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0] : null} point={customMaps && modalSelectedCustomMapId != "" ? customMaps.maps.filter(map => map.id == modalSelectedCustomMapId)[0]?.points?.filter(point => point.id == modalSelectedCustomMapPointId)[0] : null} setOpenModal={setOpenModal} getMaps={getMaps} />
 
