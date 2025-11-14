@@ -45,10 +45,24 @@ def retrieve_sentinel_image(oauth, url, request):
     return resp.content
 
 # ISO-8601 formatted time intervals
-def get_sentinel_image(bbox, date):
-    # end date is passed in, and start date should be 13 days prior (Sentinel's orbit should create a max 12 day revisit cycle)
-    startdate = (date - datetime.timedelta(days=13)).strftime("%Y-%m-%dT00:00:00Z")
-    enddate = date.strftime("%Y-%m-%dT00:00:00Z")    
+def get_sentinel_image(bbox, date, days_range=13, center_window=False):
+    # end date is passed in, and start date should be days_range days prior
+    # (Sentinel's orbit creates a max 12 day revisit cycle, so default is 13 days)
+    # For explicit date selections with center_window=True, center the window around the date
+    # to prefer images from that specific date
+    if center_window:
+        # Center the window around the requested date
+        start_dt = date - datetime.timedelta(days=days_range//2)
+        end_dt = date + datetime.timedelta(days=days_range//2 + 1)
+        startdate = start_dt.strftime("%Y-%m-%dT00:00:00Z")
+        enddate = end_dt.strftime("%Y-%m-%dT23:59:59Z")
+        print(f"[get_sentinel_image] Centered window: {start_dt.date()} to {end_dt.date()} (requested: {date.date()})")
+    else:
+        # Default: backward-looking window
+        start_dt = date - datetime.timedelta(days=days_range)
+        startdate = start_dt.strftime("%Y-%m-%dT00:00:00Z")
+        enddate = date.strftime("%Y-%m-%dT00:00:00Z")
+        print(f"[get_sentinel_image] Backward window: {start_dt.date()} to {date.date()}")    
     
     request = {
         "input": {
@@ -68,7 +82,8 @@ def get_sentinel_image(bbox, date):
                         "timeRange": {
                             "from": startdate,
                             "to": enddate,
-                        }
+                        },
+                        "mosaickingOrder": "mostRecent"  # Always prioritize most recent imagery
                     },
                 }
             ],
@@ -80,8 +95,12 @@ def get_sentinel_image(bbox, date):
         "evalscript": evalscript,
     }
 
+    print(f"[get_sentinel_image] Sending request with timeRange: {startdate} to {enddate}")
+    print(f"[get_sentinel_image] mosaickingOrder: {request['input']['data'][0]['dataFilter'].get('mosaickingOrder', 'NOT SET')}")
+    
     try:
         resp = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=request)
+        print(f"[get_sentinel_image] Response status: {resp.status_code}, size: {len(resp.content)} bytes")
     except TokenExpiredError as e:
         oauth.fetch_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
                                   client_secret=client_secret, include_client_id=True)
