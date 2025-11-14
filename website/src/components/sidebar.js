@@ -67,15 +67,30 @@ const Sidebar = ({
     updateSettings,
     pointFilters,
     updatePointFilters,
+    towerHeightFilter,
+    setTowerHeightFilter,
 }) => {
     const [selectedPart, setSelectedPart] = useState("layers");
     const [isoMinutesLive, setIsoMinutesLive] = useState(null);
     const [selectedCountry, setSelectedCountry] = useState("");
     const [parcelSearchQuery, setParcelSearchQuery] = useState("");
     
+    // Tower height filter unit state (only store unit locally)
+    const [towerHeightUnit, setTowerHeightUnit] = useState("feet");
+    
+    // Local state for slider values (updates immediately for visual feedback)
+    const [localTowerHeightMin, setLocalTowerHeightMin] = useState(towerHeightFilter.min);
+    const [localTowerHeightMax, setLocalTowerHeightMax] = useState(towerHeightFilter.max);
+    
     // Ref to store scroll position
     const sidebarContentRef = useRef(null);
     const savedScrollPosition = useRef(0);
+
+    // Sync local tower height state with parent when parent changes
+    useEffect(() => {
+        setLocalTowerHeightMin(towerHeightFilter.min);
+        setLocalTowerHeightMax(towerHeightFilter.max);
+    }, [towerHeightFilter]);
 
     useEffect(() => {
         if (isoMinutesLive == null) {
@@ -485,6 +500,175 @@ const Sidebar = ({
                         setParcelSearchQuery(e.target.value);
                     }}
                 />
+            </div>
+        )
+    }
+
+    const towerHeightFilterElement = () => {
+        const maxFeet = 2067;
+        const maxMeters = 630;
+        
+        const convertToDisplay = (value) => {
+            if (towerHeightUnit === "meters") {
+                return Math.round(value * 0.3048);
+            }
+            return value;
+        };
+        
+        const convertToFeet = (value) => {
+            if (towerHeightUnit === "meters") {
+                return Math.round(value / 0.3048);
+            }
+            return value;
+        };
+        
+        // Use local state for display (updates immediately)
+        const displayMin = convertToDisplay(localTowerHeightMin);
+        const displayMax = convertToDisplay(localTowerHeightMax);
+        const displayMaxPossible = towerHeightUnit === "meters" ? maxMeters : maxFeet;
+        
+        // Calculate the blue range position as percentages
+        const minPercent = (displayMin / displayMaxPossible) * 100;
+        const maxPercent = (displayMax / displayMaxPossible) * 100;
+        
+        // Handler to commit local values to parent (triggers API call)
+        // Also swaps values if min > max
+        const commitHeightFilter = () => {
+            let finalMin = localTowerHeightMin;
+            let finalMax = localTowerHeightMax;
+            
+            // Swap if min is greater than max
+            if (finalMin > finalMax) {
+                [finalMin, finalMax] = [finalMax, finalMin];
+                setLocalTowerHeightMin(finalMin);
+                setLocalTowerHeightMax(finalMax);
+            }
+            
+            console.log("Committing tower height filter:", {
+                min: finalMin,
+                max: finalMax,
+                unit: towerHeightUnit
+            });
+            setTowerHeightFilter({ min: finalMin, max: finalMax });
+        };
+        
+        return (
+            <div id="tower-height-filter-element">
+                <span id="tower-height-filter-label">Tower height filter</span>
+                <div id="tower-height-unit-toggle">
+                    <button 
+                        className={towerHeightUnit === "feet" ? "unit-btn-active" : "unit-btn"}
+                        onClick={() => setTowerHeightUnit("feet")}
+                    >
+                        Feet
+                    </button>
+                    <button 
+                        className={towerHeightUnit === "meters" ? "unit-btn-active" : "unit-btn"}
+                        onClick={() => setTowerHeightUnit("meters")}
+                    >
+                        Meters
+                    </button>
+                </div>
+                <div id="tower-height-slider-container">
+                    <div id="tower-height-slider-track"></div>
+                    <div 
+                        id="tower-height-slider-range" 
+                        style={{
+                            left: `${minPercent}%`,
+                            width: `${maxPercent - minPercent}%`
+                        }}
+                    ></div>
+                    <input
+                        type="range"
+                        min="0"
+                        max={displayMaxPossible}
+                        value={displayMin}
+                        className="tower-height-slider tower-height-slider-min"
+                        onChange={(e) => {
+                            const sliderValue = parseInt(e.target.value);
+                            const newMin = convertToFeet(sliderValue);
+                            console.log("Min slider onChange:", {
+                                sliderValue,
+                                newMinFeet: newMin,
+                                unit: towerHeightUnit,
+                                willUpdate: newMin <= localTowerHeightMax
+                            });
+                            if (newMin <= localTowerHeightMax) {
+                                setLocalTowerHeightMin(newMin);
+                            }
+                        }}
+                        onMouseUp={commitHeightFilter}
+                        onTouchEnd={commitHeightFilter}
+                    />
+                    <input
+                        type="range"
+                        min="0"
+                        max={displayMaxPossible}
+                        value={displayMax}
+                        className="tower-height-slider tower-height-slider-max"
+                        onChange={(e) => {
+                            const sliderValue = parseInt(e.target.value);
+                            const newMax = convertToFeet(sliderValue);
+                            console.log("Max slider onChange:", {
+                                sliderValue,
+                                newMaxFeet: newMax,
+                                unit: towerHeightUnit,
+                                willUpdate: newMax >= localTowerHeightMin
+                            });
+                            if (newMax >= localTowerHeightMin) {
+                                setLocalTowerHeightMax(newMax);
+                            }
+                        }}
+                        onMouseUp={commitHeightFilter}
+                        onTouchEnd={commitHeightFilter}
+                    />
+                </div>
+                <div id="tower-height-values">
+                    <input 
+                        type="number" 
+                        className="tower-height-input"
+                        value={displayMin}
+                        min="0"
+                        max={displayMaxPossible}
+                        onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            if (!isNaN(value)) {
+                                const clampedValue = Math.max(0, Math.min(value, displayMaxPossible));
+                                const newMinFeet = convertToFeet(clampedValue);
+                                setLocalTowerHeightMin(newMinFeet);
+                            }
+                        }}
+                        onBlur={commitHeightFilter}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                                commitHeightFilter();
+                                e.target.blur();
+                            }
+                        }}
+                    />
+                    <input 
+                        type="number" 
+                        className="tower-height-input"
+                        value={displayMax}
+                        min="0"
+                        max={displayMaxPossible}
+                        onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            if (!isNaN(value)) {
+                                const clampedValue = Math.max(0, Math.min(value, displayMaxPossible));
+                                const newMaxFeet = convertToFeet(clampedValue);
+                                setLocalTowerHeightMax(newMaxFeet);
+                            }
+                        }}
+                        onBlur={commitHeightFilter}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                                commitHeightFilter();
+                                e.target.blur();
+                            }
+                        }}
+                    />
+                </div>
             </div>
         )
     }
@@ -1292,6 +1476,8 @@ const Sidebar = ({
                                     {renderBaseLayers()}
                                     {/*only render sentinel datetime element if layer is visible*/}
                                     {baseLayers["Sentinel 2-L2A"].visible ? sentinelDatetimeElement() : ""}
+                                    {/*only render tower height filter if towers layer is visible*/}
+                                    {(layers["All Towers"].visible || layers["All Tower Extrusions"].visible) ? towerHeightFilterElement() : ""}
                                     {/*only render parcel search element if layer is visible*/}
                                     {layers["Parcel ownership"].visible ? parcelSearchElement() : ""}
                                     <h3>Regular Layers</h3>
